@@ -7,6 +7,8 @@ import 'package:spots/core/services/expertise_service.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/app_theme.dart';
 
+// Note: Using AppColors for 100% design token adherence per project requirements
+
 /// Expertise Display Widget
 /// Displays user's expertise levels and category expertise
 /// OUR_GUTS.md: "Pins, Not Badges" - Visual recognition without gamification
@@ -289,14 +291,14 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Category Expertise',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textColor,
+          Text(
+            'Category Expertise',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
         const SizedBox(height: 8),
         ...sortedPins.map((pin) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -342,7 +344,7 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textColor,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -407,14 +409,14 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Progress to Next Level',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textColor,
+          Text(
+            'Progress to Next Level',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
         const SizedBox(height: 8),
         ..._pins!.take(3).map((pin) {
           // Calculate progress (simplified - in real implementation, get from service)
@@ -444,7 +446,7 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textColor,
+                color: AppColors.textPrimary,
               ),
             ),
             if (nextLevel != null)

@@ -293,6 +293,16 @@ Future<void> init() async {
         expertiseService: ExpertiseService(),
       ));
 
+  // Payment Processing Services - Agent 1: Payment Processing & Revenue
+  // Register StripeConfig first (using test config for now)
+  sl.registerLazySingleton<StripeConfig>(() => StripeConfig.test());
+  
+  // Register StripeService with StripeConfig
+  sl.registerLazySingleton<StripeService>(() => StripeService(sl<StripeConfig>()));
+  
+  // Register PaymentService with StripeService
+  sl.registerLazySingleton<PaymentService>(() => PaymentService(sl<StripeService>()));
+
   // Device Discovery Service
   sl.registerLazySingleton<DeviceDiscoveryService>(() {
     final platform = DeviceDiscoveryFactory.createPlatformDiscovery();

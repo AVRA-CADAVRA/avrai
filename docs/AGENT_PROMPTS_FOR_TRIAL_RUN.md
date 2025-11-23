@@ -51,7 +51,7 @@ CRITICAL RULES:
 1. ✅ Use design tokens (AppColors/AppTheme) - NEVER direct Colors.*
 2. ✅ Get current date/time using: date "+%B %d, %Y, %I:%M %p %Z" for all documents
 3. ✅ Update docs/AGENT_STATUS_TRACKER.md when completing work others depend on
-4. ✅ Follow git workflow: Create branch agent-1-payment-backend
+4. ✅ Git workflow (RECOMMENDED): Create branch agent-1-payment-backend (see LOCAL_WORK_OPTIONS.md if working locally)
 5. ✅ Only modify files you own (see FILE_OWNERSHIP_MATRIX.md)
 6. ✅ Check dependencies before starting each section
 7. ✅ Document all code with proper API docs
@@ -60,7 +60,8 @@ CRITICAL RULES:
 START NOW:
 1. Read all required documents above
 2. Check docs/AGENT_STATUS_TRACKER.md for current status
-3. Create your git branch: git checkout -b agent-1-payment-backend
+3. **If using git:** Create your branch: git checkout -b agent-1-payment-backend
+   **If NOT using git:** Strictly follow FILE_OWNERSHIP_MATRIX.md (see LOCAL_WORK_OPTIONS.md)
 4. Begin Phase 1, Section 1: Stripe Integration Setup
 5. Update status tracker as you progress
 ```
