@@ -103,7 +103,7 @@ void main() {
         await Future.delayed(const Duration(seconds: 10));
 
         // Cancel if still listening
-        await subscription!.cancel();
+        await subscription.cancel();
       
         expect(values.length, greaterThanOrEqualTo(1));
         // All overviews should be valid
