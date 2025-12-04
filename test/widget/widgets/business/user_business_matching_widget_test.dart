@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/business/user_business_matching_widget.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for UserBusinessMatchingWidget
 /// Tests user-business matching display

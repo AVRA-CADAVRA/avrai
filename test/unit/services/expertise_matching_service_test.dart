@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/expertise_matching_service.dart';
 import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/expertise_level.dart';
 import '../../fixtures/model_factories.dart';
 
 /// Expertise Matching Service Tests

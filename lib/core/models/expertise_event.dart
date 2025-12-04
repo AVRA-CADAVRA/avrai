@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/models/spot.dart';
 
 /// Expertise Event Model

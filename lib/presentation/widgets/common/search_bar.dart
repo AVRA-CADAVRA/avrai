@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
 
@@ -48,59 +47,68 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? AppColors.grey100
-            : AppColors.grey800,
-        borderRadius: BorderRadius.circular(12),
-        border: _hasFocus
-            ? Border.all(color: AppTheme.primaryColor, width: 2)
-            : Border.all(color: AppColors.grey300, width: 1),
-      ),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          setState(() {
-            _hasFocus = hasFocus;
-          });
-        },
-        child: TextField(
-          controller: _controller,
-          enabled: widget.enabled,
-          onChanged: widget.onChanged,
-          onTap: widget.onTap,
-          decoration: InputDecoration(
-            hintText: widget.hintText ?? 'Search...',
-            hintStyle: const TextStyle(
-              color: AppColors.textHint,
-              fontSize: 16,
+    return Semantics(
+      label: 'Search',
+      hint: widget.hintText ?? 'Search...',
+      textField: true,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light
+              ? AppColors.grey100
+              : AppColors.grey800,
+          borderRadius: BorderRadius.circular(12),
+          border: _hasFocus
+              ? Border.all(color: AppTheme.primaryColor, width: 2)
+              : Border.all(color: AppColors.grey300, width: 1),
+        ),
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            setState(() {
+              _hasFocus = hasFocus;
+            });
+          },
+          child: TextField(
+            controller: _controller,
+            enabled: widget.enabled,
+            onChanged: widget.onChanged,
+            onTap: widget.onTap,
+            decoration: InputDecoration(
+              hintText: widget.hintText ?? 'Search...',
+              hintStyle: const TextStyle(
+                color: AppColors.textHint,
+                fontSize: 16,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: _hasFocus ? AppTheme.primaryColor : AppColors.grey600,
+              ),
+              suffixIcon: widget.showClearButton && _controller.text.isNotEmpty
+                  ? Semantics(
+                      label: 'Clear search',
+                      button: true,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: AppColors.grey600,
+                        ),
+                        onPressed: () {
+                          _controller.clear();
+                          if (widget.onChanged != null) {
+                            widget.onChanged!('');
+                          }
+                        },
+                      ),
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: _hasFocus ? AppTheme.primaryColor : AppColors.grey600,
-            ),
-            suffixIcon: widget.showClearButton && _controller.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      color: AppColors.grey600,
-                    ),
-                    onPressed: () {
-                      _controller.clear();
-                      if (widget.onChanged != null) {
-                        widget.onChanged!('');
-                      }
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            style: const TextStyle(fontSize: 16),
           ),
-          style: const TextStyle(fontSize: 16),
         ),
       ),
     );

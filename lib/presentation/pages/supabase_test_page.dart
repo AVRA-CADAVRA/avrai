@@ -5,7 +5,6 @@ import 'package:get_it/get_it.dart';
 import 'package:spots_network/spots_network.dart';
 import 'package:spots_core/spots_core.dart';
 import 'package:spots/core/services/ai2ai_realtime_service.dart';
-import 'dart:typed_data';
 
 /// Test page to verify Supabase integration
 class SupabaseTestPage extends StatefulWidget {

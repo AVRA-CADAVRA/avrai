@@ -421,12 +421,17 @@ void main() {
         await tester.pumpAndSettle();
 
         // Act - Simulate orientation change
-        tester.binding.window.physicalSizeTestValue = const Size(800, 400);
+        final originalSize = tester.view.physicalSize;
+        tester.view.physicalSize = const Size(800, 400);
         await tester.pump();
 
         // Assert - Dialog should remain visible
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(find.text('Age Verification'), findsOneWidget);
+        
+        // Cleanup - Restore original size
+        tester.view.physicalSize = originalSize;
+        await tester.pump();
       });
 
       testWidgets('handles rapid dialog operations', (WidgetTester tester) async {

@@ -435,4 +435,27 @@ class MockLLMService extends _i1.Mock implements _i10.LLMService {
           ),
         )),
       ) as _i6.Future<String>);
+
+  @override
+  _i6.Stream<String> chatStream({
+    required List<_i10.ChatMessage>? messages,
+    _i10.LLMContext? context,
+    double? temperature = 0.7,
+    int? maxTokens = 500,
+    bool? useRealSSE = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #chatStream,
+          [],
+          {
+            #messages: messages,
+            #context: context,
+            #temperature: temperature,
+            #maxTokens: maxTokens,
+            #useRealSSE: useRealSSE,
+          },
+        ),
+        returnValue: _i6.Stream<String>.empty(),
+      ) as _i6.Stream<String>);
 }

@@ -561,7 +561,7 @@ class SupabaseDataBackendSimple implements DataBackend {
           .insert(row)
           .select()
           .single();
-      return ApiResponse.success(_mapRowToSpot(response as Map<String, dynamic>));
+      return ApiResponse.success(_mapRowToSpot(response));
     } catch (e) {
       return ApiResponse.error('Create spot failed: $e');
     }
@@ -575,7 +575,7 @@ class SupabaseDataBackendSimple implements DataBackend {
           .select()
           .eq('id', spotId)
           .single();
-      return ApiResponse.success(_mapRowToSpot(response as Map<String, dynamic>));
+      return ApiResponse.success(_mapRowToSpot(response));
     } catch (e) {
       return ApiResponse.error('Get spot failed: $e');
     }
@@ -621,7 +621,7 @@ class SupabaseDataBackendSimple implements DataBackend {
           .eq('id', spot.id)
           .select()
           .single();
-      return ApiResponse.success(_mapRowToSpot(response as Map<String, dynamic>));
+      return ApiResponse.success(_mapRowToSpot(response));
     } catch (e) {
       return ApiResponse.error('Update spot failed: $e');
     }
@@ -671,7 +671,7 @@ class SupabaseDataBackendSimple implements DataBackend {
           .insert(row)
           .select()
           .single();
-      return ApiResponse.success(_mapRowToSpotList(response as Map<String, dynamic>));
+      return ApiResponse.success(_mapRowToSpotList(response));
     } catch (e) {
       return ApiResponse.error('Create spot list failed: $e');
     }
@@ -685,7 +685,7 @@ class SupabaseDataBackendSimple implements DataBackend {
           .select()
           .eq('id', listId)
           .single();
-      return ApiResponse.success(_mapRowToSpotList(response as Map<String, dynamic>));
+      return ApiResponse.success(_mapRowToSpotList(response));
     } catch (e) {
       return ApiResponse.error('Get spot list failed: $e');
     }
@@ -999,7 +999,7 @@ class SupabaseRealtimeBackendSimple implements RealtimeBackend {
       .from(collection)
       .stream(primaryKey: ['id'])
       .map((event) {
-        return event.map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        return event.map((json) => fromJson(json)).toList();
       });
   }
   
@@ -1009,7 +1009,7 @@ class SupabaseRealtimeBackendSimple implements RealtimeBackend {
       .from(collection)
       .stream(primaryKey: ['id'])
       .eq('id', documentId)
-      .map((event) => event.isNotEmpty ? fromJson(event.first as Map<String, dynamic>) : null);
+      .map((event) => event.isNotEmpty ? fromJson(event.first) : null);
   }
   
   @override

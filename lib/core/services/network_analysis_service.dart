@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 class NetworkAnalysisService {
   static Map<String, dynamic> analyzeNetwork(List<Map<String, dynamic>> connections) {

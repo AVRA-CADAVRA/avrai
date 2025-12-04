@@ -16,7 +16,7 @@
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 
 import 'package:flutter/material.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:spots/core/services/storage_service.dart';
 import 'package:spots/core/theme/colors.dart';
 
 /// Settings page for device discovery configuration
@@ -28,7 +28,7 @@ class DiscoverySettingsPage extends StatefulWidget {
 }
 
 class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
-  final _storage = GetStorage();
+  final _storageService = StorageService.instance;
   
   // Discovery settings
   bool _discoveryEnabled = false;
@@ -46,17 +46,17 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
   
   void _loadSettings() {
     setState(() {
-      _discoveryEnabled = _storage.read('discovery_enabled') ?? false;
-      _autoDiscovery = _storage.read('auto_discovery') ?? false;
-      _sharePersonalityData = _storage.read('share_personality_data') ?? true;
-      _discoverWiFi = _storage.read('discover_wifi') ?? true;
-      _discoverBluetooth = _storage.read('discover_bluetooth') ?? true;
-      _discoverMultipeer = _storage.read('discover_multipeer') ?? true;
+      _discoveryEnabled = _storageService.getBool('discovery_enabled') ?? false;
+      _autoDiscovery = _storageService.getBool('auto_discovery') ?? false;
+      _sharePersonalityData = _storageService.getBool('share_personality_data') ?? true;
+      _discoverWiFi = _storageService.getBool('discover_wifi') ?? true;
+      _discoverBluetooth = _storageService.getBool('discover_bluetooth') ?? true;
+      _discoverMultipeer = _storageService.getBool('discover_multipeer') ?? true;
     });
   }
   
   Future<void> _saveSetting(String key, bool value) async {
-    await _storage.write(key, value);
+    await _storageService.setBool(key, value);
   }
   
   @override
@@ -90,7 +90,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
         gradient: LinearGradient(
           colors: [
             AppColors.electricGreen.withValues(alpha: 0.1),
-            AppColors.neonPink.withValues(alpha: 0.1),
+            AppColors.electricGreen.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -441,7 +441,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
               ),
               const SizedBox(height: 12),
               _buildPrivacyPoint(
-                Icons.encrypted,
+                Icons.lock,
                 'Encryption',
                 'All discovery data is encrypted using end-to-end encryption.',
               ),

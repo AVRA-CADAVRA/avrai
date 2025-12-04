@@ -11,11 +11,11 @@
 You want two types of users to have an **incredibly easy** time hosting events:
 
 1. **Businesses** - After admin vetting/approval
-2. **People** - After reaching expertise level (City level or higher)
+2. **People** - After reaching expertise level (Local level or higher)
 
 **Current State:**
 - ✅ Event hosting system exists (`ExpertiseEventService`)
-- ✅ Expertise pin system exists (unlocks event hosting at City level)
+- ✅ Expertise pin system exists (unlocks event hosting at Local level)
 - ✅ Business account system exists (`BusinessAccount` model)
 - ⚠️ **BUT: Event creation process may not be "incredibly easy"**
 
@@ -26,7 +26,7 @@ You want two types of users to have an **incredibly easy** time hosting events:
 ### **For People (Experts):**
 
 **Requirements:**
-- Must have **City level or higher** expertise in a category
+- Must have **Local level or higher** expertise in a category
 - Must have expertise in the category they're hosting event for
 
 **Current Process:**
@@ -48,7 +48,7 @@ ExpertiseEventService.createEvent(
 ```
 
 **What's Good:**
-- ✅ Expertise system works (unlocks at City level)
+- ✅ Expertise system works (unlocks at Local level)
 - ✅ Event model is comprehensive
 - ✅ Validation exists (checks expertise, category match)
 
@@ -265,7 +265,7 @@ AI:
 
 ## 🎭 **User Personas & Flows**
 
-### **Persona 1: Expert Sarah (Coffee Expert, City Level)**
+### **Persona 1: Expert Sarah (Coffee Expert, Local Level)**
 
 **Current Flow (5-7 minutes):**
 1. Opens app

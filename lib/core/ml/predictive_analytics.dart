@@ -2,8 +2,6 @@ import 'dart:math';
 import 'dart:developer' as developer;
 import 'package:crypto/crypto.dart';
 import 'package:spots/core/models/user.dart';
-import 'package:spots/core/models/spot.dart';
-import 'package:spots/core/models/list.dart';
 
 /// Privacy-preserving predictive analytics for SPOTS discovery platform
 /// Predicts user journeys and community trends while maintaining privacy and authenticity

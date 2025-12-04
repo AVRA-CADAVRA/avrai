@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'package:crypto/crypto.dart';
 import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/models/user.dart' as user_model;
-import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/list.dart';
 
 /// Privacy-preserving pattern recognition system for SPOTS discovery platform

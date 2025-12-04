@@ -16,7 +16,7 @@ void main() {
 
     testWidgets('displays app bar with title and actions', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsInitial());
+      when(mockListsBloc.state).thenReturn(ListsInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -33,7 +33,7 @@ void main() {
 
     testWidgets('shows loading state when lists are loading', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsLoading());
+      when(mockListsBloc.state).thenReturn(ListsLoading());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -50,7 +50,7 @@ void main() {
     testWidgets('shows error state with retry button', (WidgetTester tester) async {
       // Arrange
       const errorMessage = 'Failed to load lists';
-      when(mockListsBloc.state).thenReturn(const ListsError(errorMessage));
+      when(mockListsBloc.state).thenReturn(ListsError(errorMessage));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -68,7 +68,7 @@ void main() {
 
     testWidgets('triggers reload when retry button is tapped', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsError('Network error'));
+      when(mockListsBloc.state).thenReturn(ListsError('Network error'));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -81,13 +81,13 @@ void main() {
       await tester.tap(find.text('Retry'));
       await tester.pump();
 
-      // Assert
-      verify(mockListsBloc.add(any)).called(greaterThanOrEqualTo(1));
+      // Assert - Verify that LoadLists event was added
+      verify(mockListsBloc.add(LoadLists())).called(greaterThanOrEqualTo(1));
     });
 
     testWidgets('displays empty state when no lists exist', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsLoaded([]));
+      when(mockListsBloc.state).thenReturn(ListsLoaded([], []));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -106,7 +106,7 @@ void main() {
     testWidgets('displays list of spot lists when loaded', (WidgetTester tester) async {
       // Arrange
       final testLists = TestDataFactory.createTestLists(3);
-      when(mockListsBloc.state).thenReturn(ListsLoaded(testLists));
+      when(mockListsBloc.state).thenReturn(ListsLoaded(testLists, testLists));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -124,7 +124,7 @@ void main() {
 
     testWidgets('displays floating action button for creating lists', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsLoaded([]));
+      when(mockListsBloc.state).thenReturn(ListsLoaded([], []));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -141,7 +141,7 @@ void main() {
 
     testWidgets('navigates to create list page when FAB is tapped', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsLoaded([]));
+      when(mockListsBloc.state).thenReturn(ListsLoaded([], []));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -160,7 +160,7 @@ void main() {
 
     testWidgets('triggers load lists event on initial state', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsInitial());
+      when(mockListsBloc.state).thenReturn(ListsInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -170,13 +170,13 @@ void main() {
       // Act
       await WidgetTestHelpers.pumpAndSettle(tester, widget);
 
-      // Assert
-      verify(mockListsBloc.add(any)).called(greaterThanOrEqualTo(1));
+      // Assert - Verify that LoadLists event was added
+      verify(mockListsBloc.add(LoadLists())).called(greaterThanOrEqualTo(1));
     });
 
     testWidgets('handles unknown state gracefully', (WidgetTester tester) async {
       // Arrange - Create a custom unknown state
-      when(mockListsBloc.state).thenReturn(const ListsInitial());
+      when(mockListsBloc.state).thenReturn(ListsInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -193,7 +193,7 @@ void main() {
     testWidgets('maintains scroll position during rebuilds', (WidgetTester tester) async {
       // Arrange
       final testLists = TestDataFactory.createTestLists(20); // Many lists to enable scrolling
-      when(mockListsBloc.state).thenReturn(ListsLoaded(testLists));
+      when(mockListsBloc.state).thenReturn(ListsLoaded(testLists, testLists));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -216,7 +216,7 @@ void main() {
     testWidgets('meets accessibility requirements', (WidgetTester tester) async {
       // Arrange
       final testLists = TestDataFactory.createTestLists(2);
-      when(mockListsBloc.state).thenReturn(ListsLoaded(testLists));
+      when(mockListsBloc.state).thenReturn(ListsLoaded(testLists, testLists));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -241,12 +241,12 @@ void main() {
 
     testWidgets('handles rapid state changes gracefully', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsLoading());
+      when(mockListsBloc.state).thenReturn(ListsLoading());
       when(mockListsBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        const ListsLoading(),
-        const ListsLoaded([]),
-        const ListsError('Error'),
-        const ListsLoaded([]),
+        ListsLoading(),
+        ListsLoaded([], []),
+        ListsError('Error'),
+        ListsLoaded([], []),
       ]));
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -267,7 +267,7 @@ void main() {
 
     testWidgets('shows offline indicator when configured', (WidgetTester tester) async {
       // Arrange
-      when(mockListsBloc.state).thenReturn(const ListsLoaded([]));
+      when(mockListsBloc.state).thenReturn(ListsLoaded([], []));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const ListsPage(),
@@ -286,7 +286,7 @@ void main() {
       testWidgets('handles list card taps', (WidgetTester tester) async {
         // Arrange
         final testLists = TestDataFactory.createTestLists(1);
-        when(mockListsBloc.state).thenReturn(ListsLoaded(testLists));
+        when(mockListsBloc.state).thenReturn(ListsLoaded(testLists, testLists));
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const ListsPage(),
@@ -306,7 +306,7 @@ void main() {
       testWidgets('refreshes lists with pull-to-refresh', (WidgetTester tester) async {
         // Arrange
         final testLists = TestDataFactory.createTestLists(3);
-        when(mockListsBloc.state).thenReturn(ListsLoaded(testLists));
+        when(mockListsBloc.state).thenReturn(ListsLoaded(testLists, testLists));
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const ListsPage(),

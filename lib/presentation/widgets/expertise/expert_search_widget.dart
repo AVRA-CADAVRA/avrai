@@ -129,7 +129,7 @@ class _ExpertSearchWidgetState extends State<ExpertSearchWidget> {
           icon: const Icon(Icons.search),
           style: IconButton.styleFrom(
             backgroundColor: AppColors.electricGreen,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
           ),
         ),
       ],

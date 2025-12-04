@@ -43,7 +43,7 @@ class PrivacyComplianceCard extends StatelessWidget {
                     '${(complianceScore * 100).round()}%',
                     style: TextStyle(color: color, fontWeight: FontWeight.bold),
                   ),
-                  backgroundColor: color.withOpacity(0.2),
+                  backgroundColor: color.withValues(alpha: 0.2),
                 ),
               ],
             ),

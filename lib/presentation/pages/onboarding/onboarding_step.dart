@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/services/logger.dart';
 
 class PermissionsPage extends StatefulWidget {

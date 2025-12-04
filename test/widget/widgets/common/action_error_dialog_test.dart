@@ -47,8 +47,10 @@ void main() {
         // Assert
         expect(find.byType(ActionErrorDialog), findsOneWidget);
         expect(find.text('Action Failed'), findsOneWidget);
-        expect(find.text('Something went wrong'), findsOneWidget);
-        expect(find.text('Dismiss'), findsOneWidget);
+        // Error message is displayed - "Something went wrong" doesn't match translation patterns, so shown as-is
+        // Use find.textContaining to find the error message in the dialog
+        expect(find.textContaining('Something went wrong'), findsWidgets);
+        expect(find.text('Cancel'), findsOneWidget);
       });
 
       testWidgets('displays retry button when onRetry provided', (WidgetTester tester) async {
@@ -111,8 +113,8 @@ void main() {
         // Act
         await WidgetTestHelpers.pumpAndSettle(tester, widget);
 
-        // Assert
-        expect(find.text('Failed to create spot'), findsOneWidget);
+        // Assert - Should show intent context
+        expect(find.textContaining('Failed to create spot', findRichText: true), findsOneWidget);
       });
     });
 
@@ -142,7 +144,7 @@ void main() {
 
         // Act
         await WidgetTestHelpers.pumpAndSettle(tester, widget);
-        await tester.tap(find.text('Dismiss'));
+        await tester.tap(find.text('Cancel'));
         await tester.pumpAndSettle();
 
         // Assert

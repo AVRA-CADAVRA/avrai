@@ -120,13 +120,11 @@ class SupabaseRealtimeBackend implements RealtimeBackend {
     
     // Get initial data
     _client.from(collection).select().then((data) {
-      if (data != null) {
-        final items = (data as List)
-            .map((json) => fromJson(json as Map<String, dynamic>))
-            .toList();
-        controller.add(items);
-      }
-    });
+      final items = (data as List)
+          .map((json) => fromJson(json as Map<String, dynamic>))
+          .toList();
+      controller.add(items);
+        });
     
     // Subscribe to changes
     final channel = _client.channel(channelName);
@@ -137,13 +135,11 @@ class SupabaseRealtimeBackend implements RealtimeBackend {
       callback: (payload) {
         // Refetch data on change
         _client.from(collection).select().then((data) {
-          if (data != null) {
-            final items = (data as List)
-                .map((json) => fromJson(json as Map<String, dynamic>))
-                .toList();
-            controller.add(items);
-          }
-        });
+          final items = (data as List)
+              .map((json) => fromJson(json as Map<String, dynamic>))
+              .toList();
+          controller.add(items);
+                });
       },
     ).subscribe();
     
@@ -168,7 +164,7 @@ class SupabaseRealtimeBackend implements RealtimeBackend {
         .maybeSingle()
         .then((data) {
       if (data != null) {
-        controller.add(fromJson(data as Map<String, dynamic>));
+        controller.add(fromJson(data));
       } else {
         controller.add(null);
       }
@@ -186,12 +182,8 @@ class SupabaseRealtimeBackend implements RealtimeBackend {
         value: documentId,
       ),
       callback: (payload) {
-        if (payload.newRecord != null) {
-          controller.add(fromJson(payload.newRecord!));
-        } else {
-          controller.add(null);
-        }
-      },
+        controller.add(fromJson(payload.newRecord!));
+            },
     ).subscribe();
     
     _activeChannels[channelName] = channel;
@@ -208,31 +200,27 @@ class SupabaseRealtimeBackend implements RealtimeBackend {
       final presences = <UserPresence>[];
       
       // Parse presence state from payload
-      if (payload != null) {
-        // Convert presence state to UserPresence list
-        // This is a simplified implementation
-        try {
-          // Supabase presence format may vary
-          controller.add(presences);
-        } catch (e) {
-          // Handle error
-        }
+      // Convert presence state to UserPresence list
+      // This is a simplified implementation
+      try {
+        // Supabase presence format may vary
+        controller.add(presences);
+      } catch (e) {
+        // Handle error
       }
-    });
+        });
     
     // Listen to presence changes via broadcast
     channel.onBroadcast(
       event: 'presence',
       callback: (payload, [ref]) {
         try {
-          if (payload is Map<String, dynamic>) {
-            final presence = UserPresence.fromJson(payload);
-            // Get current state and update
-            final currentPresences = <UserPresence>[];
-            currentPresences.add(presence);
-            controller.add(currentPresences);
-          }
-        } catch (e) {
+          final presence = UserPresence.fromJson(payload);
+          // Get current state and update
+          final currentPresences = <UserPresence>[];
+          currentPresences.add(presence);
+          controller.add(currentPresences);
+                } catch (e) {
           // Handle error
         }
       },
@@ -263,7 +251,7 @@ class SupabaseRealtimeBackend implements RealtimeBackend {
     channel.onBroadcast(
       event: 'message',
       callback: (payload, [ref]) {
-        controller.add(RealtimeMessage.fromJson(payload as Map<String, dynamic>));
+        controller.add(RealtimeMessage.fromJson(payload));
       },
     );
     

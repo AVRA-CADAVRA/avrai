@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:spots/presentation/pages/onboarding/homebase_selection_page.dart';
 import '../../helpers/widget_test_helpers.dart';
 

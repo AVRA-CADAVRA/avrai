@@ -19,6 +19,7 @@ import 'package:geolocator/geolocator.dart';
 // Phase 1 Integration: Offline indicator
 import 'package:spots/presentation/widgets/common/offline_indicator_widget.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:spots/presentation/pages/events/events_browse_page.dart';
 
 class HomePage extends StatefulWidget {
   final int initialTabIndex;
@@ -86,26 +87,36 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Column(
         children: [
-          // Phase 1 Integration: Offline banner
+          // Phase 7 Week 35: Full OfflineIndicatorWidget integration
           StreamBuilder<List<ConnectivityResult>>(
             stream: Connectivity().onConnectivityChanged,
             initialData: const [ConnectivityResult.none],
             builder: (context, snapshot) {
-              final isOffline = snapshot.data?.contains(ConnectivityResult.none) ?? true;
+              final connectivityResults = snapshot.data ?? [ConnectivityResult.none];
+              final isOffline = connectivityResults.contains(ConnectivityResult.none);
+              
               if (!isOffline) return const SizedBox.shrink();
               
-              return OfflineBanner(
+              return OfflineIndicatorWidget(
                 isOffline: isOffline,
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      content: OfflineIndicatorWidget(
-                        isOffline: isOffline,
+                onRetry: () async {
+                  // Retry connectivity check
+                  final connectivity = Connectivity();
+                  final result = await connectivity.checkConnectivity();
+                  final isNowOnline = result is List
+                      ? !result.contains(ConnectivityResult.none)
+                      : result != ConnectivityResult.none;
+                  
+                  if (isNowOnline && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Connection restored!'),
+                        backgroundColor: AppColors.success,
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
+                showDismiss: true,
               );
             },
           ),
@@ -389,7 +400,7 @@ class _SpotsTabState extends State<SpotsTab> {
                                         horizontal: 16, vertical: 8),
                                     child: ListTile(
                                       leading: CircleAvatar(
-                                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                                         child: Icon(
                                           _getCategoryIcon(spot.category),
                                           color: AppTheme.primaryColor,
@@ -741,7 +752,7 @@ class _UsersSubTabState extends State<UsersSubTab> {
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 child: Icon(
                   Icons.list,
                   color: AppTheme.primaryColor,
@@ -1047,14 +1058,14 @@ class _AISubTabState extends State<AISubTab> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: onTap == null
-                ? Border.all(color: color.withOpacity(0.3))
+                ? Border.all(color: color.withValues(alpha: 0.3))
                 : null,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircleAvatar(
-                backgroundColor: color.withOpacity(0.1),
+                backgroundColor: color.withValues(alpha: 0.1),
                 child: Icon(icon, color: color),
               ),
               const SizedBox(height: 8),
@@ -1080,7 +1091,7 @@ class _AISubTabState extends State<AISubTab> {
                   margin: const EdgeInsets.only(top: 4),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -1105,29 +1116,8 @@ class EventsSubTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event, size: 64, color: AppColors.textSecondary),
-          SizedBox(height: 16),
-          Text(
-            'Events',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Discover local events and meetups',
-            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Coming Soon',
-            style: TextStyle(fontSize: 14, color: AppTheme.warningColor),
-          ),
-        ],
-      ),
-    );
+    // Replace "Coming Soon" placeholder with Events Browse Page
+    // Agent 2: Event Discovery & Hosting UI (Phase 1, Section 1)
+    return const EventsBrowsePage();
   }
 }

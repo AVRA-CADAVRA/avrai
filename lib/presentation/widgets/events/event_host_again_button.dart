@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/models/expertise_event.dart';
 import 'package:spots/core/services/expertise_event_service.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:get_it/get_it.dart';
 
 /// OUR_GUTS.md: "Make hosting incredibly easy"
@@ -25,7 +25,7 @@ class EventHostAgainButton extends StatelessWidget {
       label: const Text('Host Again'),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -62,7 +62,7 @@ class EventHostAgainButton extends StatelessWidget {
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'View',
-            textColor: Colors.white,
+            textColor: AppColors.white,
             onPressed: () {
               // Navigate to event detail page
               // Navigator.push(...);
@@ -82,7 +82,7 @@ class EventHostAgainButton extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to duplicate event: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }

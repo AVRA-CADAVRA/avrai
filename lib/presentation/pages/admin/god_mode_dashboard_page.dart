@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/services/admin_auth_service.dart';
 import 'package:spots/core/services/admin_god_mode_service.dart';
-import 'package:spots/core/services/admin_communication_service.dart';
-import 'package:spots/core/services/business_account_service.dart';
-import 'package:spots/core/ml/predictive_analytics.dart';
-import 'package:spots/core/monitoring/connection_monitor.dart';
-import 'package:spots/core/ai/ai2ai_learning.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get_it/get_it.dart';
 import 'package:spots/presentation/pages/admin/god_mode_login_page.dart';
 import 'package:spots/presentation/pages/admin/user_data_viewer_page.dart';
@@ -16,6 +10,8 @@ import 'package:spots/presentation/pages/admin/user_progress_viewer_page.dart';
 import 'package:spots/presentation/pages/admin/user_predictions_viewer_page.dart';
 import 'package:spots/presentation/pages/admin/business_accounts_viewer_page.dart';
 import 'package:spots/presentation/pages/admin/communications_viewer_page.dart';
+import 'package:spots/presentation/pages/admin/clubs_communities_viewer_page.dart';
+import 'package:spots/presentation/pages/admin/ai_live_map_page.dart';
 import 'package:spots/presentation/widgets/admin/admin_federated_rounds_widget.dart';
 
 /// God-Mode Admin Dashboard
@@ -38,7 +34,7 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _selectedTab = _tabController.index;
@@ -166,7 +162,7 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
                 Text(
                   'Privacy: IDs Only',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.white.withOpacity(0.7),
+                        color: AppColors.white.withValues(alpha: 0.7),
                         fontSize: 10,
                       ),
                 ),
@@ -177,7 +173,7 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
               Text(
                 'Updated: ${_formatTime(_dashboardData!.lastUpdated)}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.white.withOpacity(0.8),
+                      color: AppColors.white.withValues(alpha: 0.8),
                     ),
               ),
           ],
@@ -189,7 +185,7 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
           isScrollable: true,
           indicatorColor: AppColors.white,
           labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withOpacity(0.7),
+          unselectedLabelColor: AppColors.white.withValues(alpha: 0.7),
           tabs: const [
             Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
             Tab(icon: Icon(Icons.school), text: 'FL Rounds'),
@@ -198,6 +194,8 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
             Tab(icon: Icon(Icons.psychology), text: 'Predictions'),
             Tab(icon: Icon(Icons.business), text: 'Businesses'),
             Tab(icon: Icon(Icons.chat), text: 'Communications'),
+            Tab(icon: Icon(Icons.group), text: 'Clubs'),
+            Tab(icon: Icon(Icons.map), text: 'AI Map'),
           ],
         ),
         actions: [
@@ -223,6 +221,8 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
           UserPredictionsViewerPage(godModeService: _godModeService),
           BusinessAccountsViewerPage(godModeService: _godModeService),
           CommunicationsViewerPage(godModeService: _godModeService),
+          ClubsCommunitiesViewerPage(godModeService: _godModeService),
+          AILiveMapPage(godModeService: _godModeService),
         ],
       ),
     );
@@ -309,7 +309,7 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
                   'Business Accounts',
                   '${_dashboardData!.totalBusinessAccounts}',
                   Icons.business,
-                  AppColors.info,
+                  AppColors.electricGreen,
                 ),
                 _buildMetricCard(
                   'Active Connections',
@@ -334,64 +334,121 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
             const SizedBox(height: 24),
             
             // Aggregate Privacy Metrics Card
-            if (_dashboardData!.aggregatePrivacyMetrics != null) ...[
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.privacy_tip, color: AppTheme.primaryColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            'System-Wide Privacy Metrics',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+            ...[
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.privacy_tip, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'System-Wide Privacy Metrics',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Mean Privacy Score: ${(_dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore * 100).toStringAsFixed(1)}%',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore,
+                      backgroundColor: AppColors.grey200,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore >= 0.9
+                            ? AppColors.success
+                            : AppColors.warning,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _dashboardData!.aggregatePrivacyMetrics.scoreLabel,
+                      style: TextStyle(
+                        color: _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore >= 0.9
+                            ? AppColors.success
+                            : AppColors.warning,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${_dashboardData!.aggregatePrivacyMetrics.userCount} users included',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Mean Privacy Score: ${(_dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore * 100).toStringAsFixed(1)}%',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore,
-                        backgroundColor: AppColors.grey200,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore >= 0.9
-                              ? AppColors.success
-                              : AppColors.warning,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _dashboardData!.aggregatePrivacyMetrics.scoreLabel,
-                        style: TextStyle(
-                          color: _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore >= 0.9
-                              ? AppColors.success
-                              : AppColors.warning,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        '${_dashboardData!.aggregatePrivacyMetrics.userCount} users included',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
+            const SizedBox(height: 16),
+          ],
+
+            // Fraud Review Section
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.shield, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Fraud Review',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      leading: const Icon(Icons.event, color: AppTheme.primaryColor),
+                      title: const Text('Event Fraud Review'),
+                      subtitle: const Text('Review flagged events for fraud'),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        // Navigate to fraud review list (would need to create)
+                        // For now, show a placeholder
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fraud review list coming soon'),
+                            backgroundColor: AppTheme.warningColor,
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.reviews, color: AppTheme.primaryColor),
+                      title: const Text('Review Fraud Review'),
+                      subtitle: const Text('Review flagged feedback for fraud'),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        // Navigate to review fraud review list (would need to create)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Review fraud review list coming soon'),
+                            backgroundColor: AppTheme.warningColor,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

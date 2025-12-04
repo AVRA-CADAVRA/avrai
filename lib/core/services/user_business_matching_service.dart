@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/models/business_account.dart';
 import 'package:spots/core/models/business_patron_preferences.dart';
 import 'package:spots/core/models/unified_user.dart';

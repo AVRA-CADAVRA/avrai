@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
@@ -10,13 +11,13 @@ import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
 import 'package:spots/presentation/blocs/lists/lists_bloc.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/list.dart';
-import 'package:spots/presentation/widgets/map/spot_marker.dart';
 import 'package:spots/presentation/pages/spots/spot_details_page.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:spots/presentation/widgets/common/offline_indicator.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
+import 'package:spots/presentation/widgets/boundaries/border_visualization_widget.dart';
 import 'dart:developer' as developer;
 
 class MapView extends StatefulWidget {
@@ -53,6 +54,12 @@ class _MapViewState extends State<MapView> {
   List<String> _searchSuggestions = [];
   bool _showSuggestions = false;
 
+  // Border visualization
+  bool _showBoundaries = false;
+  BorderVisualizationWidget? _borderVisualization;
+  final GlobalKey<State<BorderVisualizationWidget>> _borderVisualizationKey =
+      GlobalKey<State<BorderVisualizationWidget>>();
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +76,15 @@ class _MapViewState extends State<MapView> {
       // Request location permission and auto-locate user
       _requestLocationPermission();
       _getCurrentLocationWithRetry();
+
+      // Initialize border visualization (default city - can be made dynamic)
+      _borderVisualization = BorderVisualizationWidget(
+        key: _borderVisualizationKey,
+        mapController: _gController,
+        city: 'New York', // TODO: Get from user location or settings
+        showSoftBorderSpots: true,
+        showRefinementIndicators: true,
+      );
     });
   }
 
@@ -76,9 +92,10 @@ class _MapViewState extends State<MapView> {
     try {
       developer.log('Getting current location...', name: 'MapView');
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          timeLimit: Duration(seconds: 15),
-        ),
+        locationSettings: const LocationSettings(),
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw TimeoutException('Location request timed out'),
       );
       developer.log(
           'Location obtained: ${position.latitude}, ${position.longitude}',
@@ -94,9 +111,10 @@ class _MapViewState extends State<MapView> {
     try {
       developer.log('Getting current location with retry...', name: 'MapView');
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          timeLimit: Duration(seconds: 15),
-        ),
+        locationSettings: const LocationSettings(),
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw TimeoutException('Location request timed out'),
       );
       developer.log(
           'Location obtained with retry: ${position.latitude}, ${position.longitude}',
@@ -381,6 +399,17 @@ class _MapViewState extends State<MapView> {
                 },
               ),
               IconButton(
+                icon: Icon(
+                    _showBoundaries ? Icons.border_clear : Icons.border_color),
+                onPressed: () {
+                  setState(() {
+                    _showBoundaries = !_showBoundaries;
+                  });
+                },
+                tooltip:
+                    _showBoundaries ? 'Hide boundaries' : 'Show boundaries',
+              ),
+              IconButton(
                 icon: const Icon(Icons.palette),
                 onPressed: _showThemeSelector,
                 tooltip: 'Change map theme',
@@ -461,7 +490,7 @@ class _MapViewState extends State<MapView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: AppColors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -518,28 +547,42 @@ class _MapViewState extends State<MapView> {
 
                         if (_selectedList != null) {
                           spots = spots
-                              .where((s) => _selectedList!.spotIds.contains(s.id))
+                              .where(
+                                  (s) => _selectedList!.spotIds.contains(s.id))
                               .toList();
                         }
 
                         final gmap.LatLng center = _center != null
                             ? gmap.LatLng(_center!.latitude, _center!.longitude)
                             : (spots.isNotEmpty
-                                ? gmap.LatLng(spots.first.latitude, spots.first.longitude)
+                                ? gmap.LatLng(
+                                    spots.first.latitude, spots.first.longitude)
                                 : const gmap.LatLng(37.7749, -122.4194));
 
                         final markers = <gmap.Marker>{
                           if (_locationError == null && _center != null)
                             gmap.Marker(
                               markerId: const gmap.MarkerId('me'),
-                              position: gmap.LatLng(_center!.latitude, _center!.longitude),
+                              position: gmap.LatLng(
+                                  _center!.latitude, _center!.longitude),
                             ),
                           ...spots.map((spot) => gmap.Marker(
                                 markerId: gmap.MarkerId('spot-${spot.id}'),
-                                position: gmap.LatLng(spot.latitude, spot.longitude),
+                                position:
+                                    gmap.LatLng(spot.latitude, spot.longitude),
                                 onTap: () => _showSpotInfo(context, spot),
                               )),
                         };
+
+                        // Add boundary markers if boundaries are shown
+                        // Note: Border visualization methods are accessed via widget state
+                        // For now, boundaries are handled within the BorderVisualizationWidget itself
+                        // TODO: Refactor to expose methods via callback or public interface
+
+                        // Get boundary polylines if boundaries are shown
+                        final polylines = <gmap.Polyline>{};
+                        // Note: Polylines are handled within BorderVisualizationWidget
+                        // TODO: Refactor to expose methods via callback or public interface
 
                         return gmap.GoogleMap(
                           initialCameraPosition: gmap.CameraPosition(
@@ -549,6 +592,7 @@ class _MapViewState extends State<MapView> {
                           myLocationEnabled: true,
                           myLocationButtonEnabled: false,
                           markers: markers,
+                          polylines: polylines,
                           onMapCreated: (controller) {
                             _gController = controller;
                             developer.log('GoogleMap ready', name: 'MapView');
@@ -628,7 +672,7 @@ class _MapViewState extends State<MapView> {
                     child: Card(
                       elevation: isSelected ? 4 : 2,
                       color: isSelected
-                          ? theme.primaryColor.withOpacity(0.1)
+                          ? theme.primaryColor.withValues(alpha: 0.1)
                           : theme.surfaceColor,
                       child: Container(
                         decoration: BoxDecoration(
@@ -673,7 +717,7 @@ class _MapViewState extends State<MapView> {
                               Text(
                                 theme.tileServerName,
                                 style: TextStyle(
-                                  color: theme.textColor.withOpacity(0.7),
+                                  color: theme.textColor.withValues(alpha: 0.7),
                                   fontSize: 11,
                                 ),
                                 textAlign: TextAlign.center,

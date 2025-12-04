@@ -1,6 +1,5 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spots/core/cloud/production_readiness_manager.dart';
+import 'package:spots/core/cloud/production_readiness_manager.dart' hide SyncSystemStatus, SyncStatus;
 import 'package:spots/core/cloud/microservices_manager.dart';
 import 'package:spots/core/cloud/realtime_sync_manager.dart';
 import 'package:spots/core/cloud/edge_computing_manager.dart';
@@ -17,12 +16,12 @@ void main() {
     late ProductionDeploymentManager deploymentManager;
 
     setUp(() {
-      microservicesManager = MicroservicesManager(clusterId: "test_cluster", encryptionEnabled: true, healthCheckInterval: Duration(seconds: 30), region: "us-east-1", );
+      microservicesManager = MicroservicesManager();
       syncManager = RealTimeSyncManager();
-      edgeManager = EdgeComputingManager(authenticationEnabled: true, clusterId: "test_cluster", privacyFiltersEnabled: true, rateLimitEnabled: true, serviceDiscovery: true, );
+      edgeManager = EdgeComputingManager();
       deploymentManager = ProductionDeploymentManager();
       
-      productionManager = ProductionReadinessManager(createdAt: DateTime.now(), healthChecker: healthChecker, 
+      productionManager = ProductionReadinessManager(
         microservicesManager: microservicesManager,
         syncManager: syncManager,
         edgeManager: edgeManager,
@@ -40,18 +39,8 @@ void main() {
           'circuit_breaker': true,
         },
         syncChannels: [
-          ChannelConfiguration(
-            channelId: 'spots_sync',
-            type: ChannelType.realtime,
-            encryptionEnabled: true,
-            privacyLevel: PrivacyLevel.high,
-          ),
-          ChannelConfiguration(
-            channelId: 'user_sync',
-            type: ChannelType.eventual,
-            encryptionEnabled: true,
-            privacyLevel: PrivacyLevel.high,
-          ),
+          SimpleChannelConfig(channelId: 'spots_sync'),
+          SimpleChannelConfig(channelId: 'user_sync'),
         ],
         syncSettings: {
           'compression': true,
@@ -115,12 +104,7 @@ void main() {
         primaryRegion: 'us-east-1',
         microservicesSettings: {'auto_scaling': true},
         syncChannels: [
-          ChannelConfiguration(
-            channelId: 'production_sync',
-            type: ChannelType.realtime,
-            encryptionEnabled: true,
-            privacyLevel: PrivacyLevel.high,
-          ),
+          SimpleChannelConfig(channelId: 'production_sync'),
         ],
         syncSettings: {'encryption': true},
         edgeNodes: [
@@ -182,56 +166,24 @@ void main() {
 
     test('should monitor production health continuously', () async {
       // OUR_GUTS.md: "Continuous production monitoring with privacy protection"
-      final systemInit = SystemInitialization(
-        microservicesCluster: MicroservicesCluster(
-          clusterId: 'test_cluster',
-          config: ClusterConfiguration(
-            clusterId: 'test_cluster',
-            region: 'us-east-1',
-            settings: {},
-            autoScalingEnabled: true,
-            monitoringEnabled: true,
-          ),
-          services: {},
-          serviceDiscovery: ServiceDiscovery(),
-          apiGateway: APIGateway(),
-          loadBalancer: LoadBalancer(algorithm: "round_robin", failoverEnabled: true, healthCheckEnabled: true, stickySessionsEnabled: true, ),
-          circuitBreaker: CircuitBreaker(enabled: true, failureThreshold: 3, halfOpenMaxCalls: 5, recoveryTimeout: Duration(seconds: 30), ),
-          autoScaler: AutoScaler(),
-          healthCheckSystem: HealthCheckSystem(checkInterval: Duration(seconds: 30), retryAttempts: 3, services: [], timeoutDuration: Duration(seconds: 10), ),
-          status: ClusterStatus.operational,
-          deployedAt: DateTime.now(),
-          lastHealthCheck: DateTime.now(),
-        ),
-        syncSystem: SyncSystemStatus(
-          systemId: 'test_sync',
-          status: SyncStatus.active,
-          channelsInitialized: 2,
-          queuesInitialized: 2,
-          conflictResolversActive: 2,
-          privacyCompliant: true,
-          initializedAt: DateTime.now(),
-          channelIds: ['test_channel_1', 'test_channel_2'],
-        ),
-        edgeCluster: EdgeComputingCluster(
-          clusterId: 'test_edge_cluster',
-          config: EdgeComputingConfiguration(
-            edgeNodes: [],
-            supportedMLModels: [],
-            mlProcessingCapacity: 100.0,
-            maxBandwidthPerNode: 100.0,
-            globalSettings: {},
-          ),
-          edgeNodes: {},
-          edgeCaches: {},
-          mlProcessors: {},
-          bandwidthOptimizers: {},
-          status: EdgeClusterStatus.operational,
-          deployedAt: DateTime.now(),
-          lastHealthCheck: DateTime.now(),
-        ),
-        initializedAt: DateTime.now(),
+      // Get SystemInitialization from assessProductionReadiness
+      final config = ProductionReadinessConfiguration(
+        primaryRegion: 'us-east-1',
+        microservicesSettings: {'auto_scaling': true, 'monitoring': true},
+        syncChannels: [
+          SimpleChannelConfig(channelId: 'test_channel_1'),
+          SimpleChannelConfig(channelId: 'test_channel_2'),
+        ],
+        syncSettings: {'encryption': true},
+        edgeNodes: [],
+        supportedMLModels: [],
+        mlProcessingCapacity: 100.0,
+        maxBandwidthPerNode: 100.0,
+        edgeSettings: {},
       );
+
+      final assessment = await productionManager.assessProductionReadiness(config);
+      final systemInit = assessment.systemInitialization;
 
       final healthReport = await productionManager.monitorProductionHealth(systemInit);
 
@@ -254,56 +206,21 @@ void main() {
 
     test('should perform automated recovery when issues detected', () async {
       // OUR_GUTS.md: "Automated recovery with data integrity preservation"
-      final healthReport = ProductionHealthReport(
-        overallHealth: 0.80, // Below threshold to trigger recovery
-        microservicesHealth: ClusterHealthReport(
-          clusterId: 'test_cluster',
-          overallHealth: 0.75,
-          serviceHealthStatuses: {},
-          infrastructureHealth: InfrastructureHealth(score: 0.80),
-          networkHealth: NetworkHealth(score: 0.85),
-          securityStatus: SecurityStatus(score: 0.90),
-          recommendations: ['Scale up services'],
-          timestamp: DateTime.now(),
-        ),
-        syncHealth: SyncStatusReport(
-          overallHealth: 0.85,
-          channelStatuses: {},
-          totalPendingChanges: 100,
-          avgSyncLatency: Duration(milliseconds: 50),
-          recommendations: [],
-          timestamp: DateTime.now(),
-        ),
-        edgeHealth: EdgePerformanceReport(
-          overallPerformance: 0.90,
-          nodePerformances: {},
-          bottlenecks: [],
-          recommendations: [],
-          slaCompliance: SLACompliance(compliant: true, score: 0.95),
-          averageLatency: Duration(milliseconds: 30),
-          cacheEfficiency: 0.80,
-          bandwidthUtilization: 0.70,
-          timestamp: DateTime.now(),
-        ),
-        deploymentHealth: ProductionHealthStatus(
-          overallHealth: 0.85,
-          componentStatuses: {},
-          resourceUtilization: {},
-          performanceMetrics: {},
-          timestamp: DateTime.now(),
-        ),
-        criticalIssues: [
-          ProductionIssue(
-            issueId: 'high_cpu_usage',
-            description: 'CPU usage above 80%',
-            severity: 'high',
-          ),
-        ],
-        recommendations: ['Scale up resources'],
-        slaCompliance: SLAComplianceResult(compliant: false),
-        uptime: Duration(days: 1),
-        timestamp: DateTime.now(),
+      // Get ProductionHealthReport from monitorProductionHealth
+      final config = ProductionReadinessConfiguration(
+        primaryRegion: 'us-east-1',
+        microservicesSettings: {'auto_scaling': true, 'monitoring': true},
+        syncChannels: [SimpleChannelConfig(channelId: 'test_sync')],
+        syncSettings: {'encryption': true},
+        edgeNodes: [],
+        supportedMLModels: [],
+        mlProcessingCapacity: 100.0,
+        maxBandwidthPerNode: 100.0,
+        edgeSettings: {},
       );
+
+      final assessment = await productionManager.assessProductionReadiness(config);
+      final healthReport = await productionManager.monitorProductionHealth(assessment.systemInitialization);
 
       final recoveryResult = await productionManager.performAutomatedRecovery(healthReport);
 
@@ -328,12 +245,7 @@ void main() {
           'authenticity_over_algorithms': true,
         },
         syncChannels: [
-          ChannelConfiguration(
-            channelId: 'privacy_compliant_sync',
-            type: ChannelType.realtime,
-            encryptionEnabled: true,
-            privacyLevel: PrivacyLevel.high,
-          ),
+          SimpleChannelConfig(channelId: 'privacy_compliant_sync'),
         ],
         syncSettings: {
           'privacy_filters': true,
@@ -437,12 +349,7 @@ void main() {
           'access_controls': true,
         },
         syncChannels: [
-          ChannelConfiguration(
-            channelId: 'secure_sync',
-            type: ChannelType.realtime,
-            encryptionEnabled: true,
-            privacyLevel: PrivacyLevel.high,
-          ),
+          SimpleChannelConfig(channelId: 'secure_sync'),
         ],
         syncSettings: {
           'end_to_end_encryption': true,
@@ -499,12 +406,7 @@ void main() {
           'performance_optimization': true,
         },
         syncChannels: [
-          ChannelConfiguration(
-            channelId: 'high_performance_sync',
-            type: ChannelType.realtime,
-            encryptionEnabled: true,
-            privacyLevel: PrivacyLevel.high,
-          ),
+          SimpleChannelConfig(channelId: 'high_performance_sync'),
         ],
         syncSettings: {
           'performance_mode': true,
@@ -550,99 +452,4 @@ void main() {
       expect(assessment.performanceValidation.latencyResults.score, greaterThanOrEqualTo(0.85));
     });
   });
-}
-
-// Supporting test classes
-class ChannelConfiguration {
-  final String channelId;
-  final ChannelType type;
-  final bool encryptionEnabled;
-  final PrivacyLevel privacyLevel;
-  
-  ChannelConfiguration({
-    required this.channelId,
-    required this.type,
-    required this.encryptionEnabled,
-    required this.privacyLevel,
-  });
-}
-
-enum ChannelType { realtime, eventual, batch }
-enum PrivacyLevel { low, medium, high }
-
-// Mock classes for testing
-class ClusterHealthReport {
-  final String clusterId;
-  final double overallHealth;
-  final Map<String, ServiceHealthStatus> serviceHealthStatuses;
-  final InfrastructureHealth infrastructureHealth;
-  final NetworkHealth networkHealth;
-  final SecurityStatus securityStatus;
-  final List<String> recommendations;
-  final DateTime timestamp;
-  
-  ClusterHealthReport({
-    required this.clusterId,
-    required this.overallHealth,
-    required this.serviceHealthStatuses,
-    required this.infrastructureHealth,
-    required this.networkHealth,
-    required this.securityStatus,
-    required this.recommendations,
-    required this.timestamp,
-  });
-}
-
-class SyncStatusReport {
-  final double overallHealth;
-  final Map<String, ChannelSyncStatus> channelStatuses;
-  final int totalPendingChanges;
-  final Duration avgSyncLatency;
-  final List<String> recommendations;
-  final DateTime timestamp;
-  
-  SyncStatusReport({
-    required this.overallHealth,
-    required this.channelStatuses,
-    required this.totalPendingChanges,
-    required this.avgSyncLatency,
-    required this.recommendations,
-    required this.timestamp,
-  });
-}
-
-class ProductionHealthStatus {
-  final double overallHealth;
-  final Map<String, String> componentStatuses;
-  final Map<String, double> resourceUtilization;
-  final Map<String, double> performanceMetrics;
-  final DateTime timestamp;
-  
-  ProductionHealthStatus({
-    required this.overallHealth,
-    required this.componentStatuses,
-    required this.resourceUtilization,
-    required this.performanceMetrics,
-    required this.timestamp,
-  });
-}
-
-class ServiceHealthStatus {}
-class InfrastructureHealth {
-  final double score;
-  InfrastructureHealth({required this.score});
-}
-class NetworkHealth {
-  final double score;
-  NetworkHealth({required this.score});
-}
-class SecurityStatus {
-  final double score;
-  SecurityStatus({required this.score});
-}
-class ChannelSyncStatus {}
-class SLACompliance {
-  final bool compliant;
-  final double score;
-  SLACompliance({required this.compliant, required this.score});
 }

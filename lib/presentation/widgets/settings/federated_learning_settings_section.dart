@@ -13,8 +13,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:spots/core/services/storage_service.dart';
 
 /// Settings section widget for federated learning participation
 class FederatedLearningSettingsSection extends StatefulWidget {
@@ -26,7 +25,7 @@ class FederatedLearningSettingsSection extends StatefulWidget {
 
 class _FederatedLearningSettingsSectionState extends State<FederatedLearningSettingsSection> {
   bool _isParticipating = true;
-  final _storage = GetStorage();
+  final _storageService = StorageService.instance;
   static const String _participationKey = 'federated_learning_participation';
 
   @override
@@ -36,7 +35,7 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
   }
 
   void _loadParticipationStatus() {
-    final stored = _storage.read<bool>(_participationKey);
+    final stored = _storageService.getBool(_participationKey);
     setState(() {
       _isParticipating = stored ?? true; // Default to participating
     });
@@ -48,7 +47,7 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
     });
 
     try {
-      await _storage.write(_participationKey, value);
+      await _storageService.setBool(_participationKey, value);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -133,7 +132,7 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.electricGreen.withOpacity(0.1),
+                  color: AppColors.electricGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
@@ -236,7 +235,7 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.electricGreen.withOpacity(0.1),
+                    color: AppColors.electricGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -256,14 +255,18 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.info_outline,
-                    color: AppColors.textSecondary,
-                    size: 20,
+                Semantics(
+                  label: 'Learn more about federated learning',
+                  button: true,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.info_outline,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: _showInfoDialog,
+                    tooltip: 'Learn more',
                   ),
-                  onPressed: _showInfoDialog,
-                  tooltip: 'Learn more',
                 ),
               ],
             ),
@@ -325,10 +328,10 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppColors.warning.withOpacity(0.3),
+                  color: AppColors.warning.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -367,33 +370,37 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
               ),
             ),
             const SizedBox(height: 16),
-            Card(
-              elevation: 0,
-              color: AppColors.grey100,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SwitchListTile(
-                title: const Text(
-                  'Participate in Federated Learning',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+            Semantics(
+              label: 'Participate in Federated Learning toggle. Currently ${_isParticipating ? 'enabled' : 'disabled'}',
+              value: _isParticipating ? 'Enabled' : 'Disabled',
+              child: Card(
+                elevation: 0,
+                color: AppColors.grey100,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                subtitle: Text(
-                  _isParticipating
-                      ? 'Your device will contribute to improving SPOTS AI'
-                      : 'Your device will not participate in federated learning',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+                child: SwitchListTile(
+                  title: const Text(
+                    'Participate in Federated Learning',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
+                  subtitle: Text(
+                    _isParticipating
+                        ? 'Your device will contribute to improving SPOTS AI'
+                        : 'Your device will not participate in federated learning',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  value: _isParticipating,
+                  onChanged: _toggleParticipation,
+                  activeColor: AppColors.electricGreen,
                 ),
-                value: _isParticipating,
-                onChanged: _toggleParticipation,
-                activeColor: AppColors.electricGreen,
               ),
             ),
           ],

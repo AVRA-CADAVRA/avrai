@@ -1,4 +1,3 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:spots/data/datasources/local/respected_lists_sembast_datasource.dart';

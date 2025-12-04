@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:spots/presentation/widgets/ai2ai/performance_issues_list.dart';
 import 'package:spots/core/monitoring/network_analytics.dart';
-import '../../../helpers/widget_test_helpers.dart';
-import '../../../helpers/test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for PerformanceIssuesList
 /// Tests performance issues and recommendations display
@@ -30,18 +30,18 @@ void main() {
       // Arrange
       final issues = [
         PerformanceIssue(
-          id: 'issue-1',
-          description: 'High latency detected',
+          type: IssueType.highUtilization,
           severity: IssueSeverity.high,
-          detectedAt: TestHelpers.createTestDateTime(),
-          affectedConnections: ['conn-1'],
+          description: 'High latency detected',
+          impact: 'May cause connection delays',
+          recommendedAction: 'Consider load balancing optimization',
         ),
         PerformanceIssue(
-          id: 'issue-2',
-          description: 'Low throughput',
+          type: IssueType.lowConnectionSuccess,
           severity: IssueSeverity.critical,
-          detectedAt: TestHelpers.createTestDateTime(),
-          affectedConnections: ['conn-2'],
+          description: 'Low throughput',
+          impact: 'Reduced AI2AI personality matching',
+          recommendedAction: 'Review compatibility algorithms',
         ),
       ];
 
@@ -67,16 +67,18 @@ void main() {
       // Arrange
       final recommendations = [
         OptimizationRecommendation(
-          id: 'rec-1',
+          category: 'Connection Quality',
           recommendation: 'Consider reducing connection pool size',
-          priority: 'High',
-          estimatedImpact: 'Medium',
+          expectedImpact: 'Increase average compatibility by 10-15%',
+          priority: Priority.high,
+          estimatedEffort: 'Medium',
         ),
         OptimizationRecommendation(
-          id: 'rec-2',
+          category: 'Learning Effectiveness',
           recommendation: 'Enable connection caching',
-          priority: 'Medium',
-          estimatedImpact: 'Low',
+          expectedImpact: 'Accelerate personality evolution by 20%',
+          priority: Priority.medium,
+          estimatedEffort: 'Low',
         ),
       ];
 
@@ -101,20 +103,21 @@ void main() {
       // Arrange
       final issues = [
         PerformanceIssue(
-          id: 'issue-1',
-          description: 'Test issue',
+          type: IssueType.highUtilization,
           severity: IssueSeverity.high,
-          detectedAt: TestHelpers.createTestDateTime(),
-          affectedConnections: [],
+          description: 'Test issue',
+          impact: 'May cause connection delays',
+          recommendedAction: 'Consider load balancing optimization',
         ),
       ];
 
       final recommendations = [
         OptimizationRecommendation(
-          id: 'rec-1',
+          category: 'Connection Quality',
           recommendation: 'Test recommendation',
-          priority: 'High',
-          estimatedImpact: 'Medium',
+          expectedImpact: 'Increase average compatibility by 10-15%',
+          priority: Priority.high,
+          estimatedEffort: 'Medium',
         ),
       ];
 

@@ -1,5 +1,4 @@
 import 'dart:developer' as developer;
-import 'package:spots/core/models/unified_models.dart';
 import 'package:sembast/sembast.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/data/datasources/local/lists_local_datasource.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/theme/app_theme.dart';
 
 class PreferenceSurveyPage extends StatefulWidget {
   final Map<String, List<String>> preferences;
@@ -371,7 +371,7 @@ class _PreferenceSurveyPageState extends State<PreferenceSurveyPage> {
                       widget.onPreferencesChanged(_preferences);
                     });
                   },
-                  selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                  selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                   checkmarkColor: AppTheme.primaryColor,
                   labelStyle: TextStyle(
                     color: isSelected ? AppTheme.primaryColor : null,

@@ -11,7 +11,6 @@ import 'package:spots/presentation/pages/onboarding/baseline_lists_page.dart';
 import 'package:spots/presentation/pages/onboarding/friends_respect_page.dart';
 import 'package:spots/presentation/pages/onboarding/age_collection_page.dart';
 import 'package:spots/presentation/pages/home/home_page.dart';
-import 'package:spots/core/models/connection_metrics.dart';
 
 /// SPOTS Onboarding Flow Integration Test
 /// Date: November 20, 2025

@@ -1,7 +1,4 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/services/logger.dart';
-import 'package:spots/core/ai/privacy_protection.dart';
-import 'package:spots/core/services/ai2ai_realtime_service.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 

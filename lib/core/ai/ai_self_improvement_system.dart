@@ -1,7 +1,5 @@
 import 'dart:developer' as developer;
 import 'dart:math' as math;
-import 'dart:math';
-import 'package:spots/core/ai/continuous_learning_system.dart';
 import 'package:spots/core/ai/comprehensive_data_collector.dart';
 
 /// AI Self-Improvement System

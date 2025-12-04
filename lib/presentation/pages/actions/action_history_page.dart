@@ -1,20 +1,24 @@
 /// Action History Page
 /// 
-/// Part of Feature Matrix Phase 1: Action Execution UI & Integration
+/// Part of Feature Matrix Phase 7, Week 33: Action Execution UI & Integration
 /// 
 /// Displays the history of executed actions with:
 /// - List of all actions (most recent first)
 /// - Action details (intent, result, timestamp)
 /// - Undo functionality for successful actions
 /// - Visual indicators for success/failure/undone status
+/// - Filtering by action type
+/// - Filtering by date range
+/// - Search by action description
 /// 
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 
 import 'package:flutter/material.dart';
-import 'package:spots/core/ai/action_history_entry.dart';
+import 'package:spots/core/ai/action_history_entry.dart' as entry;
+import 'package:spots/core/ai/action_models.dart';
 import 'package:spots/core/services/action_history_service.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/presentation/widgets/actions/action_history_item_widget.dart';
 
 /// Page that displays action execution history
 /// 
@@ -35,8 +39,13 @@ class ActionHistoryPage extends StatefulWidget {
 }
 
 class _ActionHistoryPageState extends State<ActionHistoryPage> {
-  List<ActionHistoryEntry> _history = [];
+  List<entry.ActionHistoryEntry> _allHistory = [];
+  List<entry.ActionHistoryEntry> _filteredHistory = [];
   bool _isLoading = true;
+  String _searchQuery = '';
+  String? _selectedActionType;
+  DateTimeRange? _selectedDateRange;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -44,24 +53,65 @@ class _ActionHistoryPageState extends State<ActionHistoryPage> {
     _loadHistory();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadHistory() async {
     setState(() {
       _isLoading = true;
     });
 
-    final history = await widget.service.getHistory(
-      userId: widget.userId,
-    );
+    final history = await widget.service.getHistory();
 
     if (mounted) {
       setState(() {
-        _history = history;
+        // Filter by userId if provided
+        _allHistory = widget.userId != null
+            ? history.where((e) => e.userId == widget.userId).toList()
+            : history;
+        _applyFilters();
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _handleUndo(ActionHistoryEntry entry) async {
+  void _applyFilters() {
+    var filtered = List<entry.ActionHistoryEntry>.from(_allHistory);
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((e) {
+        final subtitle = _getSubtitleForEntry(e).toLowerCase();
+        final title = _getTitleForIntent(e.intent.type).toLowerCase();
+        final query = _searchQuery.toLowerCase();
+        return subtitle.contains(query) || title.contains(query);
+      }).toList();
+    }
+
+    // Filter by action type
+    if (_selectedActionType != null && _selectedActionType!.isNotEmpty) {
+      filtered = filtered.where((e) {
+        return e.intent.type == _selectedActionType;
+      }).toList();
+    }
+
+    // Filter by date range
+    if (_selectedDateRange != null) {
+      filtered = filtered.where((e) {
+        return e.timestamp.isAfter(_selectedDateRange!.start.subtract(const Duration(days: 1))) &&
+            e.timestamp.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
+      }).toList();
+    }
+
+    setState(() {
+      _filteredHistory = filtered;
+    });
+  }
+
+  Future<void> _handleUndo(entry.ActionHistoryEntry entry) async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -102,15 +152,24 @@ class _ActionHistoryPageState extends State<ActionHistoryPage> {
     );
 
     if (confirmed == true) {
-      final success = await widget.service.markAsUndone(entry.id);
+      final result = await widget.service.undoAction(entry.id);
       
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Action undone'),
-            backgroundColor: AppColors.electricGreen,
-          ),
-        );
+      if (mounted) {
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: AppColors.electricGreen,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
         _loadHistory(); // Refresh list
       }
     }
@@ -137,10 +196,216 @@ class _ActionHistoryPageState extends State<ActionHistoryPage> {
                 color: AppColors.electricGreen,
               ),
             )
-          : _history.isEmpty
-              ? _buildEmptyState()
-              : _buildHistoryList(),
+          : Column(
+              children: [
+                _buildFilters(),
+                Expanded(
+                  child: _filteredHistory.isEmpty
+                      ? _buildEmptyState()
+                      : _buildHistoryList(),
+                ),
+              ],
+            ),
     );
+  }
+
+  Widget _buildFilters() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.grey200,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Search bar
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search actions...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                        _applyFilters();
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.grey100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.grey300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.grey300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.electricGreen, width: 2),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+              _applyFilters();
+            },
+          ),
+          const SizedBox(height: 12),
+          // Filter chips
+          Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // Action type filter
+                      FilterChip(
+                        label: Text(_selectedActionType ?? 'All Types'),
+                        selected: _selectedActionType != null,
+                        onSelected: (selected) {
+                          if (selected) {
+                            _showActionTypeFilter();
+                          } else {
+                            setState(() {
+                              _selectedActionType = null;
+                            });
+                            _applyFilters();
+                          }
+                        },
+                        selectedColor: AppColors.electricGreen.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.electricGreen,
+                      ),
+                      const SizedBox(width: 8),
+                      // Date range filter
+                      FilterChip(
+                        label: Text(
+                          _selectedDateRange != null
+                              ? '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}'
+                              : 'All Dates',
+                        ),
+                        selected: _selectedDateRange != null,
+                        onSelected: (selected) {
+                          if (selected) {
+                            _showDateRangePicker();
+                          } else {
+                            setState(() {
+                              _selectedDateRange = null;
+                            });
+                            _applyFilters();
+                          }
+                        },
+                        selectedColor: AppColors.electricGreen.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.electricGreen,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActionTypeFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Filter by Action Type',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('All Types'),
+              onTap: () {
+                setState(() {
+                  _selectedActionType = null;
+                });
+                _applyFilters();
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Create Spot'),
+              onTap: () {
+                setState(() {
+                  _selectedActionType = 'create_spot';
+                });
+                _applyFilters();
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Create List'),
+              onTap: () {
+                setState(() {
+                  _selectedActionType = 'create_list';
+                });
+                _applyFilters();
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Add Spot to List'),
+              onTap: () {
+                setState(() {
+                  _selectedActionType = 'add_spot_to_list';
+                });
+                _applyFilters();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDateRangePicker() async {
+    final now = DateTime.now();
+    final firstDate = now.subtract(const Duration(days: 365));
+    final lastDate = now;
+
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      initialDateRange: _selectedDateRange,
+    );
+
+    if (range != null) {
+      setState(() {
+        _selectedDateRange = range;
+      });
+      _applyFilters();
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
   }
 
   Widget _buildEmptyState() {
@@ -179,198 +444,18 @@ class _ActionHistoryPageState extends State<ActionHistoryPage> {
   Widget _buildHistoryList() {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: _history.length,
+      itemCount: _filteredHistory.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final entry = _history[index];
-        return _buildHistoryItem(entry);
+        final entry = _filteredHistory[index];
+        return ActionHistoryItemWidget(
+          entry: entry,
+          onUndo: entry.canUndo && !entry.isUndone
+              ? () => _handleUndo(entry)
+              : null,
+        );
       },
     );
-  }
-
-  Widget _buildHistoryItem(ActionHistoryEntry entry) {
-    final icon = _getIconForIntent(entry.intent.type);
-    final title = _getTitleForIntent(entry.intent.type);
-    final subtitle = _getSubtitleForEntry(entry);
-    final timeAgo = _formatTimeAgo(entry.timestamp);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: entry.isUndone
-              ? AppColors.grey300
-              : entry.result.success
-                  ? AppColors.electricGreen.withOpacity(0.3)
-                  : AppColors.error.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: entry.isUndone
-                        ? AppColors.grey200
-                        : entry.result.success
-                            ? AppColors.electricGreen.withOpacity(0.1)
-                            : AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: entry.isUndone
-                        ? AppColors.grey600
-                        : entry.result.success
-                            ? AppColors.electricGreen
-                            : AppColors.error,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title with undone indicator
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: entry.isUndone
-                                    ? AppColors.textSecondary
-                                    : AppColors.textPrimary,
-                                decoration: entry.isUndone
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                          ),
-                          if (entry.isUndone)
-                            Text(
-                              '(Undone)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      
-                      // Subtitle
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Result message
-                      if (entry.result.successMessage != null || entry.result.errorMessage != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: entry.result.success
-                                ? AppColors.electricGreen.withOpacity(0.1)
-                                : AppColors.error.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                entry.result.success
-                                    ? Icons.check_circle_outline
-                                    : Icons.error_outline,
-                                size: 14,
-                                color: entry.result.success
-                                    ? AppColors.electricGreen
-                                    : AppColors.error,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  entry.result.successMessage ??
-                                      entry.result.errorMessage ??
-                                      '',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: entry.result.success
-                                        ? AppColors.electricGreen
-                                        : AppColors.error,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 8),
-                      
-                      // Timestamp
-                      Text(
-                        timeAgo,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Undo button
-                if (entry.canUndo && !entry.isUndone)
-                  IconButton(
-                    icon: const Icon(Icons.undo),
-                    color: AppColors.electricGreen,
-                    onPressed: () => _handleUndo(entry),
-                    tooltip: 'Undo',
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getIconForIntent(String intentType) {
-    switch (intentType) {
-      case 'create_spot':
-        return Icons.place;
-      case 'create_list':
-        return Icons.list;
-      case 'add_spot_to_list':
-        return Icons.add_circle_outline;
-      default:
-        return Icons.help_outline;
-    }
   }
 
   String _getTitleForIntent(String intentType) {
@@ -386,50 +471,29 @@ class _ActionHistoryPageState extends State<ActionHistoryPage> {
     }
   }
 
-  String _getSubtitleForEntry(ActionHistoryEntry entry) {
+  String _getSubtitleForEntry(entry.ActionHistoryEntry entry) {
     final intent = entry.intent;
     
     if (intent.type == 'create_spot') {
-      final spotIntent = intent as dynamic;
-      return spotIntent.name;
+      if (intent is CreateSpotIntent) {
+        return intent.name;
+      }
+      return 'Create a new spot';
     } else if (intent.type == 'create_list') {
-      final listIntent = intent as dynamic;
-      return listIntent.title;
+      if (intent is CreateListIntent) {
+        return intent.title;
+      }
+      return 'Create a new list';
     } else if (intent.type == 'add_spot_to_list') {
-      final addIntent = intent as dynamic;
-      final spotName = addIntent.metadata['spotName'] ?? 'Spot';
-      final listName = addIntent.metadata['listName'] ?? 'List';
-      return 'Added $spotName to $listName';
+      if (intent is AddSpotToListIntent) {
+        final spotName = intent.metadata['spotName'] as String? ?? 'Spot';
+        final listName = intent.metadata['listName'] as String? ?? 'List';
+        return 'Added $spotName to $listName';
+      }
+      return 'Add spot to list';
     }
     
     return 'Action details';
-  }
-
-  String _formatTimeAgo(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inSeconds < 60) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      final minutes = difference.inMinutes;
-      return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} ago';
-    } else if (difference.inHours < 24) {
-      final hours = difference.inHours;
-      return '$hours ${hours == 1 ? 'hour' : 'hours'} ago';
-    } else if (difference.inDays < 7) {
-      final days = difference.inDays;
-      return '$days ${days == 1 ? 'day' : 'days'} ago';
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
-      return '$weeks ${weeks == 1 ? 'week' : 'weeks'} ago';
-    } else if (difference.inDays < 365) {
-      final months = (difference.inDays / 30).floor();
-      return '$months ${months == 1 ? 'month' : 'months'} ago';
-    } else {
-      final years = (difference.inDays / 365).floor();
-      return '$years ${years == 1 ? 'year' : 'years'} ago';
-    }
   }
 }
 

@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:spots/core/models/personality_profile.dart';
-import 'package:spots/core/models/user_vibe.dart';
+import 'package:spots/core/models/unified_user.dart';
+import 'package:spots/core/models/anonymous_user.dart';
 import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/ai/vibe_analysis_engine.dart';
 import 'package:spots/core/ai/personality_learning.dart';
+import 'package:spots/core/services/user_anonymization_service.dart';
 
 /// AI2AI Protocol Handler for Phase 6: Physical Layer
 /// Handles message encoding/decoding, encryption, and connection management
@@ -19,9 +21,19 @@ class AI2AIProtocol {
   // Encryption key (should be derived from shared secret in real implementation)
   final Uint8List? _encryptionKey;
   
-  AI2AIProtocol({Uint8List? encryptionKey}) : _encryptionKey = encryptionKey;
+  // Anonymization service for converting UnifiedUser to AnonymousUser
+  final UserAnonymizationService? _anonymizationService;
+  
+  AI2AIProtocol({
+    Uint8List? encryptionKey,
+    UserAnonymizationService? anonymizationService,
+  }) : _encryptionKey = encryptionKey,
+       _anonymizationService = anonymizationService;
   
   /// Encode a message for transmission
+  /// 
+  /// **CRITICAL:** This method validates that no UnifiedUser data is in the payload.
+  /// All user data must be converted to AnonymousUser before calling this method.
   ProtocolMessage encodeMessage({
     required MessageType type,
     required Map<String, dynamic> payload,
@@ -29,6 +41,9 @@ class AI2AIProtocol {
     String? recipientNodeId,
   }) {
     try {
+      // Validate no UnifiedUser in payload (safety check)
+      _validateNoUnifiedUserInPayload(payload);
+      
       final message = ProtocolMessage(
         version: _protocolVersion,
         type: type,
@@ -148,6 +163,9 @@ class AI2AIProtocol {
     required String recipientNodeId,
     required Map<String, dynamic> learningData,
   }) {
+    // Validate no UnifiedUser in payload
+    _validateNoUnifiedUserInPayload(learningData);
+    
     // Anonymize learning data before transmission
     final anonymizedData = _anonymizeLearningData(learningData);
     
@@ -157,6 +175,131 @@ class AI2AIProtocol {
         'learningData': anonymizedData,
         'timestamp': DateTime.now().toIso8601String(),
       },
+      senderNodeId: senderNodeId,
+      recipientNodeId: recipientNodeId,
+    );
+  }
+
+  /// Create a message with AnonymousUser data
+  /// 
+  /// **CRITICAL:** This method ensures UnifiedUser is converted to AnonymousUser
+  /// before transmission. No personal data is shared in AI2AI network.
+  /// 
+  /// **Parameters:**
+  /// - `senderNodeId`: Sender's node ID (agent ID)
+  /// - `recipientNodeId`: Recipient's node ID (optional)
+  /// - `type`: Message type
+  /// - `user`: UnifiedUser to include (will be anonymized)
+  /// - `agentId`: Anonymous agent ID (required, must start with "agent_")
+  /// - `personalityProfile`: Optional personality profile
+  /// - `isAdmin`: If true, allows exact location (godmode/admin access)
+  /// 
+  /// **Returns:**
+  /// ProtocolMessage with AnonymousUser data (no personal information)
+  /// 
+  /// **Throws:**
+  /// - Exception if anonymizationService is not available
+  /// - Exception if conversion fails
+  Future<ProtocolMessage> createMessageWithUser({
+    required String senderNodeId,
+    String? recipientNodeId,
+    required MessageType type,
+    required UnifiedUser user,
+    required String agentId,
+    PersonalityProfile? personalityProfile,
+    bool isAdmin = false,
+  }) async {
+    if (_anonymizationService == null) {
+      throw Exception(
+        'UserAnonymizationService not available. Cannot create message with user data. '
+        'Use createMessage() with AnonymousUser instead.'
+      );
+    }
+
+    developer.log('Creating message with UnifiedUser (will be anonymized): ${user.id}', name: _logName);
+    
+    try {
+      // Convert UnifiedUser to AnonymousUser
+      final anonymousUser = await _anonymizationService!.anonymizeUser(
+        user,
+        agentId,
+        personalityProfile,
+        isAdmin: isAdmin,
+      );
+      
+      // Create payload with AnonymousUser (no personal data)
+      final payload = {
+        'anonymousUser': anonymousUser.toJson(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      return encodeMessage(
+        type: type,
+        payload: payload,
+        senderNodeId: senderNodeId,
+        recipientNodeId: recipientNodeId,
+      );
+    } catch (e) {
+      developer.log('Error creating message with user: $e', name: _logName);
+      rethrow;
+    }
+  }
+
+  /// Validate that no UnifiedUser is being sent directly in AI2AI network
+  /// 
+  /// This is a safety check to prevent accidental personal data leaks.
+  /// All user data must be converted to AnonymousUser before transmission.
+  void _validateNoUnifiedUserInPayload(Map<String, dynamic> payload) {
+    // Check for common UnifiedUser fields that should never appear in AI2AI payloads
+    final forbiddenFields = ['id', 'email', 'displayName', 'photoUrl', 'userId'];
+    
+    for (final field in forbiddenFields) {
+      if (payload.containsKey(field)) {
+        throw Exception(
+          'CRITICAL: UnifiedUser field "$field" detected in AI2AI payload. '
+          'All user data must be converted to AnonymousUser before transmission. '
+          'Use createMessageWithUser() method or pass AnonymousUser directly.'
+        );
+      }
+    }
+    
+    // Recursively check nested objects
+    for (final value in payload.values) {
+      if (value is Map<String, dynamic>) {
+        _validateNoUnifiedUserInPayload(value);
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map<String, dynamic>) {
+            _validateNoUnifiedUserInPayload(item);
+          }
+        }
+      }
+    }
+  }
+
+  /// Encode a message with AnonymousUser (already anonymized)
+  /// 
+  /// Use this method when you already have an AnonymousUser object.
+  /// This is more efficient than createMessageWithUser() if you've already anonymized.
+  ProtocolMessage createMessageWithAnonymousUser({
+    required String senderNodeId,
+    String? recipientNodeId,
+    required MessageType type,
+    required AnonymousUser anonymousUser,
+    Map<String, dynamic>? additionalPayload,
+  }) {
+    // Validate AnonymousUser contains no personal data
+    anonymousUser.validateNoPersonalData();
+    
+    final payload = <String, dynamic>{
+      'anonymousUser': anonymousUser.toJson(),
+      'timestamp': DateTime.now().toIso8601String(),
+      if (additionalPayload != null) ...additionalPayload,
+    };
+    
+    return encodeMessage(
+      type: type,
+      payload: payload,
       senderNodeId: senderNodeId,
       recipientNodeId: recipientNodeId,
     );

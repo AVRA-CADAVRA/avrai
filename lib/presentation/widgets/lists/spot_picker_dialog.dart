@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
-import 'package:spots/presentation/widgets/spots/spot_card.dart';
 
 class SpotPickerDialog extends StatefulWidget {
   final SpotList list;
@@ -180,7 +178,7 @@ class _SpotPickerDialogState extends State<SpotPickerDialog> {
                       if (_searchQuery.isNotEmpty) {
                         return spot.name.toLowerCase().contains(_searchQuery) ||
                             spot.category.toLowerCase().contains(_searchQuery) ||
-                            (spot.description?.toLowerCase().contains(_searchQuery) ?? false) ||
+                            (spot.description.toLowerCase().contains(_searchQuery) ?? false) ||
                             (spot.address?.toLowerCase().contains(_searchQuery) ?? false);
                       }
                       return true;

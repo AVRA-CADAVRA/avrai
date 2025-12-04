@@ -3,8 +3,6 @@ import 'package:spots/core/services/expertise_service.dart';
 import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_progress.dart';
-import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/unified_list.dart';
 import '../../fixtures/model_factories.dart';
 
 /// Expertise Service Tests
@@ -307,9 +305,14 @@ void main() {
     });
 
     group('getUnlockedFeatures', () {
+      test('should return features for local level', () {
+        final features = service.getUnlockedFeatures(ExpertiseLevel.local);
+        expect(features, contains('event_hosting'));
+      });
+
       test('should return features for city level', () {
         final features = service.getUnlockedFeatures(ExpertiseLevel.city);
-        expect(features, contains('event_hosting'));
+        expect(features, contains('event_hosting')); // City level also unlocks event hosting
       });
 
       test('should return features for regional level', () {

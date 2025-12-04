@@ -1,4 +1,3 @@
-import 'package:spots/core/models/user.dart';
 
 /// Community Validation System for Expert Curator Validation
 /// OUR_GUTS.md: "Community, Not Just Places" - Community-driven quality assurance

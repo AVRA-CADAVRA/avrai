@@ -121,6 +121,21 @@ void main() {
         expect(account.connectedExpertIds, equals(['expert-1', 'expert-2']));
         expect(account.pendingConnectionIds, equals(['expert-3']));
       });
+
+      test('should create business account with Stripe Connect account ID', () {
+        final account = BusinessAccount(
+          id: 'business-123',
+          name: 'Test Restaurant',
+          email: 'test@restaurant.com',
+          businessType: 'Restaurant',
+          stripeConnectAccountId: 'acct_1234567890',
+          createdAt: testDate,
+          updatedAt: testDate,
+          createdBy: 'user-123',
+        );
+
+        expect(account.stripeConnectAccountId, equals('acct_1234567890'));
+      });
     });
 
     group('JSON Serialization', () {
@@ -164,6 +179,23 @@ void main() {
         expect(json['verification'], isNotNull);
       });
 
+      test('should serialize Stripe Connect account ID to JSON', () {
+        final account = BusinessAccount(
+          id: 'business-123',
+          name: 'Test Restaurant',
+          email: 'test@restaurant.com',
+          businessType: 'Restaurant',
+          stripeConnectAccountId: 'acct_1234567890',
+          createdAt: testDate,
+          updatedAt: testDate,
+          createdBy: 'user-123',
+        );
+
+        final json = account.toJson();
+
+        expect(json['stripeConnectAccountId'], equals('acct_1234567890'));
+      });
+
       test('should deserialize from JSON correctly', () {
         final json = {
           'id': 'business-123',
@@ -187,6 +219,7 @@ void main() {
           'createdBy': 'user-123',
           'connectedExpertIds': ['expert-1'],
           'pendingConnectionIds': ['expert-2'],
+          'stripeConnectAccountId': 'acct_1234567890',
         };
 
         final account = BusinessAccount.fromJson(json);
@@ -212,6 +245,7 @@ void main() {
         expect(account.createdBy, equals('user-123'));
         expect(account.connectedExpertIds, equals(['expert-1']));
         expect(account.pendingConnectionIds, equals(['expert-2']));
+        expect(account.stripeConnectAccountId, equals('acct_1234567890'));
       });
 
       test('should handle null optional fields in JSON', () {

@@ -89,10 +89,11 @@ class EventTemplateService {
     
     final endTime = template.getEstimatedEndTime(startTime);
     
-    final title = customTitle ?? template.generateTitle(host.displayName);
+    final hostName = host.displayName ?? 'Host';
+    final title = customTitle ?? template.generateTitle(hostName);
     
     final description = customDescription ?? template.generateDescription(
-      hostName: host.displayName,
+      hostName: hostName,
       location: selectedSpots?.isNotEmpty == true ? selectedSpots!.first.name : null,
       spotCount: selectedSpots?.length ?? template.recommendedSpotCount,
     );

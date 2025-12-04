@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/contextual_personality.dart';
 import 'package:spots/core/constants/vibe_constants.dart';
-import 'package:spots/core/theme/app_theme.dart';
 
 /// OUR_GUTS.md: "Your doors stay yours"
 /// Phase 3: Admin UI for Contextual Personality Visualization
@@ -63,7 +63,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -88,11 +88,11 @@ class PersonalityEvolutionWidget extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: transition.isAuthentic
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
+            ? AppColors.electricGreen.withValues(alpha: 0.1)
+            : AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: transition.isAuthentic ? Colors.green : Colors.orange,
+          color: transition.isAuthentic ? AppColors.electricGreen : AppColors.warning,
           width: 2,
         ),
       ),
@@ -100,7 +100,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
         children: [
           Icon(
             transition.isAuthentic ? Icons.check_circle : Icons.warning,
-            color: transition.isAuthentic ? Colors.green : Colors.orange,
+            color: transition.isAuthentic ? AppColors.electricGreen : AppColors.warning,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -113,7 +113,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
                       : 'Monitoring Personality Changes',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: transition.isAuthentic ? Colors.green : Colors.orange,
+                    color: transition.isAuthentic ? AppColors.electricGreen : AppColors.warning,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -165,7 +165,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: diff > 0 ? Colors.blue.withOpacity(0.2) : Colors.purple.withOpacity(0.2),
+                          color: diff > 0 ? AppColors.electricGreen.withValues(alpha: 0.2) : AppColors.grey600.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -173,7 +173,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: diff > 0 ? Colors.blue : Colors.purple,
+                            color: diff > 0 ? AppColors.electricGreen : AppColors.grey600,
                           ),
                         ),
                       ),
@@ -194,7 +194,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -223,7 +223,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            _buildLegendItem('Core', AppColors.primary.withOpacity(0.3)),
+            _buildLegendItem('Core', AppColors.primary.withValues(alpha: 0.3)),
             const SizedBox(width: 16),
             _buildLegendItem('Current', AppColors.primary),
           ],
@@ -361,7 +361,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: isCurrent ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+      color: isCurrent ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -394,7 +394,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
                     child: Text(
                       'CURRENT',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -416,7 +416,7 @@ class PersonalityEvolutionWidget extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

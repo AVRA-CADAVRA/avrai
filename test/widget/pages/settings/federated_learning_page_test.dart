@@ -5,7 +5,7 @@ import 'package:spots/presentation/widgets/settings/federated_learning_settings_
 import 'package:spots/presentation/widgets/settings/federated_learning_status_widget.dart';
 import 'package:spots/presentation/widgets/settings/privacy_metrics_widget.dart';
 import 'package:spots/presentation/widgets/settings/federated_participation_history_widget.dart';
-import 'package:spots/test/widget/helpers/widget_test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 void main() {
   group('FederatedLearningPage Tests', () {

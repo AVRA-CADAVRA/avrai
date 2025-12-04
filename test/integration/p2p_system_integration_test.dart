@@ -1,4 +1,3 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/p2p/node_manager.dart';
 import 'package:spots/core/p2p/federated_learning.dart';
@@ -107,9 +106,15 @@ void main() {
 
     test('should perform privacy-preserving federated learning', () async {
       // Test federated learning initialization with privacy preservation
+      final objective = LearningObjective(
+        name: 'spot_recommendation',
+        description: 'Learn spot recommendation patterns',
+        type: LearningType.recommendation,
+        parameters: {'privacy_budget': 1.0},
+      );
       final learningRound = await federatedSystem.initializeLearningRound(
         'test_university_123',
-        LearningObjective.spotRecommendation,
+        objective,
         ['node_1', 'node_2', 'node_3'], // Minimum 3 participants
       );
 
@@ -126,26 +131,38 @@ void main() {
 
     test('should train local model without exposing personal data', () async {
       // Test local model training with privacy preservation
-      final mockTrainingData = LocalTrainingData(containsPersonalIdentifiers: false, sampleCount: 0, 
-        features: [
-          {'category_preference': 0.8, 'time_preference': 0.6},
-          {'category_preference': 0.7, 'time_preference': 0.9},
-        ],
-        labels: [1.0, 0.8],
-        privacyLevel: PrivacyLevel.maximum,
+      final objective = LearningObjective(
+        name: 'spot_recommendation',
+        description: 'Learn spot recommendation patterns',
+        type: LearningType.recommendation,
+        parameters: {'privacy_budget': 1.0},
+      );
+      final round = await federatedSystem.initializeLearningRound(
+        'test_university_123',
+        objective,
+        ['test_node_1', 'node_2', 'node_3'],
+      );
+      
+      final mockTrainingData = LocalTrainingData(
+        sampleCount: 2,
+        features: {
+          'category_preference': [0.8, 0.7],
+          'time_preference': [0.6, 0.9],
+        },
+        containsPersonalIdentifiers: false,
       );
 
       final localUpdate = await federatedSystem.trainLocalModel(
         'test_node_1',
+        round,
         mockTrainingData,
-        LearningObjective.spotRecommendation,
       );
 
       expect(localUpdate, isNotNull);
       expect(localUpdate.nodeId, equals('test_node_1'));
-      expect(localUpdate.modelWeights, isA<Map<String, double>>());
-      expect(localUpdate.privacyMetrics.hasPersonalData, isFalse);
-      expect(localUpdate.privacyMetrics.encryptionLevel, equals(EncryptionLevel.maximum));
+      expect(localUpdate.gradients, isA<Map<String, dynamic>>());
+      expect(localUpdate.privacyCompliant, isTrue);
+      expect(localUpdate.trainingMetrics.privacyBudgetUsed, greaterThan(0.0));
       
       // OUR_GUTS.md: "Privacy-preserving federated learning with community insights"
       // Local training should extract insights without exposing personal data
@@ -153,19 +170,32 @@ void main() {
 
     test('should reject training data containing personal identifiers', () async {
       // Test privacy protection by rejecting data with personal information
-      final personalData = LocalTrainingData(containsPersonalIdentifiers: false, sampleCount: 0, 
-        features: [
-          {'user_id': 'john_doe', 'location': 'home_address'}, // Personal identifiers
-        ],
-        labels: [1.0],
-        privacyLevel: PrivacyLevel.low,
+      final objective = LearningObjective(
+        name: 'spot_recommendation',
+        description: 'Learn spot recommendation patterns',
+        type: LearningType.recommendation,
+        parameters: {'privacy_budget': 1.0},
+      );
+      final round = await federatedSystem.initializeLearningRound(
+        'test_university_123',
+        objective,
+        ['test_node_1', 'node_2', 'node_3'],
+      );
+      
+      final personalData = LocalTrainingData(
+        sampleCount: 1,
+        features: {
+          'user_id': 'john_doe', // Personal identifiers
+          'location': 'home_address',
+        },
+        containsPersonalIdentifiers: true,
       );
 
       try {
         await federatedSystem.trainLocalModel(
           'test_node_1',
+          round,
           personalData,
-          LearningObjective.spotRecommendation,
         );
         fail('Should have rejected data with personal identifiers');
       } catch (e) {
@@ -176,26 +206,42 @@ void main() {
       // System must actively protect against personal data exposure
     });
 
-    test('should sync data across network with privacy preservation', () async {
+    test('should handle data synchronization with privacy preservation', () async {
       // Test privacy-preserving data synchronization across P2P network
-      final syncResult = await nodeManager.syncNetworkData(
+      // Note: Direct syncNetworkData method doesn't exist, but we can test
+      // privacy preservation through node and silo operations
+      final node = await nodeManager.initializeNode(
+        NetworkType.university,
         'test_university_123',
-        DataSyncConfiguration(
-          syncScope: SyncScope.organizationOnly,
-          encryptionRequired: true,
-          privacyLevel: PrivacyLevel.maximum,
-          maxDataSizeGB: 1,
+        NodeCapabilities(
+          canShareData: true,
+          canReceiveData: true,
+          canProcessML: true,
+          canStoreData: true,
+          maxConnections: 10,
+          supportedProtocols: ['p2p', 'federated'],
+        ),
+      );
+      
+      final dataSilo = await nodeManager.createEncryptedSilo(
+        node,
+        'test_sync_silo',
+        DataSiloPolicy(
+          requireAuthentication: true,
+          allowedRoles: ['verified_member'],
+          logAccess: true,
+          dataRetention: Duration(days: 30),
         ),
       );
 
-      expect(syncResult, isNotNull);
-      expect(syncResult.organizationId, equals('test_university_123'));
-      expect(syncResult.encryptionApplied, isTrue);
-      expect(syncResult.privacyLevel, equals(PrivacyLevel.maximum));
-      expect(syncResult.dataExposureRisk, equals(ExposureRisk.none));
+      expect(node, isNotNull);
+      expect(dataSilo, isNotNull);
+      expect(dataSilo.organizationId, equals('test_university_123'));
+      expect(dataSilo.policy.requireAuthentication, isTrue);
+      expect(dataSilo.encryptionKeys, isNotNull);
       
       // OUR_GUTS.md: "Privacy-preserving data synchronization"
-      // Network sync should maintain complete privacy
+      // Network sync should maintain complete privacy through encrypted silos
     });
 
     test('should implement advanced privacy-preserving protocols', () async {
@@ -228,14 +274,20 @@ void main() {
       );
 
       // Test secure multi-party computation
+      final objective = LearningObjective(
+        name: 'community_trends',
+        description: 'Learn community trend patterns',
+        type: LearningType.prediction,
+        parameters: {'privacy_budget': 1.0},
+      );
       final learningRound = await federatedSystem.initializeLearningRound(
         'test_company_456',
-        LearningObjective.communityTrends,
+        objective,
         ['company_node_1', 'company_node_2', 'company_node_3', 'company_node_4'],
       );
 
       expect(node.encryptionKeys, isNotNull);
-      expect(dataSilo.encryptionLevel, equals(EncryptionLevel.maximum));
+      expect(dataSilo.encryptionKeys, isNotNull);
       expect(learningRound.privacyMetrics, isNotNull);
       
       // System should support advanced cryptographic protocols
@@ -288,11 +340,12 @@ void main() {
           NetworkType.university,
           '', // Invalid organization ID
           NodeCapabilities(
-            canHostData: false,
+            canShareData: false,
+            canReceiveData: false,
             canProcessML: false,
-            canRelay: false,
-            maxStorageGB: 0,
-            maxBandwidthMbps: 0,
+            canStoreData: false,
+            maxConnections: 0,
+            supportedProtocols: [],
           ),
         );
         // Should handle invalid configuration
@@ -303,9 +356,15 @@ void main() {
       
       try {
         // Test federated learning with insufficient participants
-        final invalidRound = await federatedSystem.initializeLearningRound(
+        final objective = LearningObjective(
+          name: 'spot_recommendation',
+          description: 'Learn spot recommendation patterns',
+          type: LearningType.recommendation,
+          parameters: {'privacy_budget': 1.0},
+        );
+        await federatedSystem.initializeLearningRound(
           'test_org',
-          LearningObjective.spotRecommendation,
+          objective,
           ['single_node'], // Below minimum of 3 participants
         );
         fail('Should have failed with insufficient participants');

@@ -9,9 +9,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:spots/presentation/blocs/search/hybrid_search_bloc.dart';
-import 'package:spots/core/models/spot.dart';
 import 'package:spots/data/repositories/hybrid_search_repository.dart';
-import 'package:spots/core/services/ai_search_suggestions_service.dart';
 import '../../helpers/bloc_test_helpers.dart';
 import '../../mocks/bloc_mock_dependencies.dart';
 

@@ -1,6 +1,6 @@
 import 'package:spots/core/services/logger.dart';
 import 'dart:async';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/user.dart';
 import 'package:spots/domain/usecases/auth/get_current_user_usecase.dart';
 import 'package:spots/domain/usecases/auth/sign_in_usecase.dart';

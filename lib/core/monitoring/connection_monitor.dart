@@ -3,43 +3,45 @@ import 'dart:async';
 import 'dart:math';
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/connection_metrics.dart';
-import 'package:spots/core/models/personality_profile.dart';
-import 'package:spots/core/models/user_vibe.dart';
-import 'package:spots/core/services/storage_service.dart' hide SharedPreferences;
-import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
+import 'package:shared_preferences/shared_preferences.dart'
+    show SharedPreferences;
 
 /// OUR_GUTS.md: "Connection monitoring that tracks AI2AI personality interactions while preserving privacy"
 /// Comprehensive connection monitoring system for individual AI2AI personality learning interactions
 class ConnectionMonitor {
   static const String _logName = 'ConnectionMonitor';
-  
+
   // Storage keys for connection monitoring data
   static const String _activeConnectionsKey = 'active_connections';
   static const String _connectionHistoryKey = 'connection_history';
   static const String _monitoringAlertsKey = 'monitoring_alerts';
-  
+
   final SharedPreferences _prefs;
-  
+
   // Monitoring state
   final Map<String, ActiveConnection> _activeConnections = {};
   final Map<String, ConnectionMonitoringSession> _monitoringSessions = {};
   final List<ConnectionAlert> _alerts = [];
   Timer? _monitoringTimer;
-  
+
   // Reverse index: AI signature -> Set of connection IDs
   // This enables O(1) lookup of all connections for a given AI signature
   final Map<String, Set<String>> _aiSignatureIndex = {};
-  
+
+  // Stream controllers for active connections
+  StreamController<ActiveConnectionsOverview>? _connectionsStreamController;
+
   ConnectionMonitor({required SharedPreferences prefs}) : _prefs = prefs;
-  
+
   /// Start monitoring a new AI2AI connection
   Future<ConnectionMonitoringSession> startMonitoring(
     String connectionId,
     ConnectionMetrics initialMetrics,
   ) async {
     try {
-      developer.log('Starting connection monitoring for: $connectionId', name: _logName);
-      
+      developer.log('Starting connection monitoring for: $connectionId',
+          name: _logName);
+
       // Create monitoring session
       final session = ConnectionMonitoringSession(
         connectionId: connectionId,
@@ -49,30 +51,35 @@ class ConnectionMonitor {
         initialMetrics: initialMetrics,
         currentMetrics: initialMetrics,
         qualityHistory: [ConnectionQualitySnapshot.fromMetrics(initialMetrics)],
-        learningProgressHistory: [LearningProgressSnapshot.fromMetrics(initialMetrics)],
+        learningProgressHistory: [
+          LearningProgressSnapshot.fromMetrics(initialMetrics)
+        ],
         alertsGenerated: [],
         monitoringStatus: MonitoringStatus.active,
       );
-      
+
       // Store active connection
       _activeConnections[connectionId] = ActiveConnection.fromSession(session);
       _monitoringSessions[connectionId] = session;
-      
+
       // Update reverse index for efficient AI signature queries
-      _updateAISignatureIndex(session.localAISignature, connectionId, add: true);
-      _updateAISignatureIndex(session.remoteAISignature, connectionId, add: true);
-      
+      _updateAISignatureIndex(session.localAISignature, connectionId,
+          add: true);
+      _updateAISignatureIndex(session.remoteAISignature, connectionId,
+          add: true);
+
       // Start periodic monitoring if not already running
       _ensureMonitoringTimerRunning();
-      
-      developer.log('Connection monitoring started: $connectionId', name: _logName);
+
+      developer.log('Connection monitoring started: $connectionId',
+          name: _logName);
       return session;
     } catch (e) {
       developer.log('Error starting connection monitoring: $e', name: _logName);
       throw ConnectionMonitoringException('Failed to start monitoring: $e');
     }
   }
-  
+
   /// Update connection metrics during monitoring
   Future<ConnectionMonitoringSession> updateConnectionMetrics(
     String connectionId,
@@ -81,107 +88,129 @@ class ConnectionMonitor {
     try {
       final session = _monitoringSessions[connectionId];
       if (session == null) {
-        throw ConnectionMonitoringException('Connection monitoring session not found: $connectionId');
+        throw ConnectionMonitoringException(
+            'Connection monitoring session not found: $connectionId');
       }
-      
-      developer.log('Updating connection metrics for: $connectionId', name: _logName);
-      
+
+      developer.log('Updating connection metrics for: $connectionId',
+          name: _logName);
+
       // Calculate quality changes
-      final qualityChange = await _calculateQualityChange(session.currentMetrics, updatedMetrics);
-      
-             // Detect learning progress
-       await _calculateLearningProgress(session, updatedMetrics);
-      
+      final qualityChange =
+          await _calculateQualityChange(session.currentMetrics, updatedMetrics);
+
+      // Detect learning progress
+      await _calculateLearningProgress(session, updatedMetrics);
+
       // Check for performance alerts
-      final newAlerts = await _checkForPerformanceAlerts(connectionId, updatedMetrics, qualityChange);
-      
+      final newAlerts = await _checkForPerformanceAlerts(
+          connectionId, updatedMetrics, qualityChange);
+
       // Update monitoring session
       final updatedSession = session.copyWith(
         currentMetrics: updatedMetrics,
-        qualityHistory: [...session.qualityHistory, ConnectionQualitySnapshot.fromMetrics(updatedMetrics)],
-        learningProgressHistory: [...session.learningProgressHistory, LearningProgressSnapshot.fromMetrics(updatedMetrics)],
+        qualityHistory: [
+          ...session.qualityHistory,
+          ConnectionQualitySnapshot.fromMetrics(updatedMetrics)
+        ],
+        learningProgressHistory: [
+          ...session.learningProgressHistory,
+          LearningProgressSnapshot.fromMetrics(updatedMetrics)
+        ],
         alertsGenerated: [...session.alertsGenerated, ...newAlerts],
         lastUpdated: DateTime.now(),
       );
-      
+
       _monitoringSessions[connectionId] = updatedSession;
-      _activeConnections[connectionId] = ActiveConnection.fromSession(updatedSession);
-      
+      _activeConnections[connectionId] =
+          ActiveConnection.fromSession(updatedSession);
+
       // Process any new alerts
       if (newAlerts.isNotEmpty) {
         await _processConnectionAlerts(connectionId, newAlerts);
       }
-      
-      developer.log('Connection metrics updated: $connectionId (quality: ${(updatedMetrics.currentCompatibility * 100).round()}%)', name: _logName);
+
+      developer.log(
+          'Connection metrics updated: $connectionId (quality: ${(updatedMetrics.currentCompatibility * 100).round()}%)',
+          name: _logName);
       return updatedSession;
     } catch (e) {
       developer.log('Error updating connection metrics: $e', name: _logName);
       throw ConnectionMonitoringException('Failed to update metrics: $e');
     }
   }
-  
+
   /// Stop monitoring a connection
   Future<ConnectionMonitoringReport> stopMonitoring(String connectionId) async {
     try {
-      developer.log('Stopping connection monitoring for: $connectionId', name: _logName);
-      
+      developer.log('Stopping connection monitoring for: $connectionId',
+          name: _logName);
+
       final session = _monitoringSessions[connectionId];
       if (session == null) {
-        throw ConnectionMonitoringException('Connection monitoring session not found: $connectionId');
+        throw ConnectionMonitoringException(
+            'Connection monitoring session not found: $connectionId');
       }
-      
+
       // Generate final monitoring report
       final report = await _generateMonitoringReport(session);
-      
+
       // Archive the session
       await _archiveMonitoringSession(session);
-      
+
       // Cleanup active monitoring
       _activeConnections.remove(connectionId);
       final removedSession = _monitoringSessions.remove(connectionId);
-      
+
       // Update reverse index
       if (removedSession != null) {
-        _updateAISignatureIndex(removedSession.localAISignature, connectionId, add: false);
-        _updateAISignatureIndex(removedSession.remoteAISignature, connectionId, add: false);
+        _updateAISignatureIndex(removedSession.localAISignature, connectionId,
+            add: false);
+        _updateAISignatureIndex(removedSession.remoteAISignature, connectionId,
+            add: false);
       }
-      
+
       // Stop monitoring timer if no active connections
       if (_activeConnections.isEmpty) {
         _monitoringTimer?.cancel();
         _monitoringTimer = null;
       }
-      
-      developer.log('Connection monitoring stopped: $connectionId (duration: ${report.connectionDuration.inMinutes}min)', name: _logName);
+
+      developer.log(
+          'Connection monitoring stopped: $connectionId (duration: ${report.connectionDuration.inMinutes}min)',
+          name: _logName);
       return report;
     } catch (e) {
       developer.log('Error stopping connection monitoring: $e', name: _logName);
       throw ConnectionMonitoringException('Failed to stop monitoring: $e');
     }
   }
-  
+
   /// Get real-time connection status
-  Future<ConnectionMonitoringStatus> getConnectionStatus(String connectionId) async {
+  Future<ConnectionMonitoringStatus> getConnectionStatus(
+      String connectionId) async {
     try {
       final session = _monitoringSessions[connectionId];
       if (session == null) {
         return ConnectionMonitoringStatus.notFound(connectionId);
       }
-      
+
       // Calculate current performance metrics
       final currentPerformance = await _calculateCurrentPerformance(session);
-      
+
       // Assess connection health
       final healthScore = await _assessConnectionHealth(session);
-      
+
       // Get recent alerts
       final recentAlerts = session.alertsGenerated
-          .where((alert) => DateTime.now().difference(alert.timestamp) < Duration(minutes: 15))
+          .where((alert) =>
+              DateTime.now().difference(alert.timestamp) <
+              Duration(minutes: 15))
           .toList();
-      
+
       // Predict connection trajectory
       final trajectory = await _predictConnectionTrajectory(session);
-      
+
       return ConnectionMonitoringStatus(
         connectionId: connectionId,
         currentPerformance: currentPerformance,
@@ -196,36 +225,40 @@ class ConnectionMonitor {
       return ConnectionMonitoringStatus.error(connectionId, e.toString());
     }
   }
-  
+
   /// Get monitoring session for admin access
   /// Returns the full session with all metrics and interaction history
   ConnectionMonitoringSession? getMonitoringSession(String connectionId) {
     return _monitoringSessions[connectionId];
   }
-  
+
   /// Get all connection IDs for a specific AI signature
   /// Efficient O(1) lookup using reverse index
   /// Returns both connections where AI is local and remote
   Set<String> getConnectionsByAISignature(String aiSignature) {
     return Set<String>.from(_aiSignatureIndex[aiSignature] ?? {});
   }
-  
+
   /// Get all monitoring sessions for a specific AI signature
   /// Returns sessions where the AI signature is either local or remote
-  List<ConnectionMonitoringSession> getSessionsByAISignature(String aiSignature) {
+  List<ConnectionMonitoringSession> getSessionsByAISignature(
+      String aiSignature) {
     final connectionIds = getConnectionsByAISignature(aiSignature);
     return connectionIds
         .map((id) => _monitoringSessions[id])
         .whereType<ConnectionMonitoringSession>()
         .toList();
   }
-  
+
   /// Update reverse index for AI signature lookups
-  void _updateAISignatureIndex(String aiSignature, String connectionId, {required bool add}) {
+  void _updateAISignatureIndex(String aiSignature, String connectionId,
+      {required bool add}) {
     if (aiSignature.isEmpty) return;
-    
+
     if (add) {
-      _aiSignatureIndex.putIfAbsent(aiSignature, () => <String>{}).add(connectionId);
+      _aiSignatureIndex
+          .putIfAbsent(aiSignature, () => <String>{})
+          .add(connectionId);
     } else {
       _aiSignatureIndex[aiSignature]?.remove(connectionId);
       // Clean up empty sets to prevent memory leaks
@@ -234,41 +267,45 @@ class ConnectionMonitor {
       }
     }
   }
-  
+
   /// Analyze connection performance trends
   Future<ConnectionPerformanceAnalysis> analyzeConnectionPerformance(
     String connectionId,
     Duration analysisWindow,
   ) async {
     try {
-      developer.log('Analyzing connection performance for: $connectionId', name: _logName);
-      
+      developer.log('Analyzing connection performance for: $connectionId',
+          name: _logName);
+
       final session = _monitoringSessions[connectionId];
       if (session == null) {
-        throw ConnectionMonitoringException('Connection monitoring session not found: $connectionId');
+        throw ConnectionMonitoringException(
+            'Connection monitoring session not found: $connectionId');
       }
-      
+
       final cutoffTime = DateTime.now().subtract(analysisWindow);
-      
+
       // Analyze quality trends
       final qualityTrends = await _analyzeQualityTrends(session, cutoffTime);
-      
+
       // Analyze learning effectiveness trends
       final learningTrends = await _analyzeLearningTrends(session, cutoffTime);
-      
+
       // Calculate performance stability
-      final stabilityMetrics = await _calculateStabilityMetrics(session, cutoffTime);
-      
+      final stabilityMetrics =
+          await _calculateStabilityMetrics(session, cutoffTime);
+
       // Identify performance patterns
-      final performancePatterns = await _identifyPerformancePatterns(session, cutoffTime);
-      
+      final performancePatterns =
+          await _identifyPerformancePatterns(session, cutoffTime);
+
       // Generate performance recommendations
       final recommendations = await _generatePerformanceRecommendations(
         qualityTrends,
         learningTrends,
         stabilityMetrics,
       );
-      
+
       final analysis = ConnectionPerformanceAnalysis(
         connectionId: connectionId,
         analysisWindow: analysisWindow,
@@ -284,39 +321,46 @@ class ConnectionMonitor {
         ),
         analyzedAt: DateTime.now(),
       );
-      
-      developer.log('Connection performance analysis completed: ${recommendations.length} recommendations', name: _logName);
+
+      developer.log(
+          'Connection performance analysis completed: ${recommendations.length} recommendations',
+          name: _logName);
       return analysis;
     } catch (e) {
-      developer.log('Error analyzing connection performance: $e', name: _logName);
+      developer.log('Error analyzing connection performance: $e',
+          name: _logName);
       return ConnectionPerformanceAnalysis.failed(connectionId, analysisWindow);
     }
   }
-  
+
   /// Get all active connections overview
   Future<ActiveConnectionsOverview> getActiveConnectionsOverview() async {
     try {
       developer.log('Generating active connections overview', name: _logName);
-      
+
       if (_activeConnections.isEmpty) {
         return ActiveConnectionsOverview.empty();
       }
-      
+
       // Calculate aggregate metrics
       final aggregateMetrics = await _calculateAggregateMetrics();
-      
+
       // Identify top performing connections
-      final topPerformingConnections = await _identifyTopPerformingConnections();
-      
+      final topPerformingConnections =
+          await _identifyTopPerformingConnections();
+
       // Identify connections needing attention
-      final connectionsNeedingAttention = await _identifyConnectionsNeedingAttention();
-      
+      final connectionsNeedingAttention =
+          await _identifyConnectionsNeedingAttention();
+
       // Calculate learning velocity distribution
-      final learningVelocityDistribution = await _calculateLearningVelocityDistribution();
-      
+      final learningVelocityDistribution =
+          await _calculateLearningVelocityDistribution();
+
       // Generate optimization opportunities
-      final optimizationOpportunities = await _identifyOptimizationOpportunities();
-      
+      final optimizationOpportunities =
+          await _identifyOptimizationOpportunities();
+
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: _activeConnections.length,
         aggregateMetrics: aggregateMetrics,
@@ -328,59 +372,66 @@ class ConnectionMonitor {
         totalAlertsGenerated: _countTotalAlerts(),
         generatedAt: DateTime.now(),
       );
-      
-      developer.log('Active connections overview generated: ${overview.totalActiveConnections} active, ${overview.connectionsNeedingAttention.length} need attention', name: _logName);
+
+      developer.log(
+          'Active connections overview generated: ${overview.totalActiveConnections} active, ${overview.connectionsNeedingAttention.length} need attention',
+          name: _logName);
       return overview;
     } catch (e) {
-      developer.log('Error generating active connections overview: $e', name: _logName);
+      developer.log('Error generating active connections overview: $e',
+          name: _logName);
       return ActiveConnectionsOverview.empty();
     }
   }
-  
+
   /// Detect connection anomalies
   Future<List<ConnectionAnomaly>> detectConnectionAnomalies() async {
     try {
-      developer.log('Detecting connection anomalies across ${_activeConnections.length} connections', name: _logName);
-      
+      developer.log(
+          'Detecting connection anomalies across ${_activeConnections.length} connections',
+          name: _logName);
+
       final anomalies = <ConnectionAnomaly>[];
-      
+
       for (final session in _monitoringSessions.values) {
         // Detect quality anomalies
         final qualityAnomalies = await _detectQualityAnomalies(session);
         anomalies.addAll(qualityAnomalies);
-        
+
         // Detect learning anomalies
         final learningAnomalies = await _detectLearningAnomalies(session);
         anomalies.addAll(learningAnomalies);
-        
+
         // Detect behavior anomalies
         final behaviorAnomalies = await _detectBehaviorAnomalies(session);
         anomalies.addAll(behaviorAnomalies);
       }
-      
+
       // Sort by severity and timestamp
       anomalies.sort((a, b) {
         final severityComparison = b.severity.index.compareTo(a.severity.index);
         if (severityComparison != 0) return severityComparison;
         return b.detectedAt.compareTo(a.detectedAt);
       });
-      
-      developer.log('Detected ${anomalies.length} connection anomalies', name: _logName);
+
+      developer.log('Detected ${anomalies.length} connection anomalies',
+          name: _logName);
       return anomalies;
     } catch (e) {
       developer.log('Error detecting connection anomalies: $e', name: _logName);
       return [];
     }
   }
-  
+
   // Private helper methods
   void _ensureMonitoringTimerRunning() {
     if (_monitoringTimer == null || !_monitoringTimer!.isActive) {
-      _monitoringTimer = Timer.periodic(Duration(seconds: 30), (_) => _performPeriodicMonitoring());
+      _monitoringTimer = Timer.periodic(
+          Duration(seconds: 30), (_) => _performPeriodicMonitoring());
       developer.log('Connection monitoring timer started', name: _logName);
     }
   }
-  
+
   Future<void> _performPeriodicMonitoring() async {
     try {
       for (final connectionId in _activeConnections.keys.toList()) {
@@ -388,10 +439,10 @@ class ConnectionMonitor {
         if (session != null) {
           // Check for timeout or stale connections
           await _checkConnectionTimeout(connectionId, session);
-          
+
           // Monitor for degradation patterns
           await _monitorConnectionDegradation(connectionId, session);
-          
+
           // Check learning progress stagnation
           await _checkLearningStagnation(connectionId, session);
         }
@@ -400,45 +451,52 @@ class ConnectionMonitor {
       developer.log('Error during periodic monitoring: $e', name: _logName);
     }
   }
-  
+
   Future<ConnectionQualityChange> _calculateQualityChange(
     ConnectionMetrics previous,
     ConnectionMetrics current,
   ) async {
-    final compatibilityChange = current.currentCompatibility - previous.currentCompatibility;
-    final learningEffectivenessChange = current.learningEffectiveness - previous.learningEffectiveness;
+    final compatibilityChange =
+        current.currentCompatibility - previous.currentCompatibility;
+    final learningEffectivenessChange =
+        current.learningEffectiveness - previous.learningEffectiveness;
     final aiPleasureChange = current.aiPleasureScore - previous.aiPleasureScore;
-    
+
     return ConnectionQualityChange(
       compatibilityChange: compatibilityChange,
       learningEffectivenessChange: learningEffectivenessChange,
       aiPleasureChange: aiPleasureChange,
-      overallChange: (compatibilityChange + learningEffectivenessChange + aiPleasureChange) / 3.0,
-      changeDirection: _determineChangeDirection(compatibilityChange, learningEffectivenessChange, aiPleasureChange),
+      overallChange: (compatibilityChange +
+              learningEffectivenessChange +
+              aiPleasureChange) /
+          3.0,
+      changeDirection: _determineChangeDirection(
+          compatibilityChange, learningEffectivenessChange, aiPleasureChange),
     );
   }
-  
+
   Future<LearningProgressMetrics> _calculateLearningProgress(
     ConnectionMonitoringSession session,
     ConnectionMetrics updatedMetrics,
   ) async {
     final progressSince = Duration(minutes: 5); // Look at last 5 minutes
     final cutoffTime = DateTime.now().subtract(progressSince);
-    
+
     final recentHistory = session.learningProgressHistory
         .where((snapshot) => snapshot.timestamp.isAfter(cutoffTime))
         .toList();
-    
+
     if (recentHistory.length < 2) {
       return LearningProgressMetrics.minimal();
     }
-    
+
     final firstSnapshot = recentHistory.first;
     final lastSnapshot = recentHistory.last;
-    
-    final progressRate = (lastSnapshot.learningEffectiveness - firstSnapshot.learningEffectiveness) / 
-                        progressSince.inMinutes;
-    
+
+    final progressRate = (lastSnapshot.learningEffectiveness -
+            firstSnapshot.learningEffectiveness) /
+        progressSince.inMinutes;
+
     return LearningProgressMetrics(
       progressRate: progressRate,
       learningVelocity: updatedMetrics.learningEffectiveness,
@@ -446,28 +504,31 @@ class ConnectionMonitor {
       insightGenerationRate: 0.5 + Random().nextDouble() * 0.3, // Simulated
     );
   }
-  
+
   Future<List<ConnectionAlert>> _checkForPerformanceAlerts(
     String connectionId,
     ConnectionMetrics metrics,
     ConnectionQualityChange qualityChange,
   ) async {
     final alerts = <ConnectionAlert>[];
-    
+
     // Check for low compatibility
-    if (metrics.currentCompatibility < VibeConstants.lowCompatibilityThreshold) {
+    if (metrics.currentCompatibility <
+        VibeConstants.lowCompatibilityThreshold) {
       alerts.add(ConnectionAlert(
         connectionId: connectionId,
         type: AlertType.lowCompatibility,
         severity: AlertSeverity.medium,
-        message: 'Connection compatibility below threshold (${(metrics.currentCompatibility * 100).round()}%)',
+        message:
+            'Connection compatibility below threshold (${(metrics.currentCompatibility * 100).round()}%)',
         timestamp: DateTime.now(),
         metadata: {'compatibility': metrics.currentCompatibility},
       ));
     }
-    
+
     // Check for learning effectiveness drop
-    if (metrics.learningEffectiveness < VibeConstants.minLearningEffectiveness) {
+    if (metrics.learningEffectiveness <
+        VibeConstants.minLearningEffectiveness) {
       alerts.add(ConnectionAlert(
         connectionId: connectionId,
         type: AlertType.lowLearningEffectiveness,
@@ -477,7 +538,7 @@ class ConnectionMonitor {
         metadata: {'learning_effectiveness': metrics.learningEffectiveness},
       ));
     }
-    
+
     // Check for rapid quality degradation
     if (qualityChange.overallChange < -0.2) {
       alerts.add(ConnectionAlert(
@@ -489,42 +550,47 @@ class ConnectionMonitor {
         metadata: {'quality_change': qualityChange.overallChange},
       ));
     }
-    
+
     return alerts;
   }
-  
-  Future<void> _processConnectionAlerts(String connectionId, List<ConnectionAlert> alerts) async {
+
+  Future<void> _processConnectionAlerts(
+      String connectionId, List<ConnectionAlert> alerts) async {
     for (final alert in alerts) {
       _alerts.add(alert);
-      developer.log('CONNECTION ALERT [${alert.severity.name.toUpperCase()}]: ${alert.message}', name: _logName);
-      
+      developer.log(
+          'CONNECTION ALERT [${alert.severity.name.toUpperCase()}]: ${alert.message}',
+          name: _logName);
+
       // In a real implementation, this might trigger notifications or automatic responses
       if (alert.severity == AlertSeverity.critical) {
         await _handleCriticalAlert(connectionId, alert);
       }
     }
   }
-  
-  Future<void> _handleCriticalAlert(String connectionId, ConnectionAlert alert) async {
-    developer.log('Handling critical alert for connection: $connectionId', name: _logName);
+
+  Future<void> _handleCriticalAlert(
+      String connectionId, ConnectionAlert alert) async {
+    developer.log('Handling critical alert for connection: $connectionId',
+        name: _logName);
     // In a real implementation, this might automatically terminate problematic connections
     // or trigger emergency protocols
   }
-  
+
   Future<ConnectionMonitoringReport> _generateMonitoringReport(
     ConnectionMonitoringSession session,
   ) async {
     final connectionDuration = DateTime.now().difference(session.startTime);
-    
+
     // Calculate performance summary
     final performanceSummary = await _calculatePerformanceSummary(session);
-    
+
     // Calculate learning outcomes
     final learningOutcomes = await _calculateLearningOutcomes(session);
-    
+
     // Generate quality analysis
     final qualityAnalysis = await _generateQualityAnalysis(session);
-    
+
     return ConnectionMonitoringReport(
       connectionId: session.connectionId,
       localAISignature: session.localAISignature,
@@ -540,99 +606,145 @@ class ConnectionMonitor {
       generatedAt: DateTime.now(),
     );
   }
-  
-  Future<void> _archiveMonitoringSession(ConnectionMonitoringSession session) async {
-    developer.log('Archiving monitoring session: ${session.connectionId}', name: _logName);
+
+  Future<void> _archiveMonitoringSession(
+      ConnectionMonitoringSession session) async {
+    developer.log('Archiving monitoring session: ${session.connectionId}',
+        name: _logName);
     // In a real implementation, this would serialize and store the session data
   }
-  
+
   // Additional helper methods with placeholder implementations
-  ChangeDirection _determineChangeDirection(double comp, double learning, double pleasure) {
+  ChangeDirection _determineChangeDirection(
+      double comp, double learning, double pleasure) {
     final average = (comp + learning + pleasure) / 3.0;
     if (average > 0.05) return ChangeDirection.improving;
     if (average < -0.05) return ChangeDirection.degrading;
     return ChangeDirection.stable;
   }
-  
-  double _calculateDimensionEvolutionRate(ConnectionMetrics metrics) => 
-      metrics.dimensionEvolution.values.fold(0.0, (sum, change) => sum + change.abs()) / 
+
+  double _calculateDimensionEvolutionRate(ConnectionMetrics metrics) =>
+      metrics.dimensionEvolution.values
+          .fold(0.0, (sum, change) => sum + change.abs()) /
       max(1, metrics.dimensionEvolution.length);
-  
-  Future<CurrentPerformanceMetrics> _calculateCurrentPerformance(ConnectionMonitoringSession session) async =>
+
+  Future<CurrentPerformanceMetrics> _calculateCurrentPerformance(
+          ConnectionMonitoringSession session) async =>
       CurrentPerformanceMetrics.fromSession(session);
-  
-  Future<double> _assessConnectionHealth(ConnectionMonitoringSession session) async =>
-      (session.currentMetrics.currentCompatibility + 
-       session.currentMetrics.learningEffectiveness + 
-       session.currentMetrics.aiPleasureScore) / 3.0;
-  
-  Future<ConnectionTrajectory> _predictConnectionTrajectory(ConnectionMonitoringSession session) async =>
+
+  Future<double> _assessConnectionHealth(
+          ConnectionMonitoringSession session) async =>
+      (session.currentMetrics.currentCompatibility +
+          session.currentMetrics.learningEffectiveness +
+          session.currentMetrics.aiPleasureScore) /
+      3.0;
+
+  Future<ConnectionTrajectory> _predictConnectionTrajectory(
+          ConnectionMonitoringSession session) async =>
       ConnectionTrajectory.stable();
-  
+
   // Performance analysis helper methods (placeholder implementations)
-  Future<QualityTrends> _analyzeQualityTrends(ConnectionMonitoringSession session, DateTime cutoff) async => QualityTrends.stable();
-  Future<LearningTrends> _analyzeLearningTrends(ConnectionMonitoringSession session, DateTime cutoff) async => LearningTrends.positive();
-  Future<StabilityMetrics> _calculateStabilityMetrics(ConnectionMonitoringSession session, DateTime cutoff) async => StabilityMetrics.stable();
-  Future<List<PerformancePattern>> _identifyPerformancePatterns(ConnectionMonitoringSession session, DateTime cutoff) async => [];
-  Future<List<PerformanceRecommendation>> _generatePerformanceRecommendations(QualityTrends quality, LearningTrends learning, StabilityMetrics stability) async => [];
-  
-  double _calculateOverallPerformanceScore(QualityTrends quality, LearningTrends learning, StabilityMetrics stability) => 0.8;
-  
+  Future<QualityTrends> _analyzeQualityTrends(
+          ConnectionMonitoringSession session, DateTime cutoff) async =>
+      QualityTrends.stable();
+  Future<LearningTrends> _analyzeLearningTrends(
+          ConnectionMonitoringSession session, DateTime cutoff) async =>
+      LearningTrends.positive();
+  Future<StabilityMetrics> _calculateStabilityMetrics(
+          ConnectionMonitoringSession session, DateTime cutoff) async =>
+      StabilityMetrics.stable();
+  Future<List<PerformancePattern>> _identifyPerformancePatterns(
+          ConnectionMonitoringSession session, DateTime cutoff) async =>
+      [];
+  Future<List<PerformanceRecommendation>> _generatePerformanceRecommendations(
+          QualityTrends quality,
+          LearningTrends learning,
+          StabilityMetrics stability) async =>
+      [];
+
+  double _calculateOverallPerformanceScore(QualityTrends quality,
+          LearningTrends learning, StabilityMetrics stability) =>
+      0.8;
+
   // Active connections analysis helper methods
-  Future<AggregateConnectionMetrics> _calculateAggregateMetrics() async => AggregateConnectionMetrics.good();
-  Future<List<String>> _identifyTopPerformingConnections() async => _activeConnections.keys.take(3).toList();
+  Future<AggregateConnectionMetrics> _calculateAggregateMetrics() async =>
+      AggregateConnectionMetrics.good();
+  Future<List<String>> _identifyTopPerformingConnections() async =>
+      _activeConnections.keys.take(3).toList();
   Future<List<String>> _identifyConnectionsNeedingAttention() async => [];
-  Future<LearningVelocityDistribution> _calculateLearningVelocityDistribution() async => LearningVelocityDistribution.normal();
-  Future<List<OptimizationOpportunity>> _identifyOptimizationOpportunities() async => [];
-  
+  Future<LearningVelocityDistribution>
+      _calculateLearningVelocityDistribution() async =>
+          LearningVelocityDistribution.normal();
+  Future<List<OptimizationOpportunity>>
+      _identifyOptimizationOpportunities() async => [];
+
   Duration _calculateAverageConnectionDuration() {
     if (_activeConnections.isEmpty) return Duration.zero;
     final totalMinutes = _monitoringSessions.values
-        .map((session) => DateTime.now().difference(session.startTime).inMinutes)
+        .map(
+            (session) => DateTime.now().difference(session.startTime).inMinutes)
         .fold(0, (sum, duration) => sum + duration);
     return Duration(minutes: totalMinutes ~/ _activeConnections.length);
   }
-  
+
   int _countTotalAlerts() => _monitoringSessions.values
       .map((session) => session.alertsGenerated.length)
       .fold(0, (sum, count) => sum + count);
-  
+
   // Anomaly detection helper methods
-  Future<List<ConnectionAnomaly>> _detectQualityAnomalies(ConnectionMonitoringSession session) async => [];
-  Future<List<ConnectionAnomaly>> _detectLearningAnomalies(ConnectionMonitoringSession session) async => [];
-  Future<List<ConnectionAnomaly>> _detectBehaviorAnomalies(ConnectionMonitoringSession session) async => [];
-  
+  Future<List<ConnectionAnomaly>> _detectQualityAnomalies(
+          ConnectionMonitoringSession session) async =>
+      [];
+  Future<List<ConnectionAnomaly>> _detectLearningAnomalies(
+          ConnectionMonitoringSession session) async =>
+      [];
+  Future<List<ConnectionAnomaly>> _detectBehaviorAnomalies(
+          ConnectionMonitoringSession session) async =>
+      [];
+
   // Periodic monitoring helper methods
-  Future<void> _checkConnectionTimeout(String connectionId, ConnectionMonitoringSession session) async {
+  Future<void> _checkConnectionTimeout(
+      String connectionId, ConnectionMonitoringSession session) async {
     final maxDuration = Duration(hours: 5); // Maximum connection duration
     if (DateTime.now().difference(session.startTime) > maxDuration) {
-      developer.log('Connection timeout detected: $connectionId', name: _logName);
+      developer.log('Connection timeout detected: $connectionId',
+          name: _logName);
     }
   }
-  
-  Future<void> _monitorConnectionDegradation(String connectionId, ConnectionMonitoringSession session) async {
+
+  Future<void> _monitorConnectionDegradation(
+      String connectionId, ConnectionMonitoringSession session) async {
     // Check for consistent quality degradation
     if (session.qualityHistory.length >= 5) {
-             final recentQualities = session.qualityHistory.skip(max(0, session.qualityHistory.length - 5)).map((q) => q.compatibility).toList();
+      final recentQualities = session.qualityHistory
+          .skip(max(0, session.qualityHistory.length - 5))
+          .map((q) => q.compatibility)
+          .toList();
       final isDegraing = _isConsistentlyDegrading(recentQualities);
       if (isDegraing) {
-        developer.log('Connection degradation pattern detected: $connectionId', name: _logName);
+        developer.log('Connection degradation pattern detected: $connectionId',
+            name: _logName);
       }
     }
   }
-  
-  Future<void> _checkLearningStagnation(String connectionId, ConnectionMonitoringSession session) async {
+
+  Future<void> _checkLearningStagnation(
+      String connectionId, ConnectionMonitoringSession session) async {
     // Check for learning progress stagnation
     if (session.learningProgressHistory.length >= 10) {
-             final recentLearning = session.learningProgressHistory.skip(max(0, session.learningProgressHistory.length - 10)).map((l) => l.learningEffectiveness).toList();
+      final recentLearning = session.learningProgressHistory
+          .skip(max(0, session.learningProgressHistory.length - 10))
+          .map((l) => l.learningEffectiveness)
+          .toList();
       final stagnationThreshold = 0.02; // Less than 2% change
       final maxChange = recentLearning.reduce(max) - recentLearning.reduce(min);
       if (maxChange < stagnationThreshold) {
-        developer.log('Learning stagnation detected: $connectionId', name: _logName);
+        developer.log('Learning stagnation detected: $connectionId',
+            name: _logName);
       }
     }
   }
-  
+
   bool _isConsistentlyDegrading(List<double> values) {
     if (values.length < 3) return false;
     for (int i = 1; i < values.length; i++) {
@@ -640,16 +752,84 @@ class ConnectionMonitor {
     }
     return true;
   }
-  
+
   // Additional analysis helper methods
-  Future<PerformanceSummary> _calculatePerformanceSummary(ConnectionMonitoringSession session) async => PerformanceSummary.good();
-  Future<LearningOutcomes> _calculateLearningOutcomes(ConnectionMonitoringSession session) async => LearningOutcomes.positive();
-  Future<QualityAnalysis> _generateQualityAnalysis(ConnectionMonitoringSession session) async => QualityAnalysis.stable();
-  
-  double _calculateOverallConnectionRating(ConnectionMonitoringSession session) =>
-      (session.currentMetrics.currentCompatibility + 
-       session.currentMetrics.learningEffectiveness + 
-       session.currentMetrics.aiPleasureScore) / 3.0;
+  Future<PerformanceSummary> _calculatePerformanceSummary(
+          ConnectionMonitoringSession session) async =>
+      PerformanceSummary.good();
+  Future<LearningOutcomes> _calculateLearningOutcomes(
+          ConnectionMonitoringSession session) async =>
+      LearningOutcomes.positive();
+  Future<QualityAnalysis> _generateQualityAnalysis(
+          ConnectionMonitoringSession session) async =>
+      QualityAnalysis.stable();
+
+  double _calculateOverallConnectionRating(
+          ConnectionMonitoringSession session) =>
+      (session.currentMetrics.currentCompatibility +
+          session.currentMetrics.learningEffectiveness +
+          session.currentMetrics.aiPleasureScore) /
+      3.0;
+
+  /// Stream active connections overview
+  /// Emits initial value immediately, then updates on connection changes
+  Stream<ActiveConnectionsOverview> streamActiveConnections() {
+    // Create broadcast stream controller if not exists
+    if (_connectionsStreamController == null ||
+        _connectionsStreamController!.isClosed) {
+      _connectionsStreamController =
+          StreamController<ActiveConnectionsOverview>.broadcast();
+    }
+
+    // Store local reference to avoid null check issues
+    final controller = _connectionsStreamController;
+    if (controller == null) {
+      // Fallback: return a stream that emits empty overview
+      return Stream.value(ActiveConnectionsOverview.empty());
+    }
+
+    // Emit initial value immediately
+    getActiveConnectionsOverview().then((overview) {
+      if (controller.isClosed) return;
+      controller.add(overview);
+    }).catchError((error) {
+      developer.log('Error in streamActiveConnections initial value: $error',
+          name: _logName);
+      if (controller.isClosed) return;
+      controller.add(ActiveConnectionsOverview.empty());
+    });
+
+    // Set up periodic updates every 5 seconds
+    Timer.periodic(const Duration(seconds: 5), (timer) async {
+      final currentController = _connectionsStreamController;
+      if (currentController == null || currentController.isClosed) {
+        timer.cancel();
+        return;
+      }
+
+      try {
+        final overview = await getActiveConnectionsOverview();
+        if (currentController.isClosed) return;
+        currentController.add(overview);
+      } catch (e) {
+        developer.log('Error in streamActiveConnections periodic update: $e',
+            name: _logName);
+        if (currentController.isClosed) return;
+        currentController.add(ActiveConnectionsOverview.empty());
+      }
+    });
+
+    return controller.stream.handleError((error) {
+      developer.log('Stream error in streamActiveConnections: $error',
+          name: _logName);
+    });
+  }
+
+  /// Dispose stream controller
+  void disposeStreams() {
+    _connectionsStreamController?.close();
+    _connectionsStreamController = null;
+  }
 }
 
 // Supporting classes for connection monitoring
@@ -665,7 +845,7 @@ class ConnectionMonitoringSession {
   final List<ConnectionAlert> alertsGenerated;
   final MonitoringStatus monitoringStatus;
   final DateTime? lastUpdated;
-  
+
   ConnectionMonitoringSession({
     required this.connectionId,
     required this.localAISignature,
@@ -679,7 +859,7 @@ class ConnectionMonitoringSession {
     required this.monitoringStatus,
     this.lastUpdated,
   });
-  
+
   ConnectionMonitoringSession copyWith({
     ConnectionMetrics? currentMetrics,
     List<ConnectionQualitySnapshot>? qualityHistory,
@@ -696,15 +876,17 @@ class ConnectionMonitoringSession {
       initialMetrics: initialMetrics,
       currentMetrics: currentMetrics ?? this.currentMetrics,
       qualityHistory: qualityHistory ?? this.qualityHistory,
-      learningProgressHistory: learningProgressHistory ?? this.learningProgressHistory,
+      learningProgressHistory:
+          learningProgressHistory ?? this.learningProgressHistory,
       alertsGenerated: alertsGenerated ?? this.alertsGenerated,
       monitoringStatus: monitoringStatus ?? this.monitoringStatus,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
-  
+
   /// Get interaction history from connection metrics
-  List<InteractionEvent> get interactionHistory => currentMetrics.interactionHistory;
+  List<InteractionEvent> get interactionHistory =>
+      currentMetrics.interactionHistory;
 }
 
 class ActiveConnection {
@@ -715,7 +897,7 @@ class ActiveConnection {
   final double currentCompatibility;
   final double learningEffectiveness;
   final MonitoringStatus status;
-  
+
   ActiveConnection({
     required this.connectionId,
     required this.localAISignature,
@@ -725,7 +907,7 @@ class ActiveConnection {
     required this.learningEffectiveness,
     required this.status,
   });
-  
+
   static ActiveConnection fromSession(ConnectionMonitoringSession session) {
     return ActiveConnection(
       connectionId: session.connectionId,
@@ -744,14 +926,14 @@ class ConnectionQualitySnapshot {
   final double compatibility;
   final double learningEffectiveness;
   final double aiPleasureScore;
-  
+
   ConnectionQualitySnapshot({
     required this.timestamp,
     required this.compatibility,
     required this.learningEffectiveness,
     required this.aiPleasureScore,
   });
-  
+
   static ConnectionQualitySnapshot fromMetrics(ConnectionMetrics metrics) {
     return ConnectionQualitySnapshot(
       timestamp: DateTime.now(),
@@ -766,13 +948,13 @@ class LearningProgressSnapshot {
   final DateTime timestamp;
   final double learningEffectiveness;
   final Map<String, double> dimensionChanges;
-  
+
   LearningProgressSnapshot({
     required this.timestamp,
     required this.learningEffectiveness,
     required this.dimensionChanges,
   });
-  
+
   static LearningProgressSnapshot fromMetrics(ConnectionMetrics metrics) {
     return LearningProgressSnapshot(
       timestamp: DateTime.now(),
@@ -789,7 +971,7 @@ class ConnectionAlert {
   final String message;
   final DateTime timestamp;
   final Map<String, dynamic> metadata;
-  
+
   ConnectionAlert({
     required this.connectionId,
     required this.type,
@@ -808,7 +990,7 @@ class ConnectionMonitoringStatus {
   final ConnectionTrajectory trajectory;
   final Duration monitoringDuration;
   final DateTime lastUpdated;
-  
+
   ConnectionMonitoringStatus({
     required this.connectionId,
     required this.currentPerformance,
@@ -818,7 +1000,7 @@ class ConnectionMonitoringStatus {
     required this.monitoringDuration,
     required this.lastUpdated,
   });
-  
+
   static ConnectionMonitoringStatus notFound(String connectionId) {
     return ConnectionMonitoringStatus(
       connectionId: connectionId,
@@ -830,7 +1012,7 @@ class ConnectionMonitoringStatus {
       lastUpdated: DateTime.now(),
     );
   }
-  
+
   static ConnectionMonitoringStatus error(String connectionId, String error) {
     return ConnectionMonitoringStatus(
       connectionId: connectionId,
@@ -854,7 +1036,7 @@ class ConnectionPerformanceAnalysis {
   final List<PerformanceRecommendation> recommendations;
   final double overallPerformanceScore;
   final DateTime analyzedAt;
-  
+
   ConnectionPerformanceAnalysis({
     required this.connectionId,
     required this.analysisWindow,
@@ -866,8 +1048,9 @@ class ConnectionPerformanceAnalysis {
     required this.overallPerformanceScore,
     required this.analyzedAt,
   });
-  
-  static ConnectionPerformanceAnalysis failed(String connectionId, Duration window) {
+
+  static ConnectionPerformanceAnalysis failed(
+      String connectionId, Duration window) {
     return ConnectionPerformanceAnalysis(
       connectionId: connectionId,
       analysisWindow: window,
@@ -892,7 +1075,7 @@ class ActiveConnectionsOverview {
   final Duration averageConnectionDuration;
   final int totalAlertsGenerated;
   final DateTime generatedAt;
-  
+
   ActiveConnectionsOverview({
     required this.totalActiveConnections,
     required this.aggregateMetrics,
@@ -904,7 +1087,7 @@ class ActiveConnectionsOverview {
     required this.totalAlertsGenerated,
     required this.generatedAt,
   });
-  
+
   static ActiveConnectionsOverview empty() {
     return ActiveConnectionsOverview(
       totalActiveConnections: 0,
@@ -933,7 +1116,7 @@ class ConnectionMonitoringReport {
   final List<ConnectionAlert> alertsGenerated;
   final double overallRating;
   final DateTime generatedAt;
-  
+
   ConnectionMonitoringReport({
     required this.connectionId,
     required this.localAISignature,
@@ -952,8 +1135,17 @@ class ConnectionMonitoringReport {
 
 // Enums and additional supporting classes
 enum MonitoringStatus { active, paused, completed, error }
-enum AlertType { lowCompatibility, lowLearningEffectiveness, qualityDegradation, connectionTimeout, learningStagnation }
+
+enum AlertType {
+  lowCompatibility,
+  lowLearningEffectiveness,
+  qualityDegradation,
+  connectionTimeout,
+  learningStagnation
+}
+
 enum AlertSeverity { low, medium, high, critical }
+
 enum ChangeDirection { improving, stable, degrading }
 
 class ConnectionQualityChange {
@@ -962,7 +1154,7 @@ class ConnectionQualityChange {
   final double aiPleasureChange;
   final double overallChange;
   final ChangeDirection changeDirection;
-  
+
   ConnectionQualityChange({
     required this.compatibilityChange,
     required this.learningEffectivenessChange,
@@ -977,16 +1169,19 @@ class LearningProgressMetrics {
   final double learningVelocity;
   final double dimensionEvolutionRate;
   final double insightGenerationRate;
-  
+
   LearningProgressMetrics({
     required this.progressRate,
     required this.learningVelocity,
     required this.dimensionEvolutionRate,
     required this.insightGenerationRate,
   });
-  
+
   static LearningProgressMetrics minimal() => LearningProgressMetrics(
-    progressRate: 0.0, learningVelocity: 0.0, dimensionEvolutionRate: 0.0, insightGenerationRate: 0.0);
+      progressRate: 0.0,
+      learningVelocity: 0.0,
+      dimensionEvolutionRate: 0.0,
+      insightGenerationRate: 0.0);
 }
 
 class ConnectionAnomaly {
@@ -996,7 +1191,7 @@ class ConnectionAnomaly {
   final String description;
   final DateTime detectedAt;
   final Map<String, dynamic> metadata;
-  
+
   ConnectionAnomaly({
     required this.connectionId,
     required this.type,
@@ -1007,12 +1202,18 @@ class ConnectionAnomaly {
   });
 }
 
-enum AnomalyType { qualitySpike, qualityDrop, learningStagnation, behaviorDeviation, patternBreak }
+enum AnomalyType {
+  qualitySpike,
+  qualityDrop,
+  learningStagnation,
+  behaviorDeviation,
+  patternBreak
+}
 
 class ConnectionMonitoringException implements Exception {
   final String message;
   ConnectionMonitoringException(this.message);
-  
+
   @override
   String toString() => 'ConnectionMonitoringException: $message';
 }
@@ -1022,7 +1223,9 @@ class CurrentPerformanceMetrics {
   final double performance;
   CurrentPerformanceMetrics(this.performance);
   static CurrentPerformanceMetrics zero() => CurrentPerformanceMetrics(0.0);
-  static CurrentPerformanceMetrics fromSession(ConnectionMonitoringSession session) => CurrentPerformanceMetrics(0.8);
+  static CurrentPerformanceMetrics fromSession(
+          ConnectionMonitoringSession session) =>
+      CurrentPerformanceMetrics(0.8);
 }
 
 class ConnectionTrajectory {
@@ -1070,7 +1273,8 @@ class AggregateConnectionMetrics {
 class LearningVelocityDistribution {
   final Map<String, double> distribution;
   LearningVelocityDistribution(this.distribution);
-  static LearningVelocityDistribution normal() => LearningVelocityDistribution({'normal': 1.0});
+  static LearningVelocityDistribution normal() =>
+      LearningVelocityDistribution({'normal': 1.0});
 }
 
 class OptimizationOpportunity {

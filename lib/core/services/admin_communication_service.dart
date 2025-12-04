@@ -1,14 +1,16 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/monitoring/connection_monitor.dart';
 import 'package:spots/core/ai/ai2ai_learning.dart';
 import 'package:spots/core/models/connection_metrics.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:get_it/get_it.dart';
+import 'package:spots/core/services/logger.dart';
 
 /// Service for admin access to AI2AI communication logs
 /// Provides aggregated view of all AI-to-AI interactions
 class AdminCommunicationService {
   static const String _logName = 'AdminCommunicationService';
+  final AppLogger _logger = const AppLogger(
+    defaultTag: 'SPOTS',
+    minimumLevel: LogLevel.debug,
+  );
   
   final ConnectionMonitor _connectionMonitor;
   final AI2AIChatAnalyzer? _chatAnalyzer;
@@ -22,7 +24,7 @@ class AdminCommunicationService {
   /// Get all communication logs for a specific connection
   Future<ConnectionCommunicationLog> getConnectionLog(String connectionId) async {
     try {
-      developer.log('Fetching communication log for connection: $connectionId', name: _logName);
+      _logger.info('Fetching communication log for connection: $connectionId', tag: _logName);
       
       // Get connection status and metrics
       final status = await _connectionMonitor.getConnectionStatus(connectionId);
@@ -72,8 +74,13 @@ class AdminCommunicationService {
         healthScore: status.healthScore,
         recentAlerts: status.recentAlerts,
       );
-    } catch (e) {
-      developer.log('Error fetching connection log: $e', name: _logName);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error fetching connection log: $connectionId',
+        error: e,
+        stackTrace: stackTrace,
+        tag: _logName,
+      );
       return ConnectionCommunicationLog.empty(connectionId);
     }
   }
@@ -81,7 +88,7 @@ class AdminCommunicationService {
   /// Get all active connections with their communication summaries
   Future<List<ConnectionCommunicationSummary>> getAllConnectionSummaries() async {
     try {
-      developer.log('Fetching all connection summaries', name: _logName);
+      _logger.info('Fetching all connection summaries', tag: _logName);
       
       final overview = await _connectionMonitor.getActiveConnectionsOverview();
       final summaries = <ConnectionCommunicationSummary>[];
@@ -98,8 +105,13 @@ class AdminCommunicationService {
       }
       
       return summaries;
-    } catch (e) {
-      developer.log('Error fetching connection summaries: $e', name: _logName);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error fetching connection summaries',
+        error: e,
+        stackTrace: stackTrace,
+        tag: _logName,
+      );
       return [];
     }
   }
@@ -141,16 +153,15 @@ class AdminCommunicationService {
       }
       
       return matchingLogs;
-    } catch (e) {
-      developer.log('Error searching logs: $e', name: _logName);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error searching logs',
+        error: e,
+        stackTrace: stackTrace,
+        tag: _logName,
+      );
       return [];
     }
-  }
-  
-  String? _extractUserIdFromSignature(String signature) {
-    // This is a placeholder - in real implementation, would extract user ID
-    // from AI signature hash
-    return null;
   }
 }
 

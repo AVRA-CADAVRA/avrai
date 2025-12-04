@@ -12,12 +12,14 @@ import 'google_place_id_finder_service_test.mocks.dart';
 @GenerateMocks([http.Client])
 void main() {
   group('GooglePlaceIdFinderService Tests (Legacy)', () {
+    // ignore: deprecated_member_use_from_same_package
     late GooglePlaceIdFinderService service;
     late MockClient mockHttpClient;
     late Spot spot;
 
     setUp(() {
       mockHttpClient = MockClient();
+      // ignore: deprecated_member_use_from_same_package
       service = GooglePlaceIdFinderService(
         apiKey: 'test-api-key',
         httpClient: mockHttpClient,

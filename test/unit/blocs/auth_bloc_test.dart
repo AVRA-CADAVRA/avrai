@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
-import 'package:spots/core/models/user.dart';
 import '../../helpers/bloc_test_helpers.dart';
 import '../../mocks/bloc_mock_dependencies.dart';
 

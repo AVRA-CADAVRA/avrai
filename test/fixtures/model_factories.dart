@@ -3,9 +3,6 @@ import 'package:spots/core/models/unified_list.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/unified_models.dart' hide UnifiedUser;
-import 'package:spots/core/models/user_vibe.dart';
-import 'package:spots/core/models/community_validation.dart';
-import 'package:spots/core/models/connection_metrics.dart';
 import 'package:spots/core/constants/vibe_constants.dart';
 import '../helpers/test_helpers.dart';
 

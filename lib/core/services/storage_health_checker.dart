@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:spots/core/services/logger.dart';
 
@@ -31,7 +30,7 @@ class StorageHealthChecker {
     try {
       // Generate public URL; will work only if bucket is public and policies allow SELECT.
       final publicUrl = client.storage.from(bucket).getPublicUrl(path);
-      if (publicUrl == null || publicUrl.isEmpty) return null;
+      if (publicUrl.isEmpty) return null;
 
       // Perform a cheap HEAD via http client is not exposed here;
       // Use storage API to fetch metadata by listing the folder prefix.

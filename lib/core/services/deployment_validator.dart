@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/services/performance_monitor.dart';
 import 'package:spots/core/services/security_validator.dart';
 import 'package:spots/core/services/logger.dart';

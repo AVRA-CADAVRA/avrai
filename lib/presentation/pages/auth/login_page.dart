@@ -1,6 +1,4 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';

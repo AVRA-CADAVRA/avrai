@@ -119,6 +119,13 @@ glob_file_search('**/*COMPLETE*.md')
 glob_file_search('**/*PROGRESS*.md')
 ```
 
+**F. Mock Data Replacement (When Service Available):**
+If you encounter `// Mock data` or `// TODO: Load` comments:
+- [ ] Identify mock data locations (`grep -r "// Mock data" lib/presentation/`)
+- [ ] Verify service exists and is registered
+- [ ] Follow protocol: `docs/plans/methodology/MOCK_DATA_REPLACEMENT_PROTOCOL.md`
+- [ ] See quick reference in `DEVELOPMENT_METHODOLOGY.md` → Section 2.5
+
 **Questions to answer:**
 - Where does this fit in the overall plan?
 - Which is the PRIMARY plan (most recent + relevant)?

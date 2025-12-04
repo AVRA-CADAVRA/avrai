@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/theme/category_colors.dart';
 import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
 import 'package:spots/presentation/pages/spots/create_spot_page.dart';

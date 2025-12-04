@@ -2,13 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/ai/action_parser.dart';
 import 'package:spots/core/ai/action_executor.dart';
 import 'package:spots/core/ai/action_models.dart';
-import 'package:spots/domain/usecases/spots/create_spot_usecase.dart';
-import 'package:spots/domain/usecases/lists/create_list_usecase.dart';
-import 'package:spots/domain/usecases/lists/update_list_usecase.dart';
-import 'package:spots/domain/repositories/spots_repository.dart';
-import 'package:spots/domain/repositories/lists_repository.dart';
-import 'package:spots/core/models/spot.dart';
-import 'package:spots/core/models/list.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../helpers/test_helpers.dart';
 

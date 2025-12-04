@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
 /// OUR_GUTS.md: "Decentralized community networks with privacy protection"
 /// Manages P2P nodes for university/company private networks

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/services/expertise_recognition_service.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/presentation/widgets/expertise/expertise_pin_widget.dart';
 
 /// Expertise Recognition Widget
 /// Displays community recognition and appreciation
@@ -141,7 +140,7 @@ class ExpertiseRecognitionWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           child: Icon(icon, color: color, size: 20),
         ),
         title: Text(
@@ -168,8 +167,8 @@ class ExpertiseRecognitionWidget extends StatelessWidget {
             recognition.type.name.toUpperCase(),
             style: const TextStyle(fontSize: 10),
           ),
-          backgroundColor: color.withOpacity(0.1),
-          side: BorderSide(color: color.withOpacity(0.3)),
+          backgroundColor: color.withValues(alpha: 0.1),
+          side: BorderSide(color: color.withValues(alpha: 0.3)),
         ),
       ),
     );
@@ -182,7 +181,7 @@ class ExpertiseRecognitionWidget extends StatelessWidget {
       label: const Text('Recognize Expert'),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.electricGreen,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.white,
       ),
     );
   }
@@ -219,15 +218,15 @@ class FeaturedExpertWidget extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.electricGreen.withOpacity(0.1),
-            AppColors.electricGreen.withOpacity(0.05),
+            AppColors.electricGreen.withValues(alpha: 0.1),
+            AppColors.electricGreen.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.electricGreen.withOpacity(0.3),
+          color: AppColors.electricGreen.withValues(alpha: 0.3),
           width: 2,
         ),
       ),

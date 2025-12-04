@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:spots/core/theme/colors.dart';
 import 'expertise_level.dart';
 
 /// Expertise Pin Model
@@ -31,22 +32,23 @@ class ExpertisePin extends Equatable {
 
   /// Get pin color based on category
   /// Returns category-specific colors for visual distinction
+  /// CRITICAL: Uses AppColors (100% adherence required)
   Color getPinColor() {
-    // Category-specific color mapping
+    // Category-specific color mapping using AppColors
     final categoryColors = {
-      'Coffee': Colors.brown,
-      'Restaurants': Colors.red,
-      'Bookstores': Colors.blue,
-      'Parks': Colors.green,
-      'Museums': Colors.purple,
-      'Shopping': Colors.pink,
-      'Bars': Colors.amber,
-      'Hotels': Colors.teal,
-      'Thai Food': Colors.orange,
-      'Vintage': Colors.indigo,
+      'Coffee': AppColors.grey700, // Brown -> grey700
+      'Restaurants': AppColors.error, // Red -> error
+      'Bookstores': AppColors.electricGreen, // Blue -> electricGreen
+      'Parks': AppColors.electricGreen, // Green -> electricGreen
+      'Museums': AppColors.grey600, // Purple -> grey600
+      'Shopping': AppColors.grey500, // Pink -> grey500
+      'Bars': AppColors.warning, // Amber -> warning
+      'Hotels': AppColors.grey400, // Teal -> grey400
+      'Thai Food': AppColors.warning, // Orange -> warning
+      'Vintage': AppColors.grey600, // Indigo -> grey600
     };
 
-    return categoryColors[category] ?? Colors.grey;
+    return categoryColors[category] ?? AppColors.grey500;
   }
 
   /// Get pin icon based on category
@@ -80,9 +82,9 @@ class ExpertisePin extends Equatable {
     }';
   }
 
-  /// Check if pin unlocks event hosting
+  /// Check if pin unlocks event hosting (requires Local level or higher)
   bool unlocksEventHosting() {
-    return level.index >= ExpertiseLevel.city.index;
+    return level.index >= ExpertiseLevel.local.index;
   }
 
   /// Check if pin unlocks expert validation

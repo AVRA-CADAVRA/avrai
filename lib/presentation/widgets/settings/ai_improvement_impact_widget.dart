@@ -14,7 +14,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/services/ai_improvement_tracking_service.dart';
 
 /// Widget displaying AI improvement impact explanation
@@ -33,25 +32,28 @@ class AIImprovementImpactWidget extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 16),
-            _buildImpactSummary(),
-            const SizedBox(height: 16),
-            _buildBenefitsSection(),
-            const SizedBox(height: 16),
-            _buildTransparencySection(),
-          ],
+    return Semantics(
+      label: 'AI Improvement Impact Explanation',
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              _buildImpactSummary(),
+              const SizedBox(height: 16),
+              _buildBenefitsSection(),
+              const SizedBox(height: 16),
+              _buildTransparencySection(),
+            ],
+          ),
         ),
       ),
     );
@@ -367,17 +369,21 @@ class AIImprovementImpactWidget extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Center(
-                child: TextButton.icon(
-                  onPressed: () {
-                    // Navigate to privacy settings
-                  },
-                  icon: const Icon(
-                    Icons.settings,
-                    size: 18,
-                  ),
-                  label: const Text('Privacy Settings'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.electricGreen,
+                child: Semantics(
+                  label: 'Navigate to privacy settings',
+                  button: true,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      // Navigate to privacy settings
+                    },
+                    icon: const Icon(
+                      Icons.settings,
+                      size: 18,
+                    ),
+                    label: const Text('Privacy Settings'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.electricGreen,
+                    ),
                   ),
                 ),
               ),

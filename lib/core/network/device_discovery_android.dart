@@ -5,7 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:wifi_iot/wifi_iot.dart';
 import 'package:spots/core/network/device_discovery.dart';
-import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/network/personality_data_codec.dart';
 

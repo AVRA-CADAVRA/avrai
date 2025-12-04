@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 class PredictiveAnalysisService {
   static Map<String, dynamic> predictUserBehavior(Map<String, dynamic> userData) {

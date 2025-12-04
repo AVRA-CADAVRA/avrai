@@ -1,5 +1,5 @@
 import 'package:spots/core/models/user.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/domain/repositories/auth_repository.dart';
+import 'package:spots/domain/repositories/auth_repository.dart';
 
 class SignInUseCase {
   final AuthRepository repository;

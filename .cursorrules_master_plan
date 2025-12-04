@@ -1,5 +1,24 @@
 # Cursor Rule: Master Plan System
 
+## 🎯 MANDATORY RULE: Phase.Section.Subsection Format
+
+**ALL work references MUST use Phase.Section.Subsection (X.Y.Z) format.**
+
+**This is NON-NEGOTIABLE and enforced by cursor rules.**
+
+**Format:**
+- Phase X, Section Y, Subsection Z
+- Shorthand: X.Y.Z (e.g., 1.1.1 = Phase 1, Section 1, Subsection 1)
+- Section only: X.Y (e.g., 1.1 = Phase 1, Section 1)
+
+**FORBIDDEN:**
+- ❌ "Week" or "week" - Use "Section" instead
+- ❌ "Day" or "day" - Use "Subsection" instead
+
+**Reference:** `docs/plans/methodology/PHASE_SECTION_SUBSECTION_FORMAT.md` for complete format guide
+
+---
+
 ## 🎯 MANDATORY RULE: Master Plan Integration
 
 **Trigger:** When user says "I want to add [feature]" or "I want to implement [feature]"
@@ -66,7 +85,7 @@ Anytime user requests:
    - Include ALL required fields:
      - Plan Name
      - Date (today's date)
-     - Status (🟢 Active for new plans)
+     - Status (Unassigned for new plans in Master Plan)
      - Priority (CRITICAL / HIGH / MEDIUM / LOW)
      - Timeline (estimated duration)
      - File Path (relative link to plan folder)
@@ -103,18 +122,54 @@ Anytime user requests:
 
 1. **Read `docs/MASTER_PLAN.md`** to understand current execution sequence
 
-2. **Determine optimal position:**
-   - If catch-up opportunity exists → use catch-up logic
-   - If no catch-up → insert based on dependencies/priority/timeline
-   - Consider batching common phases
+2. **Check for similar work in unassigned plans in Master Plan (MANDATORY):**
+   - **ONLY check plans in Master Plan with status:**
+     - **Unassigned** (in Master Plan, not started, no tasks assigned)
+     - ❌ **NOT** 🟡 In Progress (do not check in-progress plans)
+     - ❌ **NOT** ✅ Completed (do not check completed plans)
+   - **Identify similar work:**
+     - Similar feature area or functionality
+     - Overlapping technical requirements
+     - Related user value or doors
+     - Common phases or dependencies
+   - **If similar work found:**
+     - **Evaluate if work should be combined:**
+       - Do they solve the same problem?
+       - Can phases be batched together?
+       - Would combining reduce duplication?
+       - Would combining improve efficiency?
+     - **If combination makes sense:**
+       - Consider merging into existing plan
+       - Or schedule phases together (batch common work)
+       - Update existing plan to include new work
+       - Document combination rationale
+     - **If combination doesn't make sense:**
+       - Proceed to default position (end of Master Plan)
+       - Note relationship to similar plan
+       - Cross-reference both plans
 
-3. **Update Master Plan execution sequence:**
+3. **Determine optimal position (if not combined):**
+   - **Default: Add at end of Master Plan** (most optimal default position)
+   - **Exception: If catch-up opportunity exists:**
+     - Use catch-up logic (pause active, catch-up, parallel work)
+   - **Exception: If dependencies require earlier position:**
+     - Insert before dependent features
+     - Respect dependency order
+   - **Exception: If priority requires earlier position:**
+     - P0/CRITICAL may need earlier placement
+     - But still check for combination first
+
+4. **Update Master Plan execution sequence:**
    - Add feature to appropriate phase/week
    - Note parallel work opportunities
    - Update progress tracking section
    - Update current phase indicator
+   - **If combined with existing plan:**
+     - Update existing plan document
+     - Note new work integrated
+     - Update plan's timeline if needed
 
-4. **Apply catch-up logic if applicable:**
+5. **Apply catch-up logic if applicable:**
    - Pause active features at current phase
    - Schedule new feature's catch-up phases
    - Schedule parallel work once caught up
@@ -244,12 +299,25 @@ docs/plans/
 - [ ] Feature area identified
 - [ ] Timeline estimated
 - [ ] Catch-up opportunities checked
-- [ ] Optimal position determined
+- [ ] **Similar work checked in unassigned plans in Master Plan** (MANDATORY)
+  - [ ] **ONLY** scanned Master Plan for plans with status "Unassigned"
+  - [ ] **NOT** checked 🟡 In Progress plans (do not disturb)
+  - [ ] **NOT** checked ✅ Completed plans (completed work)
+  - [ ] Identified similar work (feature area, functionality, requirements)
+  - [ ] Evaluated if work should be combined
+  - [ ] If combination makes sense: updated existing plan OR batched phases together
+  - [ ] If combination doesn't make sense: documented rationale and proceeded to default position
+- [ ] **Optimal position determined:**
+  - [ ] Default: End of Master Plan (if no combination)
+  - [ ] Exception: Catch-up logic applied (if applicable)
+  - [ ] Exception: Dependencies require earlier position
+  - [ ] Exception: Priority requires earlier position
 - [ ] Master Plan execution sequence updated
 - [ ] Catch-up logic applied (if applicable)
 - [ ] Parallel work opportunities noted
 - [ ] Progress tracking section updated
-- [ ] User notified of integration
+- [ ] Cross-references added (if similar work found but not combined)
+- [ ] User notified of integration and position
 
 ---
 
@@ -269,14 +337,21 @@ Every AI assistant working on SPOTS must:
 
 ---
 
-## 📊 Status Meanings
+## 📊 Status Meanings (Master Plan Only)
 
-- 🟢 **Active** - In Master Plan, ready to implement
-- 🟡 **In Progress** - Currently being implemented
-- ✅ **Complete** - Finished, kept for reference
-- ⏸️ **Paused** - Temporarily halted (not in execution sequence)
-- 📋 **Reference** - Guide only, not in Master Plan
-- ❌ **Deprecated** - No longer relevant
+**Master Plan uses ONLY three statuses:**
+
+- 🟡 **In Progress** - Currently being implemented (tasks assigned to agents)
+- ✅ **Completed** - Finished and verified
+- **Unassigned** - In Master Plan, not started, no tasks assigned (ready to implement)
+
+**Rules for In Progress status:**
+- Tasks assigned to agents = In Progress
+- Task assignments document created = In Progress
+- Once In Progress, week is LOCKED (no modifications allowed)
+- Only status updates allowed (completion, blockers, etc.)
+
+**Note:** Statuses like "Paused", "Active", "Reference", "Deprecated" are for Master Plan Tracker, not Master Plan execution sequence.
 
 ---
 

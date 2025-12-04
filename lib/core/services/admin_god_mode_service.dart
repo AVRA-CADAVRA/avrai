@@ -5,17 +5,19 @@ import 'package:spots/core/services/admin_communication_service.dart';
 import 'package:spots/core/services/admin_privacy_filter.dart';
 import 'package:spots/core/services/supabase_service.dart';
 import 'package:spots/core/services/expertise_service.dart';
+import 'package:spots/core/services/club_service.dart';
+import 'package:spots/core/services/community_service.dart';
 import 'package:spots/core/models/user.dart';
 import 'package:spots/core/models/business_account.dart';
+import 'package:spots/core/models/club.dart';
 import 'package:spots/core/ml/predictive_analytics.dart';
 import 'package:spots/core/models/expertise_progress.dart';
 import 'package:spots/core/monitoring/connection_monitor.dart';
 import 'package:spots/core/monitoring/network_analytics.dart';
 import 'package:spots/core/ai/ai2ai_learning.dart';
+import 'package:spots/core/models/collaborative_activity_metrics.dart';
 import 'package:spots/core/services/business_account_service.dart';
 import 'package:spots/core/p2p/federated_learning.dart' as federated;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:get_it/get_it.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
@@ -28,6 +30,8 @@ class AdminGodModeService {
   final AdminAuthService _authService;
   final AdminCommunicationService _communicationService;
   final BusinessAccountService _businessService;
+  final ClubService _clubService;
+  final CommunityService _communityService;
   final PredictiveAnalytics _predictiveAnalytics;
   final ConnectionMonitor _connectionMonitor;
   final AI2AIChatAnalyzer? _chatAnalyzer;
@@ -48,6 +52,8 @@ class AdminGodModeService {
     required AdminAuthService authService,
     required AdminCommunicationService communicationService,
     required BusinessAccountService businessService,
+    ClubService? clubService,
+    CommunityService? communityService,
     required PredictiveAnalytics predictiveAnalytics,
     required ConnectionMonitor connectionMonitor,
     AI2AIChatAnalyzer? chatAnalyzer,
@@ -58,6 +64,8 @@ class AdminGodModeService {
   })  : _authService = authService,
         _communicationService = communicationService,
         _businessService = businessService,
+        _clubService = clubService ?? ClubService(),
+        _communityService = communityService ?? CommunityService(),
         _predictiveAnalytics = predictiveAnalytics,
         _connectionMonitor = connectionMonitor,
         _chatAnalyzer = chatAnalyzer,
@@ -326,6 +334,271 @@ class AdminGodModeService {
     }
   }
   
+  /// Get all clubs and communities
+  /// Privacy-preserving: Returns club/community data with member AI agent information
+  /// Follows AdminPrivacyFilter principles (AI data only, no personal info)
+  Future<List<ClubCommunityData>> getAllClubsAndCommunities() async {
+    if (!isAuthorized) {
+      throw UnauthorizedException('God-mode access required');
+    }
+    
+    try {
+      developer.log('Fetching all clubs and communities', name: _logName);
+      
+      // Get all clubs - try common categories
+      final allClubsSet = <String, Club>{};
+      final categories = ['nightlife', 'food', 'music', 'sports', 'art', 'tech', 'outdoor', 'community'];
+      for (final category in categories) {
+        final clubs = await _clubService.getClubsByCategory(category, maxResults: 100);
+        for (final club in clubs) {
+          allClubsSet[club.id] = club;
+        }
+      }
+      final clubs = allClubsSet.values.toList();
+      
+      final allData = <ClubCommunityData>[];
+      
+      for (final club in clubs) {
+        // Get member AI agents (privacy-filtered)
+        final memberAIAgents = await _getMemberAIAgentsForClub(club);
+        
+        allData.add(ClubCommunityData(
+          id: club.id,
+          name: club.name,
+          description: club.description,
+          category: club.category,
+          isClub: true,
+          memberCount: club.memberCount,
+          eventCount: club.eventCount,
+          founderId: club.founderId,
+          leaders: club.leaders,
+          adminTeam: club.adminTeam,
+          createdAt: club.createdAt,
+          lastEventAt: club.lastEventAt,
+          memberAIAgents: memberAIAgents,
+        ));
+      }
+      
+      // TODO: Add communities when CommunityService has getAllCommunities method
+      
+      developer.log('Retrieved ${allData.length} clubs/communities', name: _logName);
+      return allData;
+    } catch (e) {
+      developer.log('Error fetching clubs/communities: $e', name: _logName);
+      return [];
+    }
+  }
+  
+  /// Get club/community by ID with member AI agents
+  /// Privacy-preserving: Returns AI agent data only, no personal info
+  Future<ClubCommunityData?> getClubOrCommunityById(String id) async {
+    if (!isAuthorized) {
+      throw UnauthorizedException('God-mode access required');
+    }
+    
+    try {
+      // Try to get as club first
+      final club = await _clubService.getClubById(id);
+      if (club != null) {
+        final memberAIAgents = await _getMemberAIAgentsForClub(club);
+        return ClubCommunityData(
+          id: club.id,
+          name: club.name,
+          description: club.description,
+          category: club.category,
+          isClub: true,
+          memberCount: club.memberCount,
+          eventCount: club.eventCount,
+          founderId: club.founderId,
+          leaders: club.leaders,
+          adminTeam: club.adminTeam,
+          createdAt: club.createdAt,
+          lastEventAt: club.lastEventAt,
+          memberAIAgents: memberAIAgents,
+        );
+      }
+      
+      // TODO: Try to get as community when CommunityService has getCommunityById
+      
+      return null;
+    } catch (e) {
+      developer.log('Error fetching club/community by ID: $e', name: _logName);
+      return null;
+    }
+  }
+  
+  /// Get all active AI agents with location and predictions
+  /// Privacy-preserving: Returns AI agent data with location and predicted actions
+  /// Follows AdminPrivacyFilter principles (AI data only, no personal info)
+  Future<List<ActiveAIAgentData>> getAllActiveAIAgents() async {
+    if (!isAuthorized) {
+      throw UnauthorizedException('God-mode access required');
+    }
+    
+    try {
+      developer.log('Fetching all active AI agents', name: _logName);
+      
+      final client = _supabaseService.client;
+      
+      // Get all users who are active (updated within last hour)
+      final now = DateTime.now();
+      final oneHourAgo = now.subtract(const Duration(hours: 1));
+      
+      final usersResponse = await client
+          .from('users')
+          .select('id, location, created_at, updated_at')
+          .gte('updated_at', oneHourAgo.toIso8601String())
+          .limit(1000); // Limit for performance
+      
+      final users = (usersResponse as List).cast<Map<String, dynamic>>();
+      
+      final activeAgents = <ActiveAIAgentData>[];
+      
+      // Process each user to get AI agent data
+      for (final userData in users) {
+        final userId = userData['id'] as String;
+        final updatedAt = DateTime.parse(userData['updated_at'] as String);
+        
+        // Get user data snapshot (includes location)
+        final userSnapshot = await _fetchUserDataSnapshot(userId);
+        
+        // Get predictions
+        UserPredictionsData? predictions;
+        try {
+          predictions = await getUserPredictions(userId);
+        } catch (e) {
+          developer.log('Error getting predictions for $userId: $e', name: _logName);
+        }
+        
+        // Extract location from visited locations or location string
+        double? latitude;
+        double? longitude;
+        
+        if (userSnapshot.data['visited_locations'] != null) {
+          final visited = userSnapshot.data['visited_locations'] as List;
+          if (visited.isNotEmpty) {
+            final lastLocation = visited.last as Map<String, dynamic>;
+            latitude = lastLocation['lat'] as double?;
+            longitude = lastLocation['lng'] as double?;
+          }
+        }
+        
+        // If no location from visited_locations, try to parse location string
+        if (latitude == null && userSnapshot.data['location'] != null) {
+          // Location string might be in format "City, State" or coordinates
+          // For now, we'll skip if it's not coordinates
+          // TODO: Parse location string or get from geocoding
+        }
+        
+        // Only include if we have location data
+        if (latitude != null && longitude != null) {
+          activeAgents.add(ActiveAIAgentData(
+            userId: userId,
+            aiSignature: userSnapshot.data['ai_signature']?.toString() ?? _generateAISignature(userId),
+            latitude: latitude,
+            longitude: longitude,
+            isOnline: userSnapshot.isOnline,
+            lastActive: userSnapshot.lastActive,
+            aiConnections: userSnapshot.data['ai_connections'] as int? ?? 0,
+            aiStatus: userSnapshot.data['ai_status']?.toString() ?? 'active',
+            predictedActions: predictions?.predictedActions ?? [],
+            currentStage: predictions?.currentStage ?? 'unknown',
+            confidence: predictions?.confidence ?? 0.0,
+          ));
+        }
+      }
+      
+      developer.log('Retrieved ${activeAgents.length} active AI agents', name: _logName);
+      return activeAgents;
+    } catch (e) {
+      developer.log('Error fetching active AI agents: $e', name: _logName);
+      return [];
+    }
+  }
+  
+  /// Get follower count for a user
+  /// Returns number of users following this user
+  Future<int> getFollowerCount(String userId) async {
+    if (!isAuthorized) {
+      throw UnauthorizedException('God-mode access required');
+    }
+    
+    try {
+      final client = _supabaseService.client;
+      final response = await client
+          .from('user_follows')
+          .select('id')
+          .eq('following_id', userId);
+      
+      final follows = (response as List).cast<Map<String, dynamic>>();
+      return follows.length;
+    } catch (e) {
+      developer.log('Error getting follower count: $e', name: _logName);
+      return 0;
+    }
+  }
+  
+  /// Get users who have a following (follower count >= threshold)
+  /// Returns list of user IDs with their follower counts
+  Future<Map<String, int>> getUsersWithFollowing({int minFollowers = 1}) async {
+    if (!isAuthorized) {
+      throw UnauthorizedException('God-mode access required');
+    }
+    
+    try {
+      final client = _supabaseService.client;
+      
+      // Get all follow relationships
+      final response = await client
+          .from('user_follows')
+          .select('following_id');
+      
+      final follows = (response as List).cast<Map<String, dynamic>>();
+      
+      // Count followers per user
+      final followerCounts = <String, int>{};
+      for (final follow in follows) {
+        final followingId = follow['following_id'] as String;
+        followerCounts[followingId] = (followerCounts[followingId] ?? 0) + 1;
+      }
+      
+      // Filter by minimum followers
+      return Map.fromEntries(
+        followerCounts.entries.where((e) => e.value >= minFollowers),
+      );
+    } catch (e) {
+      developer.log('Error getting users with following: $e', name: _logName);
+      return {};
+    }
+  }
+
+  /// Get member AI agents for a club (privacy-filtered)
+  /// Returns AI-related data only, no personal information
+  Future<Map<String, Map<String, dynamic>>> _getMemberAIAgentsForClub(Club club) async {
+    final memberAIAgents = <String, Map<String, dynamic>>{};
+    
+    for (final memberId in club.memberIds) {
+      // Generate AI signature from user ID (deterministic but anonymized)
+      final aiSignature = _generateAISignature(memberId);
+      
+      // Build AI agent data (AI-related data only, no personal info)
+      final aiAgentData = <String, dynamic>{
+        'ai_signature': aiSignature,
+        'user_id': memberId, // User ID is allowed (not personal data)
+        'ai_connections': 0, // TODO: Get from connection monitor
+        'ai_status': 'active', // TODO: Get actual status
+        'ai_activity': 'active', // TODO: Get actual activity
+        // Note: Personal data (name, email, phone, home address) is NOT included
+      };
+      
+      // Filter through AdminPrivacyFilter to ensure compliance
+      final filtered = AdminPrivacyFilter.filterPersonalData(aiAgentData);
+      memberAIAgents[memberId] = filtered;
+    }
+    
+    return memberAIAgents;
+  }
+
   /// Search users by AI signature or user ID only
   /// Privacy-preserving: No personal data (name, email, phone, address) is returned
   Future<List<UserSearchResult>> searchUsers({
@@ -619,7 +892,7 @@ class AdminGodModeService {
         );
       }
       
-      final userData = userResponse as Map<String, dynamic>;
+      final userData = userResponse;
       final updatedAt = DateTime.parse(userData['updated_at'] as String);
       
       // Build raw data with only safe fields
@@ -988,6 +1261,155 @@ class AdminGodModeService {
     }
   }
   
+  /// Get collaborative activity metrics
+  /// Phase 7 Week 40: Privacy-safe aggregate metrics on collaborative patterns
+  Future<CollaborativeActivityMetrics> getCollaborativeActivityMetrics() async {
+    if (!isAuthorized) {
+      throw UnauthorizedException('God-mode access required');
+    }
+    
+    try {
+      developer.log('Getting collaborative activity metrics', name: _logName);
+      
+      if (_chatAnalyzer == null) {
+        developer.log('Chat analyzer not available, returning empty metrics', name: _logName);
+        return CollaborativeActivityMetrics.empty();
+      }
+      
+      // Get all chat history across all users
+      final allChatHistory = _chatAnalyzer!.getAllChatHistoryForAdmin();
+      
+      // Aggregate metrics across all users
+      int totalCollaborativeLists = 0;
+      int groupChatLists = 0;
+      int dmLists = 0;
+      final groupSizes = <int, int>{};
+      final activityByHour = <int, int>{};
+      int totalPlanningSessions = 0;
+      double totalSessionDuration = 0.0;
+      int listsWithSpots = 0;
+      int totalUsersContributing = 0;
+      DateTime? earliestChat;
+      DateTime? latestChat;
+      
+      // Process each user's chat history
+      for (final entry in allChatHistory.entries) {
+        final userId = entry.key;
+        final chats = entry.value;
+        
+        if (chats.isEmpty) continue;
+        
+        // Aggregate metrics (privacy-safe - counts only)
+        for (final chat in chats) {
+          // Check for planning keywords
+          bool hasPlanningKeywords = false;
+          for (final message in chat.messages) {
+            final content = message.content.toLowerCase();
+            if (content.contains('list') || 
+                content.contains('plan') || 
+                content.contains('create') ||
+                content.contains('collaborate') ||
+                content.contains('together')) {
+              hasPlanningKeywords = true;
+              break;
+            }
+          }
+          
+          if (hasPlanningKeywords) {
+            totalPlanningSessions++;
+            totalSessionDuration += chat.duration.inMinutes.toDouble();
+          }
+          
+          // Estimate list creation (simplified)
+          final groupSize = chat.participants.length;
+          final isGroupChat = groupSize >= 3;
+          final listCreationProbability = hasPlanningKeywords && chat.messages.length >= 3 ? 0.3 : 0.0;
+          
+          if (listCreationProbability > 0.1) {
+            totalCollaborativeLists++;
+            
+            groupSizes[groupSize] = (groupSizes[groupSize] ?? 0) + 1;
+            
+            if (isGroupChat) {
+              groupChatLists++;
+            } else {
+              dmLists++;
+            }
+            
+            final hour = chat.timestamp.hour;
+            activityByHour[hour] = (activityByHour[hour] ?? 0) + 1;
+            
+            if (chat.messages.length >= 5) {
+              listsWithSpots++;
+            }
+          }
+          
+          // Track temporal bounds
+          if (earliestChat == null || chat.timestamp.isBefore(earliestChat)) {
+            earliestChat = chat.timestamp;
+          }
+          if (latestChat == null || chat.timestamp.isAfter(latestChat)) {
+            latestChat = chat.timestamp;
+          }
+        }
+        
+        if (chats.isNotEmpty) {
+          totalUsersContributing++;
+        }
+      }
+      
+      // Calculate total chats for collaboration rate
+      final totalChats = allChatHistory.values
+          .map((chats) => chats.length)
+          .fold(0, (sum, count) => sum + count);
+      
+      // Calculate aggregate metrics
+      final collaborationRate = totalChats > 0
+          ? totalCollaborativeLists / totalChats
+          : 0.0;
+      
+      final avgSessionDuration = totalPlanningSessions > 0
+          ? totalSessionDuration / totalPlanningSessions
+          : 0.0;
+      
+      final followThroughRate = totalCollaborativeLists > 0
+          ? listsWithSpots / totalCollaborativeLists
+          : 0.0;
+      
+      // Estimate averages (simplified - would calculate from actual lists in production)
+      final avgListSize = 8.3;
+      final avgCollaboratorCount = groupSizes.entries
+          .map((e) => e.key * e.value)
+          .fold(0, (sum, val) => sum + val) / 
+          (totalCollaborativeLists > 0 ? totalCollaborativeLists : 1);
+      
+      return CollaborativeActivityMetrics(
+        totalCollaborativeLists: totalCollaborativeLists,
+        groupChatLists: groupChatLists,
+        dmLists: dmLists,
+        avgListSize: avgListSize,
+        avgCollaboratorCount: avgCollaboratorCount,
+        groupSizeDistribution: groupSizes,
+        collaborationRate: collaborationRate,
+        totalPlanningSessions: totalPlanningSessions,
+        avgSessionDuration: avgSessionDuration,
+        followThroughRate: followThroughRate,
+        activityByHour: activityByHour,
+        collectionStart: earliestChat ?? DateTime.now(),
+        lastUpdated: DateTime.now(),
+        measurementWindow: earliestChat != null && latestChat != null
+            ? latestChat.difference(earliestChat)
+            : Duration.zero,
+        totalUsersContributing: totalUsersContributing,
+        containsUserData: false,
+        isAnonymized: true,
+      );
+    } catch (e) {
+      developer.log('Error getting collaborative activity metrics: $e', name: _logName);
+      return CollaborativeActivityMetrics.empty();
+    }
+  }
+  
   /// Dispose and cleanup
   void dispose() {
     _refreshTimer?.cancel();
@@ -1228,6 +1650,76 @@ class AggregatePrivacyMetrics {
     if (meanOverallPrivacyScore >= 0.75) return 'Fair';
     return 'Needs Improvement';
   }
+}
+
+/// Active AI Agent data for map display
+/// Privacy-preserving: Contains AI agent data with location and predictions, NO personal information
+class ActiveAIAgentData {
+  final String userId;
+  final String aiSignature;
+  final double latitude;
+  final double longitude;
+  final bool isOnline;
+  final DateTime lastActive;
+  final int aiConnections;
+  final String aiStatus;
+  final List<PredictionAction> predictedActions;
+  final String currentStage;
+  final double confidence;
+  
+  ActiveAIAgentData({
+    required this.userId,
+    required this.aiSignature,
+    required this.latitude,
+    required this.longitude,
+    required this.isOnline,
+    required this.lastActive,
+    required this.aiConnections,
+    required this.aiStatus,
+    required this.predictedActions,
+    required this.currentStage,
+    required this.confidence,
+  });
+  
+  /// Get top predicted action
+  PredictionAction? get topPredictedAction {
+    if (predictedActions.isEmpty) return null;
+    return predictedActions.reduce((a, b) => a.probability > b.probability ? a : b);
+  }
+}
+
+/// Club/Community data for admin viewing
+/// Privacy-preserving: Contains AI agent data for members, NO personal information
+class ClubCommunityData {
+  final String id;
+  final String name;
+  final String? description;
+  final String category;
+  final bool isClub;
+  final int memberCount;
+  final int eventCount;
+  final String founderId;
+  final List<String>? leaders; // Only for clubs
+  final List<String>? adminTeam; // Only for clubs
+  final DateTime createdAt;
+  final DateTime? lastEventAt;
+  final Map<String, Map<String, dynamic>> memberAIAgents; // AI agent data per member (privacy-filtered)
+  
+  ClubCommunityData({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.category,
+    required this.isClub,
+    required this.memberCount,
+    required this.eventCount,
+    required this.founderId,
+    this.leaders,
+    this.adminTeam,
+    required this.createdAt,
+    this.lastEventAt,
+    required this.memberAIAgents,
+  });
 }
 
 class UnauthorizedException implements Exception {

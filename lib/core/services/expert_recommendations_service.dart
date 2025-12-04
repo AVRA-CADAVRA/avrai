@@ -1,10 +1,10 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/spot.dart';
-import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_level.dart';
+import 'package:spots/core/models/multi_path_expertise.dart';
 import 'package:spots/core/services/logger.dart';
 import 'package:spots/core/services/expertise_matching_service.dart';
+import 'package:spots/core/services/golden_expert_ai_influence_service.dart';
 
 /// Expert Recommendations Service
 /// Provides recommendations based on expert preferences and validations
@@ -13,6 +13,7 @@ class ExpertRecommendationsService {
   final AppLogger _logger = const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
   
   final ExpertiseMatchingService _matchingService = ExpertiseMatchingService();
+  final GoldenExpertAIInfluenceService _goldenExpertService = GoldenExpertAIInfluenceService();
 
   /// Get spot recommendations from experts
   Future<List<ExpertRecommendation>> getExpertRecommendations(
@@ -44,22 +45,29 @@ class ExpertRecommendationsService {
         );
 
         for (final expertMatch in similarExperts) {
+          // Get golden expert weight if applicable
+          final localExpertise = await _getLocalExpertiseForUser(expertMatch.user.id, cat);
+          final goldenExpertWeight = _goldenExpertService.calculateInfluenceWeight(localExpertise);
+          
           // Get spots recommended by this expert
           final expertSpots = await _getExpertRecommendedSpots(expertMatch.user, cat);
           
           for (final spot in expertSpots) {
             final spotId = spot.id;
+            // Apply golden expert weight to match score
+            final weightedScore = expertMatch.matchScore * goldenExpertWeight;
+            
             if (recommendationData.containsKey(spotId)) {
               // Update existing recommendation
               final existing = recommendationData[spotId]!;
               (existing['experts'] as List<UnifiedUser>).add(expertMatch.user);
-              existing['score'] = (existing['score'] as double) + expertMatch.matchScore * 0.2;
+              existing['score'] = (existing['score'] as double) + weightedScore * 0.2;
             } else {
               // Create new recommendation entry
               recommendationData[spotId] = {
                 'spot': spot,
                 'category': cat,
-                'score': expertMatch.matchScore * 0.5,
+                'score': weightedScore * 0.5,
                 'experts': <UnifiedUser>[expertMatch.user],
                 'reason': 'Recommended by ${expertMatch.user.displayName ?? expertMatch.user.id}',
               };
@@ -117,6 +125,10 @@ class ExpertRecommendationsService {
         );
 
         for (final expertMatch in experts) {
+          // Get golden expert weight if applicable
+          final localExpertise = await _getLocalExpertiseForUser(expertMatch.user.id, cat);
+          final goldenExpertWeight = _goldenExpertService.calculateInfluenceWeight(localExpertise);
+          
           // Get lists curated by this expert
           final expertLists = await _getExpertCuratedListsForCategory(
             expertMatch.user,
@@ -124,12 +136,16 @@ class ExpertRecommendationsService {
           );
 
           for (final list in expertLists) {
+            // Apply golden expert weight to respect count for sorting
+            final weightedRespectCount = (list.respectCount * goldenExpertWeight).round();
+            
             curatedLists.add(ExpertCuratedList(
               list: list,
               curator: expertMatch.user,
               category: cat,
               curatorExpertise: expertMatch.user.getExpertiseLevel(cat),
-              respectCount: list.respectCount,
+              respectCount: weightedRespectCount,
+              originalRespectCount: list.respectCount, // Keep original for display
             ));
           }
         }
@@ -196,28 +212,193 @@ class ExpertRecommendationsService {
     return recommendations.take(maxResults).toList();
   }
 
+  /// Get spots recommended by an expert in a category
+  /// 
+  /// **Flow:**
+  /// 1. Get all lists curated by the expert
+  /// 2. Filter lists by category
+  /// 3. Extract spots from those lists
+  /// 4. Get spots from expert's reviews in category
+  /// 5. Combine and deduplicate spots
+  /// 
+  /// **Note:** Requires ListsRepository and SpotsRepository to be injected.
+  /// Currently returns empty list - repositories need to be added to service.
   Future<List<Spot>> _getExpertRecommendedSpots(
     UnifiedUser expert,
     String category,
   ) async {
-    // In production, this would get spots from expert's lists and reviews
-    // For now, return empty list as placeholder
-    return [];
+    try {
+      _logger.info(
+        'Getting expert recommended spots: expert=${expert.id}, category=$category',
+        tag: _logName,
+      );
+      
+      // In production, this would:
+      // 1. Query lists curated by expert: ListsRepository.getListsByUser(expert.id)
+      // 2. Filter lists by category
+      // 3. Get spots from those lists: ListsRepository.getSpotsInList(listId)
+      // 4. Filter spots by category
+      // 5. Query spots from expert reviews: SpotsRepository.getSpotsReviewedByUser(expert.id, category)
+      // 6. Combine and deduplicate
+      
+      // Example query structure:
+      // SELECT DISTINCT s.* FROM spots s
+      // INNER JOIN spot_list_items sli ON s.id = sli.spot_id
+      // INNER JOIN spot_lists sl ON sli.list_id = sl.id
+      // WHERE sl.created_by = $expertId AND s.category = $category
+      // UNION
+      // SELECT DISTINCT s.* FROM spots s
+      // INNER JOIN reviews r ON s.id = r.spot_id
+      // WHERE r.user_id = $expertId AND s.category = $category AND r.rating >= 4
+      
+      _logger.warn(
+        'Expert spots query requires ListsRepository and SpotsRepository injection. '
+        'Expert: ${expert.id}, Category: $category - returning empty list.',
+        tag: _logName,
+      );
+      
+      return [];
+    } catch (e) {
+      _logger.error('Error getting expert recommended spots', error: e, tag: _logName);
+      return [];
+    }
   }
 
+  /// Get lists curated by an expert in a category
+  /// 
+  /// **Flow:**
+  /// 1. Query lists created by expert
+  /// 2. Filter lists that contain spots in the category
+  /// 3. Return list of lists
+  /// 
+  /// **Note:** Requires ListsRepository to be injected.
+  /// Currently returns empty list - repository needs to be added to service.
   Future<List<dynamic>> _getExpertCuratedListsForCategory(
     UnifiedUser expert,
     String category,
   ) async {
-    // In production, this would get lists curated by expert in this category
-    // For now, return empty list as placeholder
-    return [];
+    try {
+      _logger.info(
+        'Getting expert curated lists: expert=${expert.id}, category=$category',
+        tag: _logName,
+      );
+      
+      // In production, this would:
+      // 1. Query lists by expert: ListsRepository.getListsByUser(expert.id)
+      // 2. For each list, check if it contains spots in category
+      // 3. Filter and return lists that have spots in the category
+      
+      // Example query structure:
+      // SELECT DISTINCT sl.* FROM spot_lists sl
+      // INNER JOIN spot_list_items sli ON sl.id = sli.list_id
+      // INNER JOIN spots s ON sli.spot_id = s.id
+      // WHERE sl.created_by = $expertId AND s.category = $category
+      
+      _logger.warn(
+        'Expert lists query requires ListsRepository injection. '
+        'Expert: ${expert.id}, Category: $category - returning empty list.',
+        tag: _logName,
+      );
+      
+      return [];
+    } catch (e) {
+      _logger.error('Error getting expert curated lists', error: e, tag: _logName);
+      return [];
+    }
   }
 
+  /// Get top-rated spots in a category
+  /// 
+  /// **Flow:**
+  /// 1. Query spots in category
+  /// 2. Sort by rating/respect count
+  /// 3. Return top spots
+  /// 
+  /// **Note:** Requires SpotsRepository to be injected.
+  /// Currently returns empty list - repository needs to be added to service.
   Future<List<Spot>> _getTopExpertSpots(String category) async {
-    // In production, this would get top-rated spots in category
-    // For now, return empty list as placeholder
-    return [];
+    try {
+      _logger.info('Getting top expert spots in category: $category', tag: _logName);
+      
+      // In production, this would:
+      // 1. Query spots by category: SpotsRepository.getSpotsByCategory(category)
+      // 2. Sort by respect count, rating, or combined score
+      // 3. Return top N spots
+      
+      // Example query structure:
+      // SELECT * FROM spots
+      // WHERE category = $category
+      // ORDER BY respect_count DESC, average_rating DESC
+      // LIMIT 20
+      
+      _logger.warn(
+        'Top spots query requires SpotsRepository injection. '
+        'Category: $category - returning empty list.',
+        tag: _logName,
+      );
+      
+      return [];
+    } catch (e) {
+      _logger.error('Error getting top expert spots', error: e, tag: _logName);
+      return [];
+    }
+  }
+
+  /// Get LocalExpertise for a user in a category
+  /// 
+  /// **Flow:**
+  /// 1. Query database for LocalExpertise records for user and category
+  /// 2. If multiple localities exist, return the highest-scoring one
+  /// 3. Return LocalExpertise if found, null otherwise
+  /// 
+  /// **Parameters:**
+  /// - `userId`: User ID
+  /// - `category`: Category
+  /// 
+  /// **Returns:**
+  /// LocalExpertise with highest score for the user in the category, null if none found
+  /// 
+  /// **Note:** In production, this would query the database for stored LocalExpertise.
+  /// Currently returns null - requires database integration or LocalExpertise storage service.
+  Future<LocalExpertise?> _getLocalExpertiseForUser(
+    String userId,
+    String category,
+  ) async {
+    try {
+      _logger.info(
+        'Getting local expertise for user: user=$userId, category=$category',
+        tag: _logName,
+      );
+      
+      // In production, this would query the database for LocalExpertise:
+      // SELECT * FROM local_expertise
+      // WHERE user_id = $userId AND category = $category
+      // ORDER BY score DESC
+      // LIMIT 1
+      
+      // Alternatively, if LocalExpertise is stored in MultiPathExpertiseService's cache,
+      // we could query from there. However, the service currently only calculates expertise
+      // and doesn't store/query existing records.
+      
+      // For now, return null as placeholder
+      // TODO: Implement database query or LocalExpertise storage service
+      // TODO: Or integrate with MultiPathExpertiseService if it stores calculated expertise
+      
+      _logger.warn(
+        'LocalExpertise query requires database integration. '
+        'User: $userId, Category: $category - returning null.',
+        tag: _logName,
+      );
+      
+      return null;
+    } catch (e) {
+      _logger.error(
+        'Error getting local expertise for user',
+        error: e,
+        tag: _logName,
+      );
+      return null;
+    }
   }
 }
 
@@ -244,7 +425,8 @@ class ExpertCuratedList {
   final UnifiedUser curator;
   final String category;
   final ExpertiseLevel? curatorExpertise;
-  final int respectCount;
+  final int respectCount; // Weighted respect count for sorting
+  final int? originalRespectCount; // Original respect count for display
 
   ExpertCuratedList({
     required this.list,
@@ -252,6 +434,7 @@ class ExpertCuratedList {
     required this.category,
     this.curatorExpertise,
     required this.respectCount,
+    this.originalRespectCount,
   });
 }
 

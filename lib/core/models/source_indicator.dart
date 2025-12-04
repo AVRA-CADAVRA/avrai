@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spots/core/theme/colors.dart';
 
 /// Source Indicator for transparent data source visualization
 /// OUR_GUTS.md: "Privacy and Control Are Non-Negotiable" - Users must know data sources
@@ -54,7 +55,7 @@ class SourceIndicator {
       isVerified: true,
       isCommunityContributed: true,
       qualityMetrics: DataQualityMetrics.fromCommunityData(metadata),
-      badgeColor: Colors.green,
+      badgeColor: AppColors.electricGreen,
       badgeIcon: Icons.people,
       displayText: 'Community Verified',
     );
@@ -70,7 +71,7 @@ class SourceIndicator {
       isVerified: false,
       isCommunityContributed: false,
       qualityMetrics: DataQualityMetrics.fromGooglePlaces(metadata),
-      badgeColor: Colors.blue,
+      badgeColor: AppColors.electricGreen,
       badgeIcon: Icons.business,
       displayText: 'External Data',
     );
@@ -86,7 +87,7 @@ class SourceIndicator {
       isVerified: false,
       isCommunityContributed: true, // OSM is community-contributed
       qualityMetrics: DataQualityMetrics.fromOpenStreetMap(metadata),
-      badgeColor: Colors.orange,
+      badgeColor: AppColors.warning,
       badgeIcon: Icons.map,
       displayText: 'Community Map Data',
     );

@@ -93,7 +93,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
             Text(
               'AI Data Only',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.white.withOpacity(0.8),
+                    color: AppColors.white.withValues(alpha: 0.8),
                     fontSize: 11,
                   ),
             ),
@@ -104,7 +104,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withOpacity(0.7),
+          unselectedLabelColor: AppColors.white.withValues(alpha: 0.7),
           indicatorColor: AppColors.white,
           tabs: const [
             Tab(icon: Icon(Icons.person), text: 'Data'),
@@ -116,7 +116,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
           if (_userSnapshot != null)
             Icon(
               _userSnapshot!.isOnline ? Icons.circle : Icons.circle_outlined,
-              color: _userSnapshot!.isOnline ? Colors.green : Colors.grey,
+              color: _userSnapshot!.isOnline ? AppColors.electricGreen : AppColors.grey500,
             ),
           const SizedBox(width: 16),
         ],
@@ -154,7 +154,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
                       children: [
                         CircleAvatar(
                           radius: 32,
-                          backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                           child: Icon(
                             Icons.person,
                             color: AppTheme.primaryColor,
@@ -183,13 +183,13 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.info.withOpacity(0.1),
+                                  color: AppColors.electricGreen.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   'Privacy: Location data shown (vibe indicator), no personal info',
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppColors.info,
+                                        color: AppColors.electricGreen,
                                         fontSize: 11,
                                       ),
                                 ),
@@ -393,7 +393,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
                     const SizedBox(height: 8),
                     Chip(
                       label: Text(_predictionsData!.currentStage),
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -426,7 +426,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
                   subtitle: Text(action.category),
                   trailing: Chip(
                     label: Text('${(action.probability * 100).toStringAsFixed(0)}%'),
-                    backgroundColor: _getProbabilityColor(action.probability).withOpacity(0.2),
+                    backgroundColor: _getProbabilityColor(action.probability).withValues(alpha: 0.2),
                   ),
                 ),
               )
@@ -552,7 +552,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
-      color: AppColors.info.withOpacity(0.05),
+      color: AppColors.electricGreen.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -560,7 +560,7 @@ class _UserDetailPageState extends State<UserDetailPage> with SingleTickerProvid
           children: [
             Row(
               children: [
-                Icon(Icons.location_on, color: AppColors.info),
+                Icon(Icons.location_on, color: AppColors.electricGreen),
                 const SizedBox(width: 8),
                 Text(
                   'Location Data (Vibe Indicators)',

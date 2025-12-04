@@ -1,7 +1,6 @@
 import 'package:spots/core/services/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/presentation/blocs/lists/lists_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
@@ -9,7 +8,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/data/datasources/local/onboarding_completion_service.dart';
 import 'package:go_router/go_router.dart';
-import 'package:spots/presentation/pages/home/home_page.dart';
 import 'package:spots/core/ai/list_generator_service.dart';
 import 'package:spots/injection_container.dart' as di;
 import 'package:spots/domain/usecases/lists/create_list_usecase.dart';
@@ -329,10 +327,10 @@ class _AILoadingPageState extends State<AILoadingPage>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(

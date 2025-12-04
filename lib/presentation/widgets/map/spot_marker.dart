@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/models/spot.dart';
+import 'package:spots/core/theme/colors.dart';
+import 'package:spots/core/models/spot.dart';
 
 class SpotMarker extends StatelessWidget {
   final Spot spot;
@@ -24,13 +25,13 @@ class SpotMarker extends StatelessWidget {
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: Colors.white,
+            color: AppColors.white,
             width: 2,
           ),
         ),
         child: Icon(
           _getCategoryIcon(spot.category),
-          color: Colors.white,
+          color: AppColors.white,
           size: 16,
         ),
       ),

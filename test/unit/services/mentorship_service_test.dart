@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/mentorship_service.dart';
 import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/expertise_level.dart';
 import '../../fixtures/model_factories.dart';
 
 /// Mentorship Service Tests
@@ -23,7 +22,7 @@ void main() {
         expertiseMap: {'food': 'local'},
       );
       
-      // Create mentor with city level expertise
+      // Create mentor with local level+ expertise (can host events)
       mentor = ModelFactories.createTestUser(
         id: 'mentor-123',
         tags: ['food'],

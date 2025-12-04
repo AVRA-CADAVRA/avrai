@@ -1,5 +1,4 @@
 import '../component_backend_factory.dart';
-import '../interfaces/backend_interface.dart';
 
 /// Example of using different backends for different components
 class MultiBackendExample {

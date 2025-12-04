@@ -14,7 +14,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/services/ai_improvement_tracking_service.dart';
 
 /// Widget displaying AI improvement history timeline
@@ -66,31 +65,34 @@ class _AIImprovementTimelineWidgetState extends State<AIImprovementTimelineWidge
   
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 16),
-            if (_isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else if (_milestones.isEmpty)
-              _buildEmptyState()
-            else
-              _buildTimeline(),
-          ],
+    return Semantics(
+      label: 'AI Improvement History Timeline',
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              if (_isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (_milestones.isEmpty)
+                _buildEmptyState()
+              else
+                _buildTimeline(),
+            ],
+          ),
         ),
       ),
     );

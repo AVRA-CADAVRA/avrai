@@ -27,10 +27,10 @@ class ExpertisePinWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: pinColor.withOpacity(0.1),
+          color: pinColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: pinColor.withOpacity(0.3),
+            color: pinColor.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -41,7 +41,7 @@ class ExpertisePinWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: pinColor.withOpacity(0.2),
+                color: pinColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -185,7 +185,7 @@ class ExpertisePinDetailCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: pinColor.withOpacity(0.1),
+                    color: pinColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

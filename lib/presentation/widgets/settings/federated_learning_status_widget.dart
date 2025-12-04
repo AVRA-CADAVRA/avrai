@@ -9,26 +9,77 @@
 /// - Round status (initializing, training, aggregating, completed, failed)
 /// 
 /// Location: Settings/Account page (within Federated Learning section)
-/// Uses AppColors and AppTheme for consistent styling per design token requirements.
+/// Uses AppColors for consistent styling per design token requirements.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/p2p/federated_learning.dart';
+import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
+import 'package:spots/presentation/widgets/common/standard_error_widget.dart';
+import 'package:spots/presentation/widgets/common/standard_loading_widget.dart';
+import 'package:get_it/get_it.dart';
 
 /// Widget displaying federated learning round status and participation
-class FederatedLearningStatusWidget extends StatelessWidget {
-  /// Active learning rounds to display
-  final List<FederatedLearningRound> activeRounds;
-  
-  /// Current user's node ID (for participation status)
-  final String? currentNodeId;
+class FederatedLearningStatusWidget extends StatefulWidget {
+  const FederatedLearningStatusWidget({super.key});
 
-  const FederatedLearningStatusWidget({
-    super.key,
-    this.activeRounds = const [],
-    this.currentNodeId,
-  });
+  @override
+  State<FederatedLearningStatusWidget> createState() => _FederatedLearningStatusWidgetState();
+}
+
+class _FederatedLearningStatusWidgetState extends State<FederatedLearningStatusWidget> {
+  late final FederatedLearningSystem _federatedLearningSystem;
+  List<FederatedLearningRound> _activeRounds = [];
+  String? _currentNodeId;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use dependency injection to get FederatedLearningSystem
+    try {
+      _federatedLearningSystem = GetIt.instance<FederatedLearningSystem>();
+    } catch (e) {
+      // Fallback if not registered in DI (shouldn't happen in production)
+      _federatedLearningSystem = FederatedLearningSystem();
+    }
+    _loadActiveRounds();
+  }
+
+  Future<void> _loadActiveRounds() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Get current user ID as node ID
+      final authState = context.read<AuthBloc>().state;
+      if (authState is Authenticated) {
+        _currentNodeId = authState.user.id;
+      }
+
+      // Fetch active rounds from backend
+      final activeRounds = await _federatedLearningSystem.getActiveRounds(_currentNodeId);
+      
+      if (mounted) {
+        setState(() {
+          _activeRounds = activeRounds;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load active rounds: ${e.toString()}';
+          _isLoading = false;
+          _activeRounds = [];
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +99,7 @@ class FederatedLearningStatusWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.electricGreen.withOpacity(0.1),
+                    color: AppColors.electricGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -80,13 +131,30 @@ class FederatedLearningStatusWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            if (activeRounds.isEmpty)
+            if (_isLoading)
+              _buildLoadingState()
+            else if (_errorMessage != null)
+              _buildErrorState()
+            else if (_activeRounds.isEmpty)
               _buildNoActiveRoundsMessage()
             else
-              ...activeRounds.map((round) => _buildRoundCard(round)),
+              ..._activeRounds.map((round) => _buildRoundCard(round)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return StandardLoadingWidget.container(
+      message: 'Loading active rounds...',
+    );
+  }
+
+  Widget _buildErrorState() {
+    return StandardErrorWidget(
+      message: _errorMessage ?? 'An error occurred',
+      onRetry: _loadActiveRounds,
     );
   }
 
@@ -120,8 +188,8 @@ class FederatedLearningStatusWidget extends StatelessWidget {
   }
 
   Widget _buildRoundCard(FederatedLearningRound round) {
-    final isParticipating = currentNodeId != null &&
-        round.participantNodeIds.contains(currentNodeId);
+    final isParticipating = _currentNodeId != null &&
+        round.participantNodeIds.contains(_currentNodeId);
     final progress = _calculateProgress(round);
     final statusColor = _getStatusColor(round.status);
     final statusText = _getStatusText(round.status);
@@ -133,7 +201,7 @@ class FederatedLearningStatusWidget extends StatelessWidget {
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -145,7 +213,7 @@ class FederatedLearningStatusWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -176,10 +244,10 @@ class FederatedLearningStatusWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.electricGreen.withOpacity(0.05),
+              color: AppColors.electricGreen.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: AppColors.electricGreen.withOpacity(0.2),
+                color: AppColors.electricGreen.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -283,7 +351,7 @@ class FederatedLearningStatusWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: isParticipating
-            ? AppColors.electricGreen.withOpacity(0.1)
+            ? AppColors.electricGreen.withValues(alpha: 0.1)
             : AppColors.grey200,
         borderRadius: BorderRadius.circular(4),
       ),
@@ -433,7 +501,7 @@ class FederatedLearningStatusWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.electricGreen.withOpacity(0.1),
+                  color: AppColors.electricGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
@@ -519,4 +587,3 @@ class FederatedLearningStatusWidget extends StatelessWidget {
     );
   }
 }
-

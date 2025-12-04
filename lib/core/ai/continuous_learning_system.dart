@@ -2,12 +2,6 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:spots/core/ai/advanced_communication.dart';
-import 'package:spots/core/ai/personality_learning.dart';
-import 'package:spots/core/ai/collaboration_networks.dart';
-import 'package:spots/core/ml/predictive_analytics.dart';
-import 'package:spots/core/ml/pattern_recognition.dart';
-import 'package:spots/core/ml/nlp_processor.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -63,6 +57,7 @@ class ContinuousLearningSystem {
   // Continuous learning timer
   Timer? _learningTimer;
   bool _isLearningActive = false;
+  DateTime? _learningStartTime;
   
   // Learning state tracking
   final Map<String, double> _currentLearningState = {};
@@ -93,6 +88,7 @@ class ContinuousLearningSystem {
       await _initializeLearningState();
       
       // Start continuous learning loop
+      _learningStartTime = DateTime.now();
       _learningTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
         await _performContinuousLearning();
       });
@@ -112,6 +108,7 @@ class ContinuousLearningSystem {
       _learningTimer?.cancel();
       _learningTimer = null;
       _isLearningActive = false;
+      _learningStartTime = null;
       
       // Save final learning state
       await _saveLearningState();
@@ -119,6 +116,147 @@ class ContinuousLearningSystem {
       developer.log('Continuous learning system stopped', name: _logName);
     } catch (e) {
       developer.log('Error stopping continuous learning: $e', name: _logName);
+    }
+  }
+  
+  /// Gets current learning status
+  Future<ContinuousLearningStatus> getLearningStatus() async {
+    try {
+      final activeProcesses = <String>[];
+      if (_isLearningActive) {
+        for (final dimension in _learningDimensions) {
+          final history = _learningHistory[dimension] ?? [];
+          if (history.isNotEmpty) {
+            final recentEvent = history.last;
+            final timeSinceLastEvent = DateTime.now().difference(recentEvent.timestamp);
+            if (timeSinceLastEvent.inSeconds < 60) {
+              activeProcesses.add(dimension);
+            }
+          }
+        }
+      }
+      
+      // Calculate system metrics
+      final cyclesCompleted = _learningHistory.values.fold<int>(
+        0,
+        (sum, history) => sum + history.length,
+      );
+      
+      final uptime = _learningStartTime != null
+          ? DateTime.now().difference(_learningStartTime!)
+          : Duration.zero;
+      
+      return ContinuousLearningStatus(
+        isActive: _isLearningActive,
+        activeProcesses: activeProcesses,
+        uptime: uptime,
+        cyclesCompleted: cyclesCompleted,
+        learningTime: uptime,
+      );
+    } catch (e) {
+      developer.log('Error getting learning status: $e', name: _logName);
+      return ContinuousLearningStatus(
+        isActive: false,
+        activeProcesses: [],
+        uptime: Duration.zero,
+        cyclesCompleted: 0,
+        learningTime: Duration.zero,
+      );
+    }
+  }
+  
+  /// Gets learning progress for all dimensions
+  Future<Map<String, double>> getLearningProgress() async {
+    try {
+      return Map<String, double>.from(_currentLearningState);
+    } catch (e) {
+      developer.log('Error getting learning progress: $e', name: _logName);
+      return {};
+    }
+  }
+  
+  /// Gets learning metrics and statistics
+  Future<ContinuousLearningMetrics> getLearningMetrics() async {
+    try {
+      final totalImprovements = _improvementMetrics.values.fold<double>(
+        0.0,
+        (sum, metric) => sum + metric,
+      );
+      
+      final averageProgress = _currentLearningState.values.isEmpty
+          ? 0.0
+          : _currentLearningState.values.reduce((a, b) => a + b) /
+              _currentLearningState.length;
+      
+      final topDimensions = _improvementMetrics.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      
+      return ContinuousLearningMetrics(
+        totalImprovements: totalImprovements,
+        averageProgress: averageProgress,
+        topImprovingDimensions: topDimensions.take(5).map((e) => e.key).toList(),
+        dimensionsCount: _learningDimensions.length,
+        dataSourcesCount: _dataSources.length,
+      );
+    } catch (e) {
+      developer.log('Error getting learning metrics: $e', name: _logName);
+      return ContinuousLearningMetrics(
+        totalImprovements: 0.0,
+        averageProgress: 0.0,
+        topImprovingDimensions: [],
+        dimensionsCount: 0,
+        dataSourcesCount: 0,
+      );
+    }
+  }
+  
+  /// Gets data collection status for all data sources
+  Future<DataCollectionStatus> getDataCollectionStatus() async {
+    try {
+      final sourceStatuses = <String, DataSourceStatus>{};
+      
+      for (final source in _dataSources) {
+        // Check if source has contributed to recent learning
+        bool isActive = false;
+        int eventCount = 0;
+        int dataVolume = 0;
+        
+        for (final history in _learningHistory.values) {
+          final sourceEvents = history.where((e) => e.dataSource.contains(source)).toList();
+          eventCount += sourceEvents.length;
+          
+          if (sourceEvents.isNotEmpty) {
+            final mostRecent = sourceEvents.last;
+            final timeSinceLastEvent = DateTime.now().difference(mostRecent.timestamp);
+            if (timeSinceLastEvent.inSeconds < 300) { // Active if used in last 5 minutes
+              isActive = true;
+            }
+          }
+        }
+        
+        // Estimate data volume from event count
+        dataVolume = eventCount * 100; // Rough estimate
+        
+        sourceStatuses[source] = DataSourceStatus(
+          isActive: isActive,
+          dataVolume: dataVolume,
+          eventCount: eventCount,
+          healthStatus: isActive ? 'healthy' : (eventCount > 0 ? 'idle' : 'inactive'),
+        );
+      }
+      
+      return DataCollectionStatus(
+        sourceStatuses: sourceStatuses,
+        totalVolume: sourceStatuses.values.fold<int>(0, (sum, status) => sum + status.dataVolume),
+        activeSourcesCount: sourceStatuses.values.where((s) => s.isActive).length,
+      );
+    } catch (e) {
+      developer.log('Error getting data collection status: $e', name: _logName);
+      return DataCollectionStatus(
+        sourceStatuses: {},
+        totalVolume: 0,
+        activeSourcesCount: 0,
+      );
     }
   }
   
@@ -782,12 +920,11 @@ class ContinuousLearningSystem {
   /// Uses Firebase Analytics to track user behavior
   Future<List<dynamic>> _collectUserActions() async {
     try {
-      final analytics = FirebaseAnalytics.instance;
       final actions = <dynamic>[];
       
       // Note: Firebase Analytics doesn't provide a direct way to query events
       // In a real implementation, you would:
-      // 1. Log events as they happen: analytics.logEvent(name: 'spot_visited', parameters: {...})
+      // 1. Log events as they happen: FirebaseAnalytics.instance.logEvent(name: 'spot_visited', parameters: {...})
       // 2. Store events in your database for querying
       // 3. Query your database here to get recent actions
       
@@ -840,8 +977,12 @@ class ContinuousLearningSystem {
       // Get current position
       try {
         final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 5),
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+          ),
+        ).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw TimeoutException('Location request timed out'),
         );
         
         locationData.add({
@@ -1047,7 +1188,6 @@ class ContinuousLearningSystem {
   /// Note: Firebase Analytics doesn't provide direct querying, so we track events as they happen
   Future<List<dynamic>> _collectAppUsageData() async {
     try {
-      final analytics = FirebaseAnalytics.instance;
       final usageData = <dynamic>[];
       
       // Firebase Analytics automatically tracks:
@@ -1248,5 +1388,65 @@ class LearningEvent {
     required this.improvement,
     required this.dataSource,
     required this.timestamp,
+  });
+}
+
+// Data models for UI
+
+class ContinuousLearningStatus {
+  final bool isActive;
+  final List<String> activeProcesses;
+  final Duration uptime;
+  final int cyclesCompleted;
+  final Duration learningTime;
+  
+  ContinuousLearningStatus({
+    required this.isActive,
+    required this.activeProcesses,
+    required this.uptime,
+    required this.cyclesCompleted,
+    required this.learningTime,
+  });
+}
+
+class ContinuousLearningMetrics {
+  final double totalImprovements;
+  final double averageProgress;
+  final List<String> topImprovingDimensions;
+  final int dimensionsCount;
+  final int dataSourcesCount;
+  
+  ContinuousLearningMetrics({
+    required this.totalImprovements,
+    required this.averageProgress,
+    required this.topImprovingDimensions,
+    required this.dimensionsCount,
+    required this.dataSourcesCount,
+  });
+}
+
+class DataCollectionStatus {
+  final Map<String, DataSourceStatus> sourceStatuses;
+  final int totalVolume;
+  final int activeSourcesCount;
+  
+  DataCollectionStatus({
+    required this.sourceStatuses,
+    required this.totalVolume,
+    required this.activeSourcesCount,
+  });
+}
+
+class DataSourceStatus {
+  final bool isActive;
+  final int dataVolume;
+  final int eventCount;
+  final String healthStatus; // 'healthy', 'idle', 'inactive'
+  
+  DataSourceStatus({
+    required this.isActive,
+    required this.dataVolume,
+    required this.eventCount,
+    required this.healthStatus,
   });
 } 

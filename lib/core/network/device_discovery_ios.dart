@@ -1,11 +1,9 @@
 import 'dart:developer' as developer;
 import 'dart:async';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_nsd/flutter_nsd.dart';
 import 'package:spots/core/network/device_discovery.dart';
-import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/network/personality_data_codec.dart';
 

@@ -5,6 +5,8 @@ import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/presentation/blocs/search/hybrid_search_bloc.dart';
 import 'package:spots/presentation/pages/spots/spot_details_page.dart';
+import 'package:spots/presentation/widgets/common/standard_error_widget.dart';
+import 'package:spots/presentation/widgets/common/standard_loading_widget.dart';
 
 class HybridSearchResults extends StatelessWidget {
   const HybridSearchResults({super.key});
@@ -46,53 +48,18 @@ class HybridSearchResults extends StatelessWidget {
         }
 
         if (state is HybridSearchLoading) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Searching community and external sources...',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
+          return StandardLoadingWidget.fullScreen(
+            message: 'Searching community and external sources...',
           );
         }
 
         if (state is HybridSearchError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppTheme.errorColor,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Search Error',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  state.message,
-                  style: const TextStyle(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<HybridSearchBloc>().add(ClearHybridSearch());
-                  },
-                  child: const Text('Try Again'),
-                ),
-              ],
-            ),
+          return StandardErrorWidget.fullScreen(
+            message: state.message,
+            onRetry: () {
+              context.read<HybridSearchBloc>().add(ClearHybridSearch());
+            },
+            retryLabel: 'Try Again',
           );
         }
 
@@ -236,7 +203,7 @@ class HybridSearchResults extends StatelessWidget {
           backgroundColor: _getSourceColor(source),
           child: Icon(
             _getSourceIcon(source),
-            color: Colors.white,
+            color: AppColors.white,
             size: 20,
           ),
         ),
@@ -317,7 +284,7 @@ class HybridSearchResults extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: _getSourceColor(source).withOpacity(0.1),
+        color: _getSourceColor(source).withValues(alpha: 0.1),
         border: Border.all(color: _getSourceColor(source), width: 1),
         borderRadius: BorderRadius.circular(8),
       ),

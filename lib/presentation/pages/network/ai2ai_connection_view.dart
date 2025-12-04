@@ -16,7 +16,6 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:spots/core/models/connection_metrics.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:get_it/get_it.dart';
 import 'package:spots/core/ai2ai/connection_orchestrator.dart';
 
@@ -177,7 +176,7 @@ class _AI2AIConnectionViewState extends State<AI2AIConnectionView> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.electricGreen.withOpacity(0.1),
+            color: AppColors.electricGreen.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -286,7 +285,7 @@ class _AI2AIConnectionViewState extends State<AI2AIConnectionView> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: qualityColor.withOpacity(0.1),
+                      color: qualityColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

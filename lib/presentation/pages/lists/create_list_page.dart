@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:spots/core/theme/colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/presentation/blocs/lists/lists_bloc.dart';
 
@@ -65,7 +66,7 @@ class _CreateListPageState extends State<CreateListPage> {
             onPressed: _createList,
             child: const Text(
               'Create',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.white),
             ),
           ),
         ],

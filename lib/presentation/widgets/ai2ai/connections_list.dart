@@ -114,7 +114,7 @@ class ConnectionsList extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       leading: CircleAvatar(
-        backgroundColor: color.withOpacity(0.2),
+        backgroundColor: color.withValues(alpha: 0.2),
         child: Icon(
           isPerforming ? Icons.trending_up : Icons.warning,
           color: color,

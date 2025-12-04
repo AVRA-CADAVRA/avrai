@@ -45,11 +45,49 @@ class StorageService {
     return SharedPreferencesCompat._(null);
   }
   
-  /// Get storage instance for different contexts (with fallback)
-  GetStorage get defaultStorage => _defaultStorage ?? GetStorage(_defaultBox);
-  GetStorage get userStorage => _userStorage ?? GetStorage(_userBox);
-  GetStorage get aiStorage => _aiStorage ?? GetStorage(_aiBox);
-  GetStorage get analyticsStorage => _analyticsStorage ?? GetStorage(_analyticsBox);
+  /// Get storage instance for different contexts
+  /// 
+  /// Throws StateError if storage is not initialized.
+  /// In tests, ensure StorageService is initialized with mock storage.
+  GetStorage get defaultStorage {
+    if (!_initialized || _defaultStorage == null) {
+      throw StateError(
+        'Default storage not initialized. Call StorageService.instance.init() first. '
+        'In tests, use mock storage via dependency injection.'
+      );
+    }
+    return _defaultStorage!;
+  }
+  
+  GetStorage get userStorage {
+    if (!_initialized || _userStorage == null) {
+      throw StateError(
+        'User storage not initialized. Call StorageService.instance.init() first. '
+        'In tests, use mock storage via dependency injection.'
+      );
+    }
+    return _userStorage!;
+  }
+  
+  GetStorage get aiStorage {
+    if (!_initialized || _aiStorage == null) {
+      throw StateError(
+        'AI storage not initialized. Call StorageService.instance.init() first. '
+        'In tests, use mock storage via dependency injection.'
+      );
+    }
+    return _aiStorage!;
+  }
+  
+  GetStorage get analyticsStorage {
+    if (!_initialized || _analyticsStorage == null) {
+      throw StateError(
+        'Analytics storage not initialized. Call StorageService.instance.init() first. '
+        'In tests, use mock storage via dependency injection.'
+      );
+    }
+    return _analyticsStorage!;
+  }
   
   // String operations
   Future<bool> setString(String key, String value, {String box = _defaultBox}) async {
@@ -149,16 +187,25 @@ class StorageService {
   }
   
   GetStorage _getStorageForBox(String box) {
+    // Ensure storage is initialized before use
+    // In tests, this will throw MissingPluginException if not properly mocked
+    if (!_initialized) {
+      throw StateError(
+        'StorageService not initialized. Call StorageService.instance.init() first. '
+        'In tests, use mock storage via dependency injection.'
+      );
+    }
+    
     switch (box) {
       case _userBox:
-        return _userStorage ?? GetStorage(_userBox);
+        return _userStorage ?? (throw StateError('User storage not initialized'));
       case _aiBox:
-        return _aiStorage ?? GetStorage(_aiBox);
+        return _aiStorage ?? (throw StateError('AI storage not initialized'));
       case _analyticsBox:
-        return _analyticsStorage ?? GetStorage(_analyticsBox);
+        return _analyticsStorage ?? (throw StateError('Analytics storage not initialized'));
       case _defaultBox:
       default:
-        return _defaultStorage ?? GetStorage(_defaultBox);
+        return _defaultStorage ?? (throw StateError('Default storage not initialized'));
     }
   }
 }

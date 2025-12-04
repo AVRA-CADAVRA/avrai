@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 class PersonalityAnalysisService {
   static Map<String, dynamic> analyzePersonality(Map<String, dynamic> userData) {

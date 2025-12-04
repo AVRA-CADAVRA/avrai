@@ -72,7 +72,7 @@ class AppTextStyles {
     return GoogleFonts.inter(
       fontSize: 18,
       fontWeight: FontWeight.w600,
-      color: Colors.white,
+      color: AppColors.white,
     );
   }
 
@@ -80,7 +80,7 @@ class AppTextStyles {
     return GoogleFonts.inter(
       fontSize: 16,
       fontWeight: FontWeight.w600,
-      color: Colors.white,
+      color: AppColors.white,
     );
   }
 }

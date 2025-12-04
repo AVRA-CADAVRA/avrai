@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/map/spot_marker.dart';
-import 'package:spots/core/models/spot.dart';
+import 'package:spots/core/theme/colors.dart';
 import '../../helpers/widget_test_helpers.dart';
 import '../../../fixtures/model_factories.dart';
 
@@ -18,7 +18,7 @@ void main() {
       final widget = WidgetTestHelpers.createTestableWidget(
         child: SpotMarker(
           spot: testSpot,
-          color: Colors.blue,
+          color: AppColors.electricGreen,
         ),
       );
 
@@ -38,7 +38,7 @@ void main() {
       final widget = WidgetTestHelpers.createTestableWidget(
         child: SpotMarker(
           spot: testSpot,
-          color: Colors.blue,
+          color: AppColors.electricGreen,
         ),
       );
 
@@ -56,7 +56,7 @@ void main() {
       final widget = WidgetTestHelpers.createTestableWidget(
         child: SpotMarker(
           spot: testSpot,
-          color: Colors.blue,
+          color: AppColors.electricGreen,
           onTap: () => wasTapped = true,
         ),
       );

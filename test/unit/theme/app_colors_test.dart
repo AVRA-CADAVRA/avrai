@@ -20,7 +20,7 @@ void main() {
     group('Accent Colors', () {
       test('should have electric green as primary accent', () {
         expect(AppColors.electricGreen, isA<Color>());
-        expect(AppColors.electricGreen.value, equals(0xFF00FF66));
+        expect(AppColors.electricGreen.toARGB32(), equals(0xFF00FF66));
       });
 
       test('should map primary to electric green', () {
@@ -32,9 +32,9 @@ void main() {
     group('Core Neutrals', () {
       test('should have black and white colors', () {
         expect(AppColors.black, isA<Color>());
-        expect(AppColors.black.value, equals(0xFF000000));
+        expect(AppColors.black.toARGB32(), equals(0xFF000000));
         expect(AppColors.white, isA<Color>());
-        expect(AppColors.white.value, equals(0xFFFFFFFF));
+        expect(AppColors.white.toARGB32(), equals(0xFFFFFFFF));
       });
     });
 
@@ -54,15 +54,15 @@ void main() {
 
       test('should have greyscale values in correct order', () {
         // Verify greyscale values are progressively darker
-        expect(AppColors.grey50.value, greaterThan(AppColors.grey100.value));
-        expect(AppColors.grey100.value, greaterThan(AppColors.grey200.value));
-        expect(AppColors.grey200.value, greaterThan(AppColors.grey300.value));
-        expect(AppColors.grey300.value, greaterThan(AppColors.grey400.value));
-        expect(AppColors.grey400.value, greaterThan(AppColors.grey500.value));
-        expect(AppColors.grey500.value, greaterThan(AppColors.grey600.value));
-        expect(AppColors.grey600.value, greaterThan(AppColors.grey700.value));
-        expect(AppColors.grey700.value, greaterThan(AppColors.grey800.value));
-        expect(AppColors.grey800.value, greaterThan(AppColors.grey900.value));
+        expect(AppColors.grey50.toARGB32(), greaterThan(AppColors.grey100.toARGB32()));
+        expect(AppColors.grey100.toARGB32(), greaterThan(AppColors.grey200.toARGB32()));
+        expect(AppColors.grey200.toARGB32(), greaterThan(AppColors.grey300.toARGB32()));
+        expect(AppColors.grey300.toARGB32(), greaterThan(AppColors.grey400.toARGB32()));
+        expect(AppColors.grey400.toARGB32(), greaterThan(AppColors.grey500.toARGB32()));
+        expect(AppColors.grey500.toARGB32(), greaterThan(AppColors.grey600.toARGB32()));
+        expect(AppColors.grey600.toARGB32(), greaterThan(AppColors.grey700.toARGB32()));
+        expect(AppColors.grey700.toARGB32(), greaterThan(AppColors.grey800.toARGB32()));
+        expect(AppColors.grey800.toARGB32(), greaterThan(AppColors.grey900.toARGB32()));
       });
     });
 
@@ -78,11 +78,11 @@ void main() {
       });
 
       test('should have correct error color', () {
-        expect(AppColors.error.value, equals(0xFFFF4D4D));
+        expect(AppColors.error.toARGB32(), equals(0xFFFF4D4D));
       });
 
       test('should have correct warning color', () {
-        expect(AppColors.warning.value, equals(0xFFFFC107));
+        expect(AppColors.warning.toARGB32(), equals(0xFFFFC107));
       });
     });
 
@@ -98,8 +98,8 @@ void main() {
       test('should have primary light and dark variants', () {
         expect(AppColors.primaryLight, isA<Color>());
         expect(AppColors.primaryDark, isA<Color>());
-        expect(AppColors.primaryLight.value, equals(0xFF66FF99));
-        expect(AppColors.primaryDark.value, equals(0xFF00CC52));
+        expect(AppColors.primaryLight.toARGB32(), equals(0xFF66FF99));
+        expect(AppColors.primaryDark.toARGB32(), equals(0xFF00CC52));
       });
     });
 
@@ -111,7 +111,7 @@ void main() {
       });
 
       test('should map text colors correctly', () {
-        expect(AppColors.textPrimary.value, equals(0xFF121212));
+        expect(AppColors.textPrimary.toARGB32(), equals(0xFF121212));
         expect(AppColors.textSecondary, equals(AppColors.grey600));
         expect(AppColors.textHint, equals(AppColors.grey400));
       });

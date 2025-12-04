@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/business/business_account_form_widget.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for BusinessAccountFormWidget
 /// Tests business account creation form

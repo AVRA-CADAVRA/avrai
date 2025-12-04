@@ -3,15 +3,12 @@ import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart' as real_prefs;
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/user_vibe.dart';
-import 'package:spots/core/models/connection_metrics.dart' hide InteractionType;
 import 'package:spots/core/ai2ai/connection_orchestrator.dart';
 import 'package:spots/core/ai2ai/trust_network.dart' show TrustNetworkManager, TrustContext, TrustInteraction, InteractionType, TrustLevel;
 import 'package:spots/core/ai2ai/anonymous_communication.dart' show AnonymousCommunicationProtocol, MessageType, PrivacyLevel;
 import 'package:spots/core/ai/vibe_analysis_engine.dart';
-import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/ai/personality_learning.dart' show PersonalityLearning, UserAction, UserActionType;
 import 'package:spots/core/ai2ai/aipersonality_node.dart';
-import 'package:spots/core/services/storage_service.dart' show SharedPreferences;
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// AI2AI Ecosystem Integration Test

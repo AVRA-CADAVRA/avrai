@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:spots/core/network/device_discovery.dart';
 import 'device_discovery_stub.dart' show StubDeviceDiscovery;
 

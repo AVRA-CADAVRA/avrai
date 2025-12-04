@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mockito/mockito.dart';
 import 'package:spots/core/models/unified_user.dart';
+import 'package:spots/core/models/user.dart' as user_model;
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
@@ -115,7 +116,7 @@ class WidgetTestHelpers {
     verify(observer.didPush(any as Route<dynamic>, any));
   }
 
-  /// Creates test user data
+  /// Creates test user data (UnifiedUser)
   static UnifiedUser createTestUser({
     String id = 'test-user-id',
     String email = 'test@example.com',
@@ -148,6 +149,28 @@ class WidgetTestHelpers {
       primaryRole: role,
       isAgeVerified: isAgeVerified,
       ageVerificationDate: isAgeVerified ? now : null,
+    );
+  }
+
+  /// Creates test User (for AuthBloc compatibility)
+  /// Converts UnifiedUser to User type expected by Authenticated state
+  static user_model.User createTestUserForAuth({
+    String id = 'test-user-id',
+    String email = 'test@example.com',
+    String? displayName,
+    user_model.UserRole role = user_model.UserRole.user,
+    bool isAgeVerified = true,
+  }) {
+    final now = DateTime.now();
+    return user_model.User(
+      id: id,
+      email: email,
+      name: displayName ?? 'Test User',
+      displayName: displayName,
+      role: role,
+      createdAt: now,
+      updatedAt: now,
+      isOnline: false,
     );
   }
 

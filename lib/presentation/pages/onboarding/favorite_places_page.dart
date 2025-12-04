@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/theme/app_theme.dart';
 
 class FavoritePlacesPage extends StatefulWidget {
   final List<String> favoritePlaces;
@@ -301,7 +301,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
                       ),
                       deleteIcon: const Icon(Icons.close, size: 14),
                       onDeleted: () => _removePlace(place),
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                       deleteIconColor: AppTheme.primaryColor,
                       labelStyle: TextStyle(
                         color: AppTheme.primaryColor,
@@ -425,7 +425,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
                       }
                     },
                     tileColor: isSelected
-                        ? AppTheme.primaryColor.withOpacity(0.1)
+                        ? AppTheme.primaryColor.withValues(alpha: 0.1)
                         : null,
                   );
                 }).toList(),
@@ -463,7 +463,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
               _addPlace(place);
             }
           },
-          tileColor: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : null,
+          tileColor: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -616,7 +616,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
                       _addPlace(suggestion);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     },
-                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                    backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                     labelStyle: TextStyle(color: AppTheme.primaryColor),
                   )
                 ).toList(),

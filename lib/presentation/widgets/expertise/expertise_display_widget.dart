@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_level.dart';
-import 'package:spots/core/models/expertise_progress.dart';
+import 'package:spots/core/models/expertise_requirements.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/services/expertise_service.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/app_theme.dart';
-
-// Note: Using AppColors for 100% design token adherence per project requirements
+import 'package:spots/presentation/widgets/expertise/locality_threshold_widget.dart';
+import 'package:go_router/go_router.dart';
 
 /// Expertise Display Widget
 /// Displays user's expertise levels and category expertise
@@ -167,8 +167,9 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
       levelGroups.putIfAbsent(pin.level, () => []).add(pin);
     }
 
-    // Filter to show only City level and above (as per requirements)
+    // Filter to show Local level and above (as per requirements)
     final displayLevels = [
+      ExpertiseLevel.local,
       ExpertiseLevel.city,
       ExpertiseLevel.regional,
       ExpertiseLevel.national,
@@ -186,6 +187,12 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
         // Category Expertise
         _buildCategoryExpertise(),
         
+        // Locality Threshold Indicators (Week 25)
+        _buildLocalityThresholdIndicators(),
+        
+        // Partnership Boost Indicator (Phase 4.5)
+        _buildPartnershipBoostIndicator(),
+        
         // Progress Indicators (if enabled)
         if (widget.showProgress) ...[
           const SizedBox(height: 16),
@@ -202,14 +209,14 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-          Text(
-            'Expertise Levels',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+        Text(
+          'Expertise Levels',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
           ),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -230,12 +237,12 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: hasLevel
-            ? AppTheme.primaryColor.withOpacity(0.1)
+            ? AppTheme.primaryColor.withValues(alpha: 0.1)
             : AppColors.grey100,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: hasLevel
-              ? AppTheme.primaryColor.withOpacity(0.3)
+              ? AppTheme.primaryColor.withValues(alpha: 0.3)
               : AppColors.grey300,
           width: 1.5,
         ),
@@ -291,14 +298,14 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-          Text(
-            'Category Expertise',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+        Text(
+          'Category Expertise',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
           ),
+        ),
         const SizedBox(height: 8),
         ...sortedPins.map((pin) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -324,7 +331,7 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: pinColor.withOpacity(0.1),
+              color: pinColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -381,10 +388,10 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -401,6 +408,63 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
     );
   }
 
+  Widget _buildLocalityThresholdIndicators() {
+    if (_pins == null || _pins!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Show locality thresholds for Local level expertise (or below)
+    final localPins = _pins!.where((pin) => 
+      pin.level == ExpertiseLevel.local || 
+      (pin.location != null && pin.level.index < ExpertiseLevel.city.index)
+    ).toList();
+
+    if (localPins.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Show threshold for first local pin (or user's primary locality)
+    final pinToShow = localPins.first;
+    final userLocality = widget.user.location;
+
+    // Extract locality from location string (format: "Locality, City, State")
+    String? extractLocality(String? location) {
+      if (location == null || location.isEmpty) return null;
+      final parts = location.split(',').map((s) => s.trim()).toList();
+      return parts.isNotEmpty ? parts.first : null;
+    }
+
+    final locality = extractLocality(pinToShow.location ?? userLocality);
+    if (locality == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Get base thresholds (would come from ExpertiseRequirements in production)
+    // For now, use placeholder - in production would get from service
+    final baseThresholds = ThresholdValues(
+      minVisits: 10,
+      minRatings: 5,
+      minAvgRating: 4.0,
+      minTimeInCategory: const Duration(days: 30),
+      minCommunityEngagement: 3,
+      minListCuration: 1,
+      minEventHosting: null,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        LocalityThresholdWidget(
+          user: widget.user,
+          category: pinToShow.category,
+          locality: locality,
+          baseThresholds: baseThresholds,
+        ),
+      ],
+    );
+  }
+
   Widget _buildProgressIndicators() {
     if (_pins == null || _pins!.isEmpty) {
       return const SizedBox.shrink();
@@ -409,14 +473,14 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-          Text(
-            'Progress to Next Level',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+        Text(
+          'Progress to Next Level',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
           ),
+        ),
         const SizedBox(height: 8),
         ..._pins!.take(3).map((pin) {
           // Calculate progress (simplified - in real implementation, get from service)
@@ -489,5 +553,100 @@ class _ExpertiseDisplayWidgetState extends State<ExpertiseDisplayWidget> {
       ],
     );
   }
-}
 
+  Widget _buildPartnershipBoostIndicator() {
+    // TODO: Replace with actual service calls once Agent 1 completes services
+    // For now, return a compact indicator that will be populated when services are available
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _loadPartnershipBoost(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+
+        final data = snapshot.data ?? {};
+        final totalBoost = (data['totalBoost'] as num?)?.toDouble() ?? 0.0;
+        final activePartnerships = (data['activePartnerships'] as int?) ?? 0;
+        final completedPartnerships = (data['completedPartnerships'] as int?) ?? 0;
+
+        if (totalBoost <= 0 && activePartnerships == 0 && completedPartnerships == 0) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.handshake,
+                size: 16,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '+${(totalBoost * 100).toStringAsFixed(1)}% from partnerships',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  context.go('/profile/partnerships');
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'View',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> _loadPartnershipBoost() async {
+    // TODO: Replace with actual service calls once Agent 1 completes services
+    // Example:
+    // final profileService = sl<PartnershipProfileService>();
+    // final expertiseService = sl<ExpertiseCalculationService>();
+    // final userId = widget.user.id;
+    // final partnerships = await profileService.getUserPartnerships(userId);
+    // final boost = await expertiseService.calculatePartnershipBoost(
+    //   userId: userId,
+    //   category: null,
+    // );
+    // return {
+    //   'totalBoost': boost.totalBoost,
+    //   'activePartnerships': partnerships.where((p) => p.isActive).length,
+    //   'completedPartnerships': partnerships.where((p) => p.isCompleted).length,
+    // };
+    
+    // For now, return empty data
+    return {
+      'totalBoost': 0.0,
+      'activePartnerships': 0,
+      'completedPartnerships': 0,
+    };
+  }
+}

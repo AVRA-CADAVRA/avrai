@@ -2,15 +2,18 @@ import 'package:go_router/go_router.dart';
 import 'package:spots/core/services/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
-import 'package:spots/presentation/pages/onboarding/ai_loading_page.dart';
 import 'package:spots/presentation/pages/onboarding/baseline_lists_page.dart';
 import 'package:spots/presentation/pages/onboarding/favorite_places_page.dart';
 import 'package:spots/presentation/pages/onboarding/friends_respect_page.dart';
 import 'package:spots/presentation/pages/onboarding/homebase_selection_page.dart';
 import 'package:spots/presentation/pages/onboarding/preference_survey_page.dart';
 import 'package:spots/presentation/pages/onboarding/onboarding_step.dart';
+import 'package:spots/presentation/pages/onboarding/legal_acceptance_dialog.dart';
+import 'package:spots/core/services/legal_document_service.dart';
+import 'package:spots/core/services/expertise_event_service.dart';
+import 'package:get_it/get_it.dart';
 import 'package:spots/presentation/pages/onboarding/age_collection_page.dart';
 import 'package:spots/presentation/pages/onboarding/welcome_page.dart';
 
@@ -310,6 +313,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
       _logger.debug('  Homebase: $_selectedHomebase', tag: 'Onboarding');
       _logger.debug('  Favorite Places: $_favoritePlaces', tag: 'Onboarding');
       _logger.debug('  Preferences: $_preferences', tag: 'Onboarding');
+      
+      // Check if user has accepted Terms and Privacy Policy
+      final legalService = LegalDocumentService(
+        eventService: GetIt.instance<ExpertiseEventService>(),
+      );
+      final authState = context.read<AuthBloc>().state;
+      
+      if (authState is Authenticated) {
+        final hasAcceptedTerms = await legalService.hasAcceptedTerms(authState.user.id);
+        final hasAcceptedPrivacy = await legalService.hasAcceptedPrivacyPolicy(authState.user.id);
+        
+        if (!hasAcceptedTerms || !hasAcceptedPrivacy) {
+          // Show legal acceptance dialog
+          final accepted = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => LegalAcceptanceDialog(
+              requireTerms: !hasAcceptedTerms,
+              requirePrivacy: !hasAcceptedPrivacy,
+            ),
+          );
+          
+          if (accepted != true) {
+            // User must accept to continue
+            return;
+          }
+        }
+      }
       
       // Calculate age from birthday
       int? age;

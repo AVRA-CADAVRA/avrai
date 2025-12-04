@@ -18,7 +18,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
   bool _publicLists = false;
   bool _analyticsOptIn = false;
   bool _personalizedAds = false;
-  bool _dataExportEnabled = true;
+  // Removed unused _dataExportEnabled field
   
   String _profileVisibility = 'Friends Only';
   String _locationSharing = 'Precise';

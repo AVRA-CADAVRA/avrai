@@ -65,18 +65,20 @@ All plans and related documentation have been organized into the following folde
 26. **`collaborative_features/`** - Collaborative features
 27. **`compilation_fixes/`** - Compilation fixes (deprecated)
 28. **`general_docs/`** - General documentation
+29. **`services/`** - Service index and dependency matrix (90 services cataloged)
+30. **`reservations/`** - Reservation System Implementation Plan (8-10 weeks)
 
 ---
 
 ## 📊 Organization Statistics
 
-- **Total Plan Folders:** 28
-- **Total Documents Organized:** 189+ markdown files
+- **Total Plan Folders:** 29
+- **Total Documents Organized:** 192+ markdown files
 - **Active Plans:** 7
 - **Complete Plans:** 7
 - **Paused Plans:** 1
 - **Reference Plans:** 2
-- **Supporting Documentation Folders:** 11
+- **Supporting Documentation Folders:** 12
 
 ---
 
@@ -94,14 +96,47 @@ All plans and related documentation have been organized into the following folde
 
 ---
 
-## 📝 Remaining Files in Root
+## 📝 Files in Root
 
 The following files remain in `docs/` root (intentionally):
-- `MASTER_PLAN_TRACKER.md` - Master registry
-- `MASTER_PLAN_REQUIREMENTS.md` - Master plan requirements
+- `MASTER_PLAN.md` - Master execution plan (single source of truth)
+- `MASTER_PLAN_TRACKER.md` - Master registry of all plans
 - `README.md` - Documentation index
 - `file_classification.md` - File classification guide
-- `ui_ux_notes.md` - UI/UX notes
+
+### **Files Moved (January 30, 2025)**
+
+The following files were moved to organized locations:
+
+**Phase Documentation → `plans/phase_1_3/`:**
+- `PHASE_3_COMPLETION_REPORT.md`
+- `PHASE_3_COMPLETION_VERIFICATION.md`
+- `PHASE_3_ERROR_FIXES.md`
+- `PHASE_4_OVERVIEW.md`
+- `PHASE_5_OVERVIEW.md`
+- `MVP_CRITICAL_ANALYSIS.md`
+- `USER_TO_EXPERT_JOURNEY.md`
+
+**Master Plan Supporting Docs → `plans/methodology/`:**
+- `MASTER_PLAN_REQUIREMENTS.md`
+- `MASTER_PLAN_SYSTEM_COMPLETE.md`
+- `MASTER_PLAN_TIMELINE.md`
+- `LOCAL_WORK_OPTIONS.md`
+
+**Test Documentation → `plans/test_suite_update/`:**
+- `INTEGRATION_PAYMENT_EVENTS.md`
+- `INTEGRATION_TEST_EXECUTION.md`
+- `INTEGRATION_TEST_PLAN.md`
+- `INTEGRATION_TEST_SUMMARY.md`
+- `UNIT_TEST_REVIEW.md`
+
+**Design Documentation → `design/`:**
+- `ui_ux_notes.md`
+
+**Agent Guides → `agents/guides/`:**
+- `ORGANIZATION_COMPLETE.md`
+- `PHASE_3_PREPARATION.md`
+- `PHASE_3_PROTOCOL_VERIFICATION.md`
 
 ---
 
@@ -114,6 +149,21 @@ The following files remain in `docs/` root (intentionally):
 
 ---
 
-**Last Updated:** November 21, 2025  
+**Last Updated:** January 30, 2025  
 **Status:** ✅ Organization Complete
+
+---
+
+## 📊 **Reports Organization**
+
+The `docs/reports/` folder has been organized by category (January 30, 2025):
+
+- **Project Status:** `reports/project_status/` - Project status and readiness reports
+- **Refactoring & Cleanup:** `reports/refactoring_cleanup/` - Refactoring and cleanup reports
+- **Feature Implementation:** `reports/feature_implementation/` - Feature implementation reports
+- **Code Quality & Testing:** `reports/code_quality_testing/` - Code quality and testing reports
+- **Session & Progress:** `reports/session_progress/` - Session and progress reports
+- **Optimization:** `reports/optimization/` - Optimization reports
+
+See `docs/reports/README.md` for complete organization schema.
 

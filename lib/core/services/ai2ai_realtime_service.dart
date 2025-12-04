@@ -1,10 +1,8 @@
-import 'dart:developer' as developer;
 import 'dart:async';
 import 'dart:convert';
 import 'package:spots_network/spots_network.dart';
 import 'package:spots/core/ai2ai/connection_orchestrator.dart';
 import 'package:spots/core/services/logger.dart';
-import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/ai2ai/aipersonality_node.dart';
 
 /// Enhanced AI2AI Realtime Service for SPOTS

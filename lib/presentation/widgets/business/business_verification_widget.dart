@@ -196,7 +196,7 @@ class _BusinessVerificationWidgetState extends State<BusinessVerificationWidget>
     final statusIcon = _getStatusIcon(status);
 
     return Card(
-      color: statusColor.withOpacity(0.1),
+      color: statusColor.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -335,7 +335,7 @@ class _BusinessVerificationWidgetState extends State<BusinessVerificationWidget>
 
   Widget _buildRejectedContent(BusinessVerification verification) {
     return Card(
-      color: AppColors.error.withOpacity(0.1),
+      color: AppColors.error.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -432,7 +432,7 @@ class _BusinessVerificationWidgetState extends State<BusinessVerificationWidget>
                       label: const Text('Try Automatic Verification'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.electricGreen,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.white,
                       ),
                     ),
                   ],
@@ -581,7 +581,7 @@ class _BusinessVerificationWidgetState extends State<BusinessVerificationWidget>
             onPressed: _isSubmitting ? null : _submitVerification,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.electricGreen,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -593,7 +593,7 @@ class _BusinessVerificationWidgetState extends State<BusinessVerificationWidget>
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                     ),
                   )
                 : const Text(

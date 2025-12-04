@@ -41,6 +41,9 @@ class BusinessAccount extends Equatable {
   final DateTime updatedAt;
   final String createdBy; // User ID who created this business account
   
+  // Payment integration
+  final String? stripeConnectAccountId; // Stripe Connect account ID for payouts
+  
   // Connected experts
   final List<String> connectedExpertIds;
   final List<String> pendingConnectionIds;
@@ -70,6 +73,7 @@ class BusinessAccount extends Equatable {
     required this.createdBy,
     this.connectedExpertIds = const [],
     this.pendingConnectionIds = const [],
+    this.stripeConnectAccountId,
   });
 
   factory BusinessAccount.fromJson(Map<String, dynamic> json) {
@@ -104,6 +108,7 @@ class BusinessAccount extends Equatable {
       createdBy: json['createdBy'] as String,
       connectedExpertIds: List<String>.from(json['connectedExpertIds'] ?? []),
       pendingConnectionIds: List<String>.from(json['pendingConnectionIds'] ?? []),
+      stripeConnectAccountId: json['stripeConnectAccountId'] as String?,
     );
   }
 
@@ -133,6 +138,7 @@ class BusinessAccount extends Equatable {
       'createdBy': createdBy,
       'connectedExpertIds': connectedExpertIds,
       'pendingConnectionIds': pendingConnectionIds,
+      'stripeConnectAccountId': stripeConnectAccountId,
     };
   }
 
@@ -161,6 +167,7 @@ class BusinessAccount extends Equatable {
     String? createdBy,
     List<String>? connectedExpertIds,
     List<String>? pendingConnectionIds,
+    String? stripeConnectAccountId,
   }) {
     return BusinessAccount(
       id: id ?? this.id,
@@ -187,6 +194,7 @@ class BusinessAccount extends Equatable {
       createdBy: createdBy ?? this.createdBy,
       connectedExpertIds: connectedExpertIds ?? this.connectedExpertIds,
       pendingConnectionIds: pendingConnectionIds ?? this.pendingConnectionIds,
+      stripeConnectAccountId: stripeConnectAccountId ?? this.stripeConnectAccountId,
     );
   }
 
@@ -216,6 +224,7 @@ class BusinessAccount extends Equatable {
         createdBy,
         connectedExpertIds,
         pendingConnectionIds,
+        stripeConnectAccountId,
       ];
 }
 

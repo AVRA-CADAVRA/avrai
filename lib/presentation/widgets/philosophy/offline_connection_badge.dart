@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/theme/colors.dart';
 
 /// OUR_GUTS.md: "The key works offline"
 /// Shows when AI2AI connections happen offline
@@ -23,8 +23,8 @@ class OfflineConnectionBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isOffline 
-            ? AppColors.warning.withOpacity(0.1) 
-            : AppColors.success.withOpacity(0.1),
+            ? AppColors.warning.withValues(alpha: 0.1) 
+            : AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isOffline ? AppColors.warning : AppColors.success,

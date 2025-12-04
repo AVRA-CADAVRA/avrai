@@ -30,6 +30,8 @@ void main() {
           latitude: 37.7749,
           longitude: -122.4194,
           category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -48,6 +50,9 @@ void main() {
           description: 'Test Description',
           latitude: 37.7749,
           longitude: -122.4194,
+          category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -74,6 +79,9 @@ void main() {
           description: 'Original Description',
           latitude: 37.7749,
           longitude: -122.4194,
+          category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -95,6 +103,9 @@ void main() {
           description: 'Test Description',
           latitude: 37.7749,
           longitude: -122.4194,
+          category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -115,6 +126,9 @@ void main() {
           description: 'Description 1',
           latitude: 37.7749,
           longitude: -122.4194,
+          category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -124,6 +138,9 @@ void main() {
           description: 'Description 2',
           latitude: 37.7849,
           longitude: -122.4294,
+          category: 'park',
+          rating: 4.5,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -146,6 +163,8 @@ void main() {
           latitude: 37.7749,
           longitude: -122.4194,
           category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -156,6 +175,8 @@ void main() {
           latitude: 37.7849,
           longitude: -122.4294,
           category: 'park',
+          rating: 4.5,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -179,6 +200,8 @@ void main() {
           latitude: 37.7749,
           longitude: -122.4194,
           category: 'cafe',
+          rating: 4.5,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -199,6 +222,8 @@ void main() {
           latitude: 37.7749,
           longitude: -122.4194,
           category: 'restaurant',
+          rating: 4.0,
+          createdBy: 'test_user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );

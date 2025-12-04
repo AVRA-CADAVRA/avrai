@@ -19,7 +19,7 @@ class BusinessAccountCreationPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Create Business Account'),
         backgroundColor: AppColors.electricGreen,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.white,
       ),
       body: BusinessAccountFormWidget(
         creator: user,
@@ -32,7 +32,7 @@ class BusinessAccountCreationPage extends StatelessWidget {
               backgroundColor: AppColors.electricGreen,
               action: SnackBarAction(
                 label: 'View',
-                textColor: Colors.white,
+                textColor: AppColors.white,
                 onPressed: () {
                   // Navigate to business dashboard
                 },

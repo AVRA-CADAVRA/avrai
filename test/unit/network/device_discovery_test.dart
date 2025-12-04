@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/network/device_discovery.dart';
-import 'package:spots/core/ai/privacy_protection.dart';
 
 void main() {
   group('DeviceDiscoveryService', () {

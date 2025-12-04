@@ -6,7 +6,6 @@ import 'package:spots/presentation/widgets/common/ai_thinking_indicator.dart';
 import 'package:spots/presentation/widgets/common/streaming_response_widget.dart';
 import 'package:spots/presentation/widgets/common/action_success_widget.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/services/llm_service.dart';
 import 'package:spots/core/ai/action_models.dart';
 import 'package:spots/core/services/action_history_service.dart';
 import 'package:geolocator/geolocator.dart';
@@ -275,13 +274,13 @@ class ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: isUser
               ? AppColors.primary
-              : (isError ? AppColors.error.withOpacity(0.1) : AppColors.grey100),
+              : (isError ? AppColors.error.withValues(alpha: 0.1) : AppColors.grey100),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           message,
           style: TextStyle(
-            color: isUser ? Colors.white : AppColors.textPrimary,
+            color: isUser ? AppColors.white : AppColors.textPrimary,
             fontSize: 16,
           ),
         ),

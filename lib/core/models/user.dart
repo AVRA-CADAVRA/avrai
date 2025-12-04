@@ -1,4 +1,3 @@
-import 'package:spots/core/models/user_role.dart';
 
 enum UserRole {
   user,

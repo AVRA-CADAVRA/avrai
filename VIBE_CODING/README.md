@@ -8,7 +8,7 @@ This folder contains the complete architecture and implementation guide for SPOT
 ### **Current Documentation Status**
 
 ```
-VIBE_CODING/
+VIBE_CODING/q
 ├── README.md                                    # This file - Overview and navigation
 ├── ARCHITECTURE/
 │   ├── vision_overview.md                      # ✅ Complete vision and concept

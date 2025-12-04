@@ -2,7 +2,6 @@ import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_progress.dart';
 import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/unified_list.dart';
 import 'package:spots/core/services/logger.dart';
 
 /// Expertise Service
@@ -226,7 +225,7 @@ class ExpertiseService {
   List<String> getUnlockedFeatures(ExpertiseLevel level) {
     final features = <String>[];
 
-    if (level.index >= ExpertiseLevel.city.index) {
+    if (level.index >= ExpertiseLevel.local.index) {
       features.add('event_hosting');
     }
 

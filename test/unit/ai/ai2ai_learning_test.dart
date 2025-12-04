@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:spots/core/ai/ai2ai_learning.dart' show AI2AIChatAnalyzer, AI2AIChatEvent, AI2AIChatAnalysisResult;
+import 'package:spots/core/ai/ai2ai_learning.dart';
 import 'package:spots/core/ai/personality_learning.dart';
-import 'package:spots/core/models/connection_metrics.dart';
+import 'package:spots/core/models/connection_metrics.dart' hide ChatMessage, ChatMessageType;
 
 import 'ai2ai_learning_test.mocks.dart';
 
@@ -29,12 +29,26 @@ void main() {
       test('should analyze chat conversation without errors', () async {
         const localUserId = 'test-user-123';
         final chatEvent = AI2AIChatEvent(
-          id: 'chat-123',
-          messageType: 'discovery_sync',
+          eventId: 'chat-123',
+          messageType: ChatMessageType.personalitySharing,
           participants: ['user1', 'user2'],
+          messages: [
+            ChatMessage(
+              senderId: 'user1',
+              content: 'Test message',
+              timestamp: DateTime.now(),
+              context: {},
+            ),
+          ],
           timestamp: DateTime.now(),
+          duration: const Duration(minutes: 5),
+          metadata: {},
         );
-        final connectionContext = ConnectionMetrics.empty();
+        final connectionContext = ConnectionMetrics.initial(
+          localAISignature: 'ai1',
+          remoteAISignature: 'ai2',
+          compatibility: 0.8,
+        );
 
         when(mockPrefs.getString(any)).thenReturn(null);
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
@@ -54,18 +68,36 @@ void main() {
 
       test('should handle different chat message types', () async {
         const localUserId = 'test-user-123';
-        final messageTypes = ['discovery_sync', 'recommendation_share', 'trust_verification'];
-        final connectionContext = ConnectionMetrics.empty();
+        final messageTypes = [
+          ChatMessageType.personalitySharing,
+          ChatMessageType.experienceSharing,
+          ChatMessageType.trustBuilding,
+        ];
+        final connectionContext = ConnectionMetrics.initial(
+          localAISignature: 'ai1',
+          remoteAISignature: 'ai2',
+          compatibility: 0.8,
+        );
 
         when(mockPrefs.getString(any)).thenReturn(null);
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
         for (final messageType in messageTypes) {
           final chatEvent = AI2AIChatEvent(
-            id: 'chat-$messageType',
+            eventId: 'chat-$messageType',
             messageType: messageType,
             participants: ['user1', 'user2'],
+            messages: [
+              ChatMessage(
+                senderId: 'user1',
+                content: 'Test message',
+                timestamp: DateTime.now(),
+                context: {},
+              ),
+            ],
             timestamp: DateTime.now(),
+            duration: const Duration(minutes: 5),
+            metadata: {},
           );
 
           final result = await analyzer.analyzeChatConversation(
@@ -83,12 +115,26 @@ void main() {
       test('should analyze collective intelligence without errors', () async {
         const localUserId = 'test-user-123';
         final chatEvent = AI2AIChatEvent(
-          id: 'chat-123',
-          messageType: 'discovery_sync',
+          eventId: 'chat-123',
+          messageType: ChatMessageType.personalitySharing,
           participants: ['user1', 'user2', 'user3'],
+          messages: [
+            ChatMessage(
+              senderId: 'user1',
+              content: 'Test message',
+              timestamp: DateTime.now(),
+              context: {},
+            ),
+          ],
           timestamp: DateTime.now(),
+          duration: const Duration(minutes: 5),
+          metadata: {},
         );
-        final connectionContext = ConnectionMetrics.empty();
+        final connectionContext = ConnectionMetrics.initial(
+          localAISignature: 'ai1',
+          remoteAISignature: 'ai2',
+          compatibility: 0.8,
+        );
 
         when(mockPrefs.getString(any)).thenReturn(null);
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
@@ -107,12 +153,26 @@ void main() {
       test('should ensure chat analysis contains no user data', () async {
         const localUserId = 'test-user-123';
         final chatEvent = AI2AIChatEvent(
-          id: 'chat-123',
-          messageType: 'discovery_sync',
+          eventId: 'chat-123',
+          messageType: ChatMessageType.personalitySharing,
           participants: ['user1', 'user2'],
+          messages: [
+            ChatMessage(
+              senderId: 'user1',
+              content: 'Test message',
+              timestamp: DateTime.now(),
+              context: {},
+            ),
+          ],
           timestamp: DateTime.now(),
+          duration: const Duration(minutes: 5),
+          metadata: {},
         );
-        final connectionContext = ConnectionMetrics.empty();
+        final connectionContext = ConnectionMetrics.initial(
+          localAISignature: 'ai1',
+          remoteAISignature: 'ai2',
+          compatibility: 0.8,
+        );
 
         when(mockPrefs.getString(any)).thenReturn(null);
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
@@ -130,4 +190,3 @@ void main() {
     });
   });
 }
-

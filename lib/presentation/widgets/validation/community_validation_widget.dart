@@ -146,7 +146,7 @@ class _CommunityValidationWidgetState extends State<CommunityValidationWidget> {
                   label: Text(
                     '${index + 1}★',
                     style: TextStyle(
-                      color: isSelected ? Colors.black : AppColors.grey700,
+                      color: isSelected ? AppColors.black : AppColors.grey700,
                       fontSize: 12,
                     ),
                   ),
@@ -193,7 +193,7 @@ class _CommunityValidationWidgetState extends State<CommunityValidationWidget> {
                       issue,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isSelected ? Colors.black : AppColors.grey700,
+                        color: isSelected ? AppColors.black : AppColors.grey700,
                       ),
                     ),
                     selected: isSelected,
@@ -245,7 +245,7 @@ class _CommunityValidationWidgetState extends State<CommunityValidationWidget> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                           valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                           valueColor: AlwaysStoppedAnimation<Color>(AppColors.black),
                         ),
                       )
                     : const Text('Submit Validation'),
@@ -292,7 +292,7 @@ class _CommunityValidationWidgetState extends State<CommunityValidationWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(8),
       ),

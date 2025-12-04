@@ -4,7 +4,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:spots/data/repositories/auth_repository_impl.dart';
 import 'package:spots/core/models/user.dart';
 
-import '../../fixtures/model_factories.dart';
 import '../../helpers/test_helpers.dart';
 import '../../mocks/mock_dependencies.mocks.dart';
 

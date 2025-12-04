@@ -5,7 +5,6 @@ import 'package:spots/data/repositories/spots_repository_impl.dart';
 import 'package:spots/core/models/spot.dart';
 
 import '../../fixtures/model_factories.dart';
-import '../../helpers/test_helpers.dart';
 import '../../mocks/mock_dependencies.mocks.dart';
 
 /// Comprehensive test suite for SpotsRepositoryImpl

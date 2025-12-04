@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'dart:async';
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/user_vibe.dart';
@@ -9,13 +8,15 @@ import 'package:spots/core/ai/personality_learning.dart';
 import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/services/ai2ai_realtime_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:spots/core/models/realtime_discovered_node.dart';
 import 'package:spots/core/ai2ai/aipersonality_node.dart';
 import 'package:spots/core/ai2ai/orchestrator_components.dart';
 import 'package:spots/core/services/logger.dart';
 import 'package:spots/core/network/device_discovery.dart';
 import 'package:spots/core/network/ai2ai_protocol.dart';
 import 'package:spots/core/network/personality_advertising_service.dart';
+import 'package:spots/core/models/unified_user.dart';
+import 'package:spots/core/models/anonymous_user.dart';
+import 'package:spots/core/services/user_anonymization_service.dart';
 import 'package:spots_network/spots_network.dart';
 
 /// OUR_GUTS.md: "AI2AI vibe-based connections that enable cross-personality learning while preserving privacy"
@@ -33,6 +34,7 @@ class VibeConnectionOrchestrator {
   final DeviceDiscoveryService? _deviceDiscovery;
   final AI2AIProtocol? _protocol;
   final PersonalityAdvertisingService? _advertisingService;
+  final UserAnonymizationService? _anonymizationService;
   final AppLogger _logger = const AppLogger(defaultTag: 'AI2AI', minimumLevel: LogLevel.debug);
   
   // Connection state management
@@ -62,6 +64,7 @@ class VibeConnectionOrchestrator {
     DeviceDiscoveryService? deviceDiscovery,
     AI2AIProtocol? protocol,
     PersonalityAdvertisingService? advertisingService,
+    UserAnonymizationService? anonymizationService,
     PersonalityLearning? personalityLearning, // NEW: For offline AI2AI learning
   })  : _vibeAnalyzer = vibeAnalyzer,
         _connectivity = connectivity,
@@ -69,6 +72,7 @@ class VibeConnectionOrchestrator {
         _deviceDiscovery = deviceDiscovery,
         _protocol = protocol,
         _advertisingService = advertisingService,
+        _anonymizationService = anonymizationService,
         _discoveryManager = DiscoveryManager(connectivity: connectivity, vibeAnalyzer: vibeAnalyzer),
         _connectionManager = ConnectionManager(
           vibeAnalyzer: vibeAnalyzer,
@@ -668,6 +672,74 @@ class VibeConnectionOrchestrator {
   /// Get current user vibe for AI2AI matching (stub; can be wired to cache)
   UserVibe? getCurrentVibe() {
     return null;
+  }
+
+  /// Convert UnifiedUser to AnonymousUser for AI2AI transmission
+  /// 
+  /// **CRITICAL:** This method ensures no personal data is transmitted in AI2AI network.
+  /// All user data must be converted to AnonymousUser before transmission.
+  /// 
+  /// **Throws:**
+  /// - Exception if anonymizationService is not available
+  /// - Exception if conversion fails
+  Future<AnonymousUser> anonymizeUserForTransmission(
+    UnifiedUser user,
+    String agentId,
+    PersonalityProfile? personalityProfile, {
+    bool isAdmin = false,
+  }) async {
+    if (_anonymizationService == null) {
+      throw Exception('UserAnonymizationService not available. Cannot anonymize user for transmission.');
+    }
+
+    _logger.info('Anonymizing user for AI2AI transmission: ${user.id} -> $agentId', tag: _logName);
+    
+    try {
+      final anonymousUser = await _anonymizationService!.anonymizeUser(
+        user,
+        agentId,
+        personalityProfile,
+        isAdmin: isAdmin,
+      );
+      
+      _logger.info('User anonymized successfully for transmission', tag: _logName);
+      return anonymousUser;
+    } catch (e) {
+      _logger.error('Failed to anonymize user for transmission', error: e, tag: _logName);
+      rethrow;
+    }
+  }
+
+  /// Validate that no UnifiedUser is being sent directly in AI2AI network
+  /// 
+  /// This is a safety check to prevent accidental personal data leaks.
+  /// All user data must be converted to AnonymousUser before transmission.
+  void validateNoUnifiedUserInPayload(Map<String, dynamic> payload) {
+    // Check for common UnifiedUser fields that should never appear in AI2AI payloads
+    final forbiddenFields = ['id', 'email', 'displayName', 'photoUrl', 'userId'];
+    
+    for (final field in forbiddenFields) {
+      if (payload.containsKey(field)) {
+        throw Exception(
+          'CRITICAL: UnifiedUser field "$field" detected in AI2AI payload. '
+          'All user data must be converted to AnonymousUser before transmission. '
+          'Use anonymizeUserForTransmission() method.'
+        );
+      }
+    }
+    
+    // Recursively check nested objects
+    for (final value in payload.values) {
+      if (value is Map<String, dynamic>) {
+        validateNoUnifiedUserInPayload(value);
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map<String, dynamic>) {
+            validateNoUnifiedUserInPayload(item);
+          }
+        }
+      }
+    }
   }
 
   /// Set up realtime listeners for AI2AI communication (safe no-op if unavailable)

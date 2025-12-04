@@ -5,12 +5,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/common/ai_thinking_indicator.dart';
-import 'package:spots/test/widget/helpers/widget_test_helpers.dart';
 
 void main() {
-  setUpAll(() {
-    WidgetTestHelpers.setupTestEnvironment();
-  });
 
   group('AIThinkingIndicator', () {
     testWidgets('renders full indicator with default stage', (tester) async {

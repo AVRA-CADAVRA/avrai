@@ -1,19 +1,18 @@
 /// Discovery Settings Page
-/// 
+///
 /// Part of Feature Matrix Phase 1: Critical UI/UX Features
-/// 
+///
 /// Allows users to configure device discovery settings:
 /// - Scan interval (how often to scan for devices)
 /// - Device timeout (how long before removing stale devices)
-/// 
+///
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:get_it/get_it.dart';
 import 'package:spots/core/network/device_discovery.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:spots/core/services/storage_service.dart';
 
 /// Page for configuring device discovery settings
 class DiscoverySettingsPage extends StatefulWidget {
@@ -27,11 +26,11 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
   final _formKey = GlobalKey<FormState>();
   final _scanIntervalController = TextEditingController();
   final _deviceTimeoutController = TextEditingController();
-  final _storage = GetStorage();
-  
+  final _storageService = StorageService.instance;
+
   static const String _scanIntervalKey = 'discovery_scan_interval';
   static const String _deviceTimeoutKey = 'discovery_device_timeout';
-  
+
   // Default values
   static const int defaultScanInterval = 5; // seconds
   static const int defaultDeviceTimeout = 2; // minutes
@@ -50,9 +49,11 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
   }
 
   void _loadSettings() {
-    final scanInterval = _storage.read<int>(_scanIntervalKey) ?? defaultScanInterval;
-    final deviceTimeout = _storage.read<int>(_deviceTimeoutKey) ?? defaultDeviceTimeout;
-    
+    final scanInterval =
+        _storageService.getInt(_scanIntervalKey) ?? defaultScanInterval;
+    final deviceTimeout =
+        _storageService.getInt(_deviceTimeoutKey) ?? defaultDeviceTimeout;
+
     _scanIntervalController.text = scanInterval.toString();
     _deviceTimeoutController.text = deviceTimeout.toString();
   }
@@ -67,8 +68,8 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       final deviceTimeout = int.parse(_deviceTimeoutController.text);
 
       // Save to storage
-      await _storage.write(_scanIntervalKey, scanInterval);
-      await _storage.write(_deviceTimeoutKey, deviceTimeout);
+      await _storageService.setInt(_scanIntervalKey, scanInterval);
+      await _storageService.setInt(_deviceTimeoutKey, deviceTimeout);
 
       // Apply to discovery service if it's running
       try {
@@ -309,4 +310,3 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
     );
   }
 }
-

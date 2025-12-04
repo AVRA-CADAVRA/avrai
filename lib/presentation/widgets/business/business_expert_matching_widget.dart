@@ -3,7 +3,6 @@ import 'package:spots/core/models/business_account.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/services/business_expert_matching_service.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/presentation/widgets/expertise/expertise_pin_widget.dart';
 
 /// Business Expert Matching Widget
 /// Displays expert matches for a business account
@@ -210,7 +209,7 @@ class BusinessExpertMatchingWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: matchTypeColor.withOpacity(0.1),
+                      color: matchTypeColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -248,7 +247,7 @@ class BusinessExpertMatchingWidget extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.electricGreen.withOpacity(0.1),
+                        color: AppColors.electricGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -311,7 +310,7 @@ class BusinessExpertMatchingWidget extends StatelessWidget {
                     label: const Text('Connect'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.electricGreen,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                     ),
                   ),
                 ],
@@ -339,9 +338,9 @@ class BusinessExpertMatchingWidget extends StatelessWidget {
       case MatchType.expertise:
         return AppColors.electricGreen;
       case MatchType.community:
-        return Colors.blue;
+        return AppColors.electricGreen;
       case MatchType.aiSuggestion:
-        return Colors.purple;
+        return AppColors.grey600;
     }
   }
 

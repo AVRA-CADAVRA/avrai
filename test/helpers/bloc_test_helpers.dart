@@ -4,12 +4,8 @@
 /// Ensures optimal development and deployment through comprehensive testing
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bloc_test/bloc_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/user.dart';
-import 'package:spots/core/models/user_role.dart' show UserRole;
 import 'package:spots/core/models/list.dart';
 
 /// Common test utilities for BLoC testing

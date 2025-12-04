@@ -255,6 +255,29 @@ class MockLLMService extends _i1.Mock implements _i6.LLMService {
           ),
         )),
       ) as _i7.Future<String>);
+
+  @override
+  _i7.Stream<String> chatStream({
+    required List<_i6.ChatMessage>? messages,
+    _i6.LLMContext? context,
+    double? temperature = 0.7,
+    int? maxTokens = 500,
+    bool? useRealSSE = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #chatStream,
+          [],
+          {
+            #messages: messages,
+            #context: context,
+            #temperature: temperature,
+            #maxTokens: maxTokens,
+            #useRealSSE: useRealSSE,
+          },
+        ),
+        returnValue: _i7.Stream<String>.empty(),
+      ) as _i7.Stream<String>);
 }
 
 /// A class which mocks [Connectivity].

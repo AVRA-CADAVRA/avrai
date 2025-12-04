@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/pages/onboarding/onboarding_step.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for PermissionsPage (in onboarding_step.dart)
 /// Tests permissions page for enabling connectivity and location

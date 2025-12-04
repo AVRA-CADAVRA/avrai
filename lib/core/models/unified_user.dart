@@ -291,11 +291,11 @@ class UnifiedUser extends Equatable {
     return expertiseMap.keys.toList();
   }
 
-  /// Check if user can host events (requires City level or higher)
+  /// Check if user can host events (requires Local level or higher)
   bool canHostEvents() {
     return expertiseMap.values.any((levelString) {
       final level = ExpertiseLevel.fromString(levelString);
-      return level != null && level.index >= ExpertiseLevel.city.index;
+      return level != null && level.index >= ExpertiseLevel.local.index;
     });
   }
 

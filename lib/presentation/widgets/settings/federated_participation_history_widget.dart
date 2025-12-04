@@ -13,61 +13,77 @@
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/p2p/federated_learning.dart';
+import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:intl/intl.dart';
-
-/// Model representing user's participation history in federated learning
-class ParticipationHistory {
-  /// Total number of rounds user has participated in
-  final int totalRoundsParticipated;
-  
-  /// Number of rounds completed successfully
-  final int completedRounds;
-  
-  /// Total number of contributions (model updates) made
-  final int totalContributions;
-  
-  /// List of benefits earned from participation
-  final List<String> benefitsEarned;
-  
-  /// Date of last participation
-  final DateTime? lastParticipationDate;
-  
-  /// Current participation streak (consecutive rounds)
-  final int participationStreak;
-  
-  ParticipationHistory({
-    required this.totalRoundsParticipated,
-    required this.completedRounds,
-    required this.totalContributions,
-    required this.benefitsEarned,
-    this.lastParticipationDate,
-    required this.participationStreak,
-  });
-  
-  /// Calculate completion rate (0.0-1.0)
-  double get completionRate {
-    if (totalRoundsParticipated == 0) return 0.0;
-    return completedRounds / totalRoundsParticipated;
-  }
-  
-  /// Calculate average contributions per round
-  double get averageContributionsPerRound {
-    if (totalRoundsParticipated == 0) return 0.0;
-    return totalContributions / totalRoundsParticipated;
-  }
-}
+import 'package:get_it/get_it.dart';
 
 /// Widget displaying user's federated learning participation history
-class FederatedParticipationHistoryWidget extends StatelessWidget {
-  /// User's participation history (null if no participation yet)
-  final ParticipationHistory? participationHistory;
-  
-  const FederatedParticipationHistoryWidget({
-    super.key,
-    this.participationHistory,
-  });
+class FederatedParticipationHistoryWidget extends StatefulWidget {
+  const FederatedParticipationHistoryWidget({super.key});
+
+  @override
+  State<FederatedParticipationHistoryWidget> createState() => _FederatedParticipationHistoryWidgetState();
+}
+
+class _FederatedParticipationHistoryWidgetState extends State<FederatedParticipationHistoryWidget> {
+  late final FederatedLearningSystem _federatedLearningSystem;
+  ParticipationHistory? _participationHistory;
+  String? _currentNodeId;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use dependency injection to get FederatedLearningSystem
+    try {
+      _federatedLearningSystem = GetIt.instance<FederatedLearningSystem>();
+    } catch (e) {
+      // Fallback if not registered in DI (shouldn't happen in production)
+      _federatedLearningSystem = FederatedLearningSystem();
+    }
+    _loadParticipationHistory();
+  }
+
+  Future<void> _loadParticipationHistory() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Get current user ID as node ID
+      final authState = context.read<AuthBloc>().state;
+      if (authState is Authenticated) {
+        _currentNodeId = authState.user.id;
+      }
+
+      if (_currentNodeId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Fetch participation history from backend
+      final history = await _federatedLearningSystem.getParticipationHistory(_currentNodeId!);
+      
+      if (mounted) {
+        setState(() {
+          _participationHistory = history;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load participation history: ${e.toString()}';
+          _isLoading = false;
+          _participationHistory = null;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +104,7 @@ class FederatedParticipationHistoryWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.electricGreen.withOpacity(0.1),
+                      color: AppColors.electricGreen.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -111,13 +127,75 @@ class FederatedParticipationHistoryWidget extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              if (participationHistory == null)
+              if (_isLoading)
+                _buildLoadingState()
+              else if (_errorMessage != null)
+                _buildErrorState()
+              else if (_participationHistory == null)
                 _buildEmptyState()
               else
-                _buildHistoryContent(participationHistory!),
+                _buildHistoryContent(_participationHistory!),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.electricGreen,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.error.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _errorMessage ?? 'An error occurred',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _loadParticipationHistory,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.electricGreen,
+              foregroundColor: AppColors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -207,10 +285,10 @@ class FederatedParticipationHistoryWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: completionColor.withOpacity(0.1),
+              color: completionColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: completionColor.withOpacity(0.3),
+                color: completionColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -355,10 +433,10 @@ class FederatedParticipationHistoryWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.electricGreen.withOpacity(0.1),
+        color: AppColors.electricGreen.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.electricGreen.withOpacity(0.3),
+          color: AppColors.electricGreen.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

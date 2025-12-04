@@ -81,7 +81,7 @@ class BusinessCompatibilityWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: isGoodMatch
-                        ? AppColors.electricGreen.withOpacity(0.1)
+                        ? AppColors.electricGreen.withValues(alpha: 0.1)
                         : AppColors.grey200,
                     borderRadius: BorderRadius.circular(16),
                   ),

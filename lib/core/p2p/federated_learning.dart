@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'dart:math' as math;
-import 'dart:convert';
+import 'package:get_storage/get_storage.dart';
+import 'package:spots/core/services/storage_service.dart';
 
 /// OUR_GUTS.md: "Privacy-preserving federated learning with community insights"
 /// Federated learning system for collaborative AI training without data exposure
@@ -12,6 +13,20 @@ class FederatedLearningSystem {
   static const int _maxRounds = 50;
   static const double _convergenceThreshold = 0.001;
   static const Duration _roundTimeout = Duration(minutes: 10);
+  
+  // Storage keys
+  static const String _activeRoundsKey = 'federated_learning_active_rounds';
+  static const String _participationHistoryKey = 'federated_learning_participation_history';
+  static const String _completedRoundsKey = 'federated_learning_completed_rounds';
+  
+  final GetStorage _storage;
+  
+  /// Constructor with dependency injection for storage
+  /// 
+  /// [storage] - Optional GetStorage instance. If not provided, uses StorageService singleton.
+  /// This allows for testability by injecting mock storage in tests.
+  FederatedLearningSystem({GetStorage? storage})
+      : _storage = storage ?? StorageService.instance.defaultStorage;
   
   /// Initialize federated learning round
   /// OUR_GUTS.md: "Local model training with global model aggregation"
@@ -47,6 +62,9 @@ class FederatedLearningSystem {
       
       // Start learning round
       round.status = RoundStatus.training;
+      
+      // Store as active round
+      await _storeActiveRound(round);
       
       developer.log('Federated learning round initialized: ${round.roundId}', name: _logName);
       return round;
@@ -434,6 +452,344 @@ class FederatedLearningSystem {
     if (patterns.isEmpty) return 0.0;
     return patterns.map((p) => p.confidence).reduce((a, b) => a + b) / patterns.length;
   }
+  
+  /// Get active learning rounds for the current user
+  /// Returns list of rounds that are currently in progress
+  Future<List<FederatedLearningRound>> getActiveRounds(String? nodeId) async {
+    try {
+      developer.log('Getting active rounds for node: $nodeId', name: _logName);
+      
+      // Load active rounds from storage
+      final storedRounds = _storage.read<List>(_activeRoundsKey) ?? [];
+      
+      // Convert stored data to FederatedLearningRound objects
+      final activeRounds = <FederatedLearningRound>[];
+      for (final roundData in storedRounds) {
+        try {
+          final round = _roundFromJson(roundData as Map<String, dynamic>);
+          // Only include rounds that are not completed or failed
+          if (round.status != RoundStatus.completed && 
+              round.status != RoundStatus.failed) {
+            activeRounds.add(round);
+          }
+        } catch (e) {
+          developer.log('Error parsing round: $e', name: _logName);
+        }
+      }
+      
+      // Filter by nodeId if provided (rounds where user is participating)
+      if (nodeId != null) {
+        activeRounds.removeWhere((round) => 
+          !round.participantNodeIds.contains(nodeId));
+      }
+      
+      developer.log('Found ${activeRounds.length} active rounds', name: _logName);
+      return activeRounds;
+    } catch (e) {
+      developer.log('Error getting active rounds: $e', name: _logName);
+      return [];
+    }
+  }
+  
+  /// Get participation history for a specific node
+  /// Returns history of rounds the user has participated in
+  Future<ParticipationHistory> getParticipationHistory(String nodeId) async {
+    try {
+      developer.log('Getting participation history for node: $nodeId', name: _logName);
+      
+      // Load participation history from storage
+      final storedHistory = _storage.read<Map<String, dynamic>>(
+        '${_participationHistoryKey}_$nodeId'
+      ) ?? {};
+      
+      // Load completed rounds to calculate metrics
+      final completedRounds = _storage.read<List>(_completedRoundsKey) ?? [];
+      
+      // Count rounds where this node participated
+      int totalRoundsParticipated = 0;
+      int completedRoundsCount = 0;
+      int totalContributions = 0;
+      DateTime? lastParticipationDate;
+      int participationStreak = 0;
+      
+      for (final roundData in completedRounds) {
+        try {
+          final round = _roundFromJson(roundData as Map<String, dynamic>);
+          if (round.participantNodeIds.contains(nodeId)) {
+            totalRoundsParticipated++;
+            if (round.status == RoundStatus.completed) {
+              completedRoundsCount++;
+            }
+            // Count contributions (updates submitted)
+            if (round.participantUpdates.containsKey(nodeId)) {
+              totalContributions++;
+            }
+            // Track last participation date
+            if (lastParticipationDate == null || 
+                round.createdAt.isAfter(lastParticipationDate)) {
+              lastParticipationDate = round.createdAt;
+            }
+          }
+        } catch (e) {
+          developer.log('Error parsing completed round: $e', name: _logName);
+        }
+      }
+      
+      // Calculate participation streak (consecutive days with participation)
+      participationStreak = _calculateParticipationStreak(nodeId, completedRounds);
+      
+      // Load benefits earned from storage
+      final benefitsEarned = (storedHistory['benefitsEarned'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList() ?? [];
+      
+      final history = ParticipationHistory(
+        totalRoundsParticipated: totalRoundsParticipated,
+        completedRounds: completedRoundsCount,
+        totalContributions: totalContributions,
+        benefitsEarned: benefitsEarned,
+        lastParticipationDate: lastParticipationDate,
+        participationStreak: participationStreak,
+      );
+      
+      developer.log('Participation history: ${history.totalRoundsParticipated} rounds, ${history.completedRounds} completed', name: _logName);
+      return history;
+    } catch (e) {
+      developer.log('Error getting participation history: $e', name: _logName);
+      return ParticipationHistory(
+        totalRoundsParticipated: 0,
+        completedRounds: 0,
+        totalContributions: 0,
+        benefitsEarned: [],
+        lastParticipationDate: null,
+        participationStreak: 0,
+      );
+    }
+  }
+  
+  /// Store a round as active
+  Future<void> _storeActiveRound(FederatedLearningRound round) async {
+    try {
+      final storedRounds = _storage.read<List>(_activeRoundsKey) ?? [];
+      storedRounds.add(_roundToJson(round));
+      await _storage.write(_activeRoundsKey, storedRounds);
+    } catch (e) {
+      developer.log('Error storing active round: $e', name: _logName);
+    }
+  }
+  
+  /// Move a round from active to completed
+  Future<void> _moveRoundToCompleted(FederatedLearningRound round) async {
+    try {
+      // Remove from active rounds
+      final activeRounds = _storage.read<List>(_activeRoundsKey) ?? [];
+      activeRounds.removeWhere((r) => 
+        (r as Map<String, dynamic>)['roundId'] == round.roundId);
+      await _storage.write(_activeRoundsKey, activeRounds);
+      
+      // Add to completed rounds
+      final completedRounds = _storage.read<List>(_completedRoundsKey) ?? [];
+      completedRounds.add(_roundToJson(round));
+      await _storage.write(_completedRoundsKey, completedRounds);
+    } catch (e) {
+      developer.log('Error moving round to completed: $e', name: _logName);
+    }
+  }
+  
+  /// Convert FederatedLearningRound to JSON
+  Map<String, dynamic> _roundToJson(FederatedLearningRound round) {
+    return {
+      'roundId': round.roundId,
+      'organizationId': round.organizationId,
+      'objective': {
+        'name': round.objective.name,
+        'description': round.objective.description,
+        'type': round.objective.type.toString(),
+        'parameters': round.objective.parameters,
+      },
+      'participantNodeIds': round.participantNodeIds,
+      'status': round.status.toString(),
+      'createdAt': round.createdAt.toIso8601String(),
+      'roundNumber': round.roundNumber,
+      'globalModel': {
+        'modelId': round.globalModel.modelId,
+        'objective': {
+          'name': round.globalModel.objective.name,
+          'description': round.globalModel.objective.description,
+          'type': round.globalModel.objective.type.toString(),
+          'parameters': round.globalModel.objective.parameters,
+        },
+        'version': round.globalModel.version,
+        'parameters': round.globalModel.parameters,
+        'loss': round.globalModel.loss,
+        'accuracy': round.globalModel.accuracy,
+        'updatedAt': round.globalModel.updatedAt.toIso8601String(),
+      },
+      'participantUpdates': round.participantUpdates.map((key, value) => 
+        MapEntry(key, {
+          'nodeId': value.nodeId,
+          'roundId': value.roundId,
+          'gradients': value.gradients,
+          'trainingMetrics': {
+            'samplesUsed': value.trainingMetrics.samplesUsed,
+            'trainingLoss': value.trainingMetrics.trainingLoss,
+            'accuracy': value.trainingMetrics.accuracy,
+            'privacyBudgetUsed': value.trainingMetrics.privacyBudgetUsed,
+          },
+          'timestamp': value.timestamp.toIso8601String(),
+          'privacyCompliant': value.privacyCompliant,
+        })
+      ),
+      'privacyMetrics': {
+        'privacyBudgetUsed': round.privacyMetrics.privacyBudgetUsed,
+        'noiseLevelApplied': round.privacyMetrics.noiseLevelApplied,
+        'differentialPrivacyEnabled': round.privacyMetrics.differentialPrivacyEnabled,
+      },
+    };
+  }
+  
+  /// Convert JSON to FederatedLearningRound
+  FederatedLearningRound _roundFromJson(Map<String, dynamic> json) {
+    final objectiveJson = json['objective'] as Map<String, dynamic>;
+    final objective = LearningObjective(
+      name: objectiveJson['name'] as String,
+      description: objectiveJson['description'] as String,
+      type: _parseLearningType(objectiveJson['type'] as String),
+      parameters: Map<String, dynamic>.from(objectiveJson['parameters'] as Map),
+    );
+    
+    final globalModelJson = json['globalModel'] as Map<String, dynamic>;
+    final globalModelObjectiveJson = globalModelJson['objective'] as Map<String, dynamic>;
+    final globalModel = GlobalModel(
+      modelId: globalModelJson['modelId'] as String,
+      objective: LearningObjective(
+        name: globalModelObjectiveJson['name'] as String,
+        description: globalModelObjectiveJson['description'] as String,
+        type: _parseLearningType(globalModelObjectiveJson['type'] as String),
+        parameters: Map<String, dynamic>.from(globalModelObjectiveJson['parameters'] as Map),
+      ),
+      version: globalModelJson['version'] as int,
+      parameters: Map<String, dynamic>.from(globalModelJson['parameters'] as Map),
+      loss: (globalModelJson['loss'] as num).toDouble(),
+      accuracy: (globalModelJson['accuracy'] as num).toDouble(),
+      updatedAt: DateTime.parse(globalModelJson['updatedAt'] as String),
+    );
+    
+    final participantUpdates = <String, LocalModelUpdate>{};
+    final updatesJson = json['participantUpdates'] as Map<String, dynamic>? ?? {};
+    for (final entry in updatesJson.entries) {
+      final updateJson = entry.value as Map<String, dynamic>;
+      final metricsJson = updateJson['trainingMetrics'] as Map<String, dynamic>;
+      participantUpdates[entry.key] = LocalModelUpdate(
+        nodeId: updateJson['nodeId'] as String,
+        roundId: updateJson['roundId'] as String,
+        gradients: Map<String, dynamic>.from(updateJson['gradients'] as Map),
+        trainingMetrics: TrainingMetrics(
+          samplesUsed: metricsJson['samplesUsed'] as int,
+          trainingLoss: (metricsJson['trainingLoss'] as num).toDouble(),
+          accuracy: (metricsJson['accuracy'] as num).toDouble(),
+          privacyBudgetUsed: (metricsJson['privacyBudgetUsed'] as num).toDouble(),
+        ),
+        timestamp: DateTime.parse(updateJson['timestamp'] as String),
+        privacyCompliant: updateJson['privacyCompliant'] as bool,
+      );
+    }
+    
+    final privacyMetricsJson = json['privacyMetrics'] as Map<String, dynamic>;
+    final privacyMetrics = PrivacyMetrics(
+      privacyBudgetUsed: (privacyMetricsJson['privacyBudgetUsed'] as num).toDouble(),
+      noiseLevelApplied: (privacyMetricsJson['noiseLevelApplied'] as num).toDouble(),
+      differentialPrivacyEnabled: privacyMetricsJson['differentialPrivacyEnabled'] as bool,
+    );
+    
+    return FederatedLearningRound(
+      roundId: json['roundId'] as String,
+      organizationId: json['organizationId'] as String,
+      objective: objective,
+      participantNodeIds: List<String>.from(json['participantNodeIds'] as List),
+      status: _parseRoundStatus(json['status'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      roundNumber: json['roundNumber'] as int,
+      globalModel: globalModel,
+      participantUpdates: participantUpdates,
+      privacyMetrics: privacyMetrics,
+    );
+  }
+  
+  LearningType _parseLearningType(String type) {
+    switch (type) {
+      case 'LearningType.recommendation':
+        return LearningType.recommendation;
+      case 'LearningType.classification':
+        return LearningType.classification;
+      case 'LearningType.clustering':
+        return LearningType.clustering;
+      case 'LearningType.prediction':
+        return LearningType.prediction;
+      default:
+        return LearningType.recommendation;
+    }
+  }
+  
+  RoundStatus _parseRoundStatus(String status) {
+    switch (status) {
+      case 'RoundStatus.initializing':
+        return RoundStatus.initializing;
+      case 'RoundStatus.training':
+        return RoundStatus.training;
+      case 'RoundStatus.aggregating':
+        return RoundStatus.aggregating;
+      case 'RoundStatus.completed':
+        return RoundStatus.completed;
+      case 'RoundStatus.failed':
+        return RoundStatus.failed;
+      default:
+        return RoundStatus.initializing;
+    }
+  }
+  
+  /// Calculate participation streak (consecutive days with participation)
+  int _calculateParticipationStreak(String nodeId, List<dynamic> completedRounds) {
+    final participationDates = <DateTime>[];
+    for (final roundData in completedRounds) {
+      try {
+        final round = _roundFromJson(roundData as Map<String, dynamic>);
+        if (round.participantNodeIds.contains(nodeId) && 
+            round.status == RoundStatus.completed) {
+          participationDates.add(round.createdAt);
+        }
+      } catch (e) {
+        // Skip invalid rounds
+      }
+    }
+    
+    if (participationDates.isEmpty) return 0;
+    
+    // Sort dates descending
+    participationDates.sort((a, b) => b.compareTo(a));
+    
+    // Calculate streak
+    int streak = 0;
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    
+    for (int i = 0; i < participationDates.length; i++) {
+      final participationDate = DateTime(
+        participationDates[i].year,
+        participationDates[i].month,
+        participationDates[i].day,
+      );
+      
+      final expectedDate = todayDate.subtract(Duration(days: i));
+      if (participationDate == expectedDate) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  }
 }
 
 // Supporting classes and enums
@@ -673,4 +1029,46 @@ class PrivateInsight {
 class FederatedLearningException implements Exception {
   final String message;
   FederatedLearningException(this.message);
+}
+
+/// Participation history for a user in federated learning
+class ParticipationHistory {
+  /// Total number of rounds user has participated in
+  final int totalRoundsParticipated;
+  
+  /// Number of rounds completed successfully
+  final int completedRounds;
+  
+  /// Total number of contributions (model updates) made
+  final int totalContributions;
+  
+  /// List of benefits earned from participation
+  final List<String> benefitsEarned;
+  
+  /// Date of last participation
+  final DateTime? lastParticipationDate;
+  
+  /// Current participation streak (consecutive rounds)
+  final int participationStreak;
+  
+  ParticipationHistory({
+    required this.totalRoundsParticipated,
+    required this.completedRounds,
+    required this.totalContributions,
+    required this.benefitsEarned,
+    this.lastParticipationDate,
+    required this.participationStreak,
+  });
+  
+  /// Calculate completion rate (0.0-1.0)
+  double get completionRate {
+    if (totalRoundsParticipated == 0) return 0.0;
+    return completedRounds / totalRoundsParticipated;
+  }
+  
+  /// Calculate average contributions per round
+  double get averageContributionsPerRound {
+    if (totalRoundsParticipated == 0) return 0.0;
+    return totalContributions / totalRoundsParticipated;
+  }
 }

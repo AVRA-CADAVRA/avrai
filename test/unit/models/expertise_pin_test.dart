@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_level.dart';
+import 'package:spots/core/theme/colors.dart';
 import '../../helpers/test_helpers.dart';
 
 /// Comprehensive tests for ExpertisePin model
@@ -182,7 +183,7 @@ void main() {
           earnedAt: testDate,
           earnedReason: 'Test',
         );
-        expect(coffeePin.getPinColor(), equals(Colors.brown));
+        expect(coffeePin.getPinColor(), equals(AppColors.grey700));
 
         final restaurantPin = ExpertisePin(
           id: 'pin-2',
@@ -192,7 +193,7 @@ void main() {
           earnedAt: testDate,
           earnedReason: 'Test',
         );
-        expect(restaurantPin.getPinColor(), equals(Colors.red));
+        expect(restaurantPin.getPinColor(), equals(AppColors.error));
 
         final bookstorePin = ExpertisePin(
           id: 'pin-3',
@@ -202,7 +203,7 @@ void main() {
           earnedAt: testDate,
           earnedReason: 'Test',
         );
-        expect(bookstorePin.getPinColor(), equals(Colors.blue));
+        expect(bookstorePin.getPinColor(), equals(AppColors.electricGreen));
       });
 
       test('getPinColor should return grey for unknown category', () {
@@ -214,7 +215,7 @@ void main() {
           earnedAt: testDate,
           earnedReason: 'Test',
         );
-        expect(unknownPin.getPinColor(), equals(Colors.grey));
+        expect(unknownPin.getPinColor(), equals(AppColors.grey500));
       });
 
       test('getPinIcon should return category-specific icons', () {
@@ -253,7 +254,21 @@ void main() {
     });
 
     group('Feature Unlocking', () {
-      test('unlocksEventHosting should return true for city level and above', () {
+      test('unlocksEventHosting should return true for local level and above', () {
+        // Local level unlocks event hosting
+        expect(
+          ExpertisePin(
+            id: 'pin-local',
+            userId: 'user-123',
+            category: 'Coffee',
+            level: ExpertiseLevel.local,
+            earnedAt: testDate,
+            earnedReason: 'Test',
+          ).unlocksEventHosting(),
+          isTrue,
+        );
+
+        // City level also unlocks event hosting (expanded scope)
         expect(
           ExpertisePin(
             id: 'pin-1',
@@ -266,6 +281,7 @@ void main() {
           isTrue,
         );
 
+        // Regional level and above also unlock event hosting
         expect(
           ExpertisePin(
             id: 'pin-2',
@@ -276,20 +292,6 @@ void main() {
             earnedReason: 'Test',
           ).unlocksEventHosting(),
           isTrue,
-        );
-      });
-
-      test('unlocksEventHosting should return false for local level', () {
-        expect(
-          ExpertisePin(
-            id: 'pin-1',
-            userId: 'user-123',
-            category: 'Coffee',
-            level: ExpertiseLevel.local,
-            earnedAt: testDate,
-            earnedReason: 'Test',
-          ).unlocksEventHosting(),
-          isFalse,
         );
       });
 

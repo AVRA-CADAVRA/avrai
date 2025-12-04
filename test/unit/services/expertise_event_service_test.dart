@@ -28,7 +28,7 @@ void main() {
     });
 
     group('createEvent', () {
-      test('should create event when host has city level expertise', () async {
+      test('should create event when host has local level expertise', () async {
         final startTime = DateTime.now().add(const Duration(days: 7));
         final endTime = startTime.add(const Duration(hours: 2));
 
@@ -49,19 +49,18 @@ void main() {
         expect(event.status, equals(EventStatus.upcoming));
       });
 
-      test('should throw exception when host lacks city level expertise', () async {
-        final localHost = ModelFactories.createTestUser(
+      test('should throw exception when host lacks local level expertise', () async {
+        final userWithoutExpertise = ModelFactories.createTestUser(
           id: 'host-456',
-        ).copyWith(
-          expertiseMap: {'food': 'local'},
         );
+        // No expertise - cannot host events
 
         final startTime = DateTime.now().add(const Duration(days: 7));
         final endTime = startTime.add(const Duration(hours: 2));
 
         expect(
           () => service.createEvent(
-            host: localHost,
+            host: userWithoutExpertise,
             title: 'Food Tour',
             description: 'A guided food tour',
             category: 'food',
@@ -69,7 +68,7 @@ void main() {
             startTime: startTime,
             endTime: endTime,
           ),
-          throwsException,
+          throwsA(isA<Exception>()),
         );
       });
 

@@ -47,7 +47,7 @@ class DynamicExpertiseThresholds {
     return PlatformPhase.mature;
   }
   
-  /// Base requirements for City-level (event hosting ability)
+  /// Base requirements for Local-level (event hosting ability) - City level provides expanded hosting scope
   static ExpertiseRequirements getCityLevelRequirements(
     String category,
     PlatformPhase phase,
@@ -1803,7 +1803,7 @@ class ExpertiseProgression {
         minCommunityEngagement: (8 * saturation).ceil(),
       ),
       
-      // City level = Can host events
+      // Local level = Can host events (City level = Expanded hosting scope)
       ExpertiseLevel.city: _getCityRequirements(baseReqs, saturation),
       
       // Higher levels for future

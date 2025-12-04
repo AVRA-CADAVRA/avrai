@@ -1,5 +1,4 @@
 import 'package:sembast/sembast.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast_io.dart';
@@ -91,4 +90,8 @@ class SembastDatabase {
       stringMapStoreFactory.store('onboarding');
   static final StoreRef<String, Map<String, dynamic>> respectsStore = 
       stringMapStoreFactory.store('respects');
+  static final StoreRef<String, Map<String, dynamic>> taxProfilesStore = 
+      stringMapStoreFactory.store('tax_profiles');
+  static final StoreRef<String, Map<String, dynamic>> taxDocumentsStore = 
+      stringMapStoreFactory.store('tax_documents');
 }

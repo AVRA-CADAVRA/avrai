@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:spots/core/theme/colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/presentation/pages/settings/notifications_settings_page.dart';
 import 'package:spots/presentation/pages/settings/privacy_settings_page.dart';
 import 'package:spots/presentation/pages/settings/help_support_page.dart';
 import 'package:spots/presentation/pages/settings/about_page.dart';
+import 'package:spots/presentation/pages/tax/tax_profile_page.dart';
+import 'package:spots/presentation/pages/tax/tax_documents_page.dart';
+import 'package:spots/presentation/pages/legal/terms_of_service_page.dart';
+import 'package:spots/presentation/pages/legal/privacy_policy_page.dart';
+import 'package:spots/presentation/pages/verification/identity_verification_page.dart';
 // Phase 1 Integration: Device Discovery & AI2AI
 import 'package:go_router/go_router.dart';
+// Phase 4.5: Partnership Profile Visibility
+import 'package:spots/presentation/widgets/profile/partnership_display_widget.dart';
+import 'package:spots/core/models/user_partnership.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -46,7 +55,7 @@ class ProfilePage extends StatelessWidget {
                                           .substring(0, 1)
                                           .toUpperCase(),
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -109,6 +118,11 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
+                  // Partnerships Section (Phase 4.5)
+                  _buildPartnershipsSection(context, state.user.id),
+
+                  const SizedBox(height: 24),
+
                   // Settings Section
                   Text(
                     'Settings',
@@ -147,6 +161,16 @@ class ProfilePage extends StatelessWidget {
                       );
                     },
                   ),
+                  // Phase 4: Expertise Dashboard Navigation
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.school,
+                    title: 'Expertise Dashboard',
+                    subtitle: 'View your expertise profile and progress',
+                    onTap: () {
+                      context.go('/profile/expertise-dashboard');
+                    },
+                  ),
                   // Phase 1 Integration: New settings links
                   _buildSettingsItem(
                     context,
@@ -183,6 +207,107 @@ class ProfilePage extends StatelessWidget {
                     subtitle: 'Privacy-preserving AI training',
                     onTap: () {
                       context.go('/federated-learning');
+                    },
+                  ),
+                  // Phase 7, Week 37: AI Self-Improvement Visibility
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.trending_up,
+                    title: 'AI Improvement',
+                    subtitle: 'See how your AI is improving',
+                    onTap: () {
+                      context.go('/ai-improvement');
+                    },
+                  ),
+                  // Phase 7, Week 38: AI2AI Learning Methods UI
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.psychology,
+                    title: 'AI2AI Learning Methods',
+                    subtitle: 'See how your AI learns from other AIs',
+                    onTap: () {
+                      context.go('/ai2ai-learning-methods');
+                    },
+                  ),
+                  // Phase 7, Section 39: Continuous Learning UI
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.auto_awesome,
+                    title: 'Continuous Learning',
+                    subtitle: 'See how your AI continuously learns',
+                    onTap: () {
+                      context.go('/continuous-learning');
+                    },
+                  ),
+                  // Tax & Legal Section
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.verified_user,
+                    title: 'Identity Verification',
+                    subtitle: 'Verify your identity for high earnings',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const IdentityVerificationPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.receipt_long,
+                    title: 'Tax Profile',
+                    subtitle: 'Manage W-9 and tax information',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TaxProfilePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.description,
+                    title: 'Tax Documents',
+                    subtitle: 'View and download tax forms',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TaxDocumentsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.gavel,
+                    title: 'Terms of Service',
+                    subtitle: 'View terms and conditions',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TermsOfServicePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.privacy_tip,
+                    title: 'Privacy Policy',
+                    subtitle: 'View privacy policy',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacyPolicyPage(),
+                        ),
+                      );
                     },
                   ),
                   _buildSettingsItem(
@@ -257,6 +382,56 @@ class ProfilePage extends StatelessWidget {
         onTap: onTap,
       ),
     );
+  }
+
+  Widget _buildPartnershipsSection(BuildContext context, String userId) {
+    // TODO: Replace with actual PartnershipProfileService once Agent 1 completes it
+    // For now, using FutureBuilder with empty list
+    // The service will be: sl<PartnershipProfileService>().getActivePartnerships(userId)
+    
+    return FutureBuilder<List<UserPartnership>>(
+      future: _loadPartnerships(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink(); // Don't show loading, just skip if not ready
+        }
+
+        final partnerships = snapshot.data ?? [];
+        
+        if (partnerships.isEmpty) {
+          return const SizedBox.shrink(); // Don't show empty state on profile page
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PartnershipDisplayWidget(
+              partnerships: partnerships,
+              maxDisplayCount: 3,
+              onViewAllTap: (_) {
+                context.go('/profile/partnerships');
+              },
+              onPartnershipTap: (partnership) {
+                // Navigate to partnership details if needed
+                // For now, just navigate to partnerships page
+                context.go('/profile/partnerships');
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<List<UserPartnership>> _loadPartnerships(String userId) async {
+    // TODO: Replace with actual service call once PartnershipProfileService is available
+    // Example:
+    // final service = sl<PartnershipProfileService>();
+    // return await service.getActivePartnerships(userId);
+    
+    // For now, return empty list
+    // This will be replaced when Agent 1 completes PartnershipProfileService
+    return [];
   }
 
   void _showSignOutDialog(BuildContext context) {

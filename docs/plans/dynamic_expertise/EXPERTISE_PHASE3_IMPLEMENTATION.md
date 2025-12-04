@@ -272,7 +272,7 @@ ExpertiseRecognitionWidget(
 - ✅ Community validation
 
 ### **3. Expertise Unlocks Features**
-- ✅ City level+ unlocks event hosting
+- ✅ Local level+ unlocks event hosting (City level provides expanded hosting scope)
 - ✅ Regional level+ unlocks expert curation
 - ✅ Pins unlock capabilities
 - ✅ Level-based access

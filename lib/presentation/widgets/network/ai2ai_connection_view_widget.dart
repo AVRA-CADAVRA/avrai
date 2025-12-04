@@ -199,8 +199,8 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
   }
   
   Widget _buildConnectionCard(ConnectionMetrics connection) {
-    final compatibilityScore = (connection.vibeAlignment * 100).toInt();
-    final compatibilityColor = _getCompatibilityColor(connection.vibeAlignment);
+    final compatibilityScore = (connection.currentCompatibility * 100).toInt();
+    final compatibilityColor = _getCompatibilityColor(connection.currentCompatibility);
     final isFullyCompatible = compatibilityScore == 100;
     
     return Card(
@@ -222,7 +222,7 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
           children: [
             _buildConnectionHeader(connection, compatibilityScore, compatibilityColor),
             const SizedBox(height: 16),
-            _buildCompatibilityBar(connection.vibeAlignment, compatibilityColor),
+            _buildCompatibilityBar(connection.currentCompatibility, compatibilityColor),
             const SizedBox(height: 16),
             _buildLearningMetrics(connection),
             const SizedBox(height: 16),
@@ -233,6 +233,8 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
             ],
             const SizedBox(height: 12),
             _buildFleetingNotice(connection),
+            const SizedBox(height: 8),
+            _buildPrivacyIndicator(),
           ],
         ),
       ),
@@ -252,7 +254,7 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
             gradient: LinearGradient(
               colors: [
                 AppColors.electricGreen,
-                AppColors.neonPink,
+                AppColors.electricGreen.withValues(alpha: 0.7),
               ],
             ),
             shape: BoxShape.circle,
@@ -278,7 +280,7 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Connected ${_formatDuration(connection.duration)}',
+                'Connected ${_formatDuration(connection.connectionDuration)}',
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -361,17 +363,17 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
         children: [
           _buildMetricItem(
             Icons.swap_horiz,
-            '${connection.sharedInsights}',
+            '${connection.learningOutcomes['insights_gained'] ?? 0}',
             'Insights',
           ),
           _buildMetricItem(
             Icons.trending_up,
-            '${connection.learningExchanges}',
+            '${connection.interactionHistory.length}',
             'Exchanges',
           ),
           _buildMetricItem(
             Icons.favorite,
-            '${(connection.vibeAlignment * 100).toInt()}',
+            '${(connection.currentCompatibility * 100).toInt()}',
             'Vibe',
           ),
         ],
@@ -460,7 +462,7 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
         gradient: LinearGradient(
           colors: [
             AppColors.electricGreen.withValues(alpha: 0.1),
-            AppColors.neonPink.withValues(alpha: 0.1),
+            AppColors.electricGreen.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -540,6 +542,29 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
     );
   }
   
+  Widget _buildPrivacyIndicator() {
+    return Row(
+      children: [
+        Icon(
+          Icons.verified_user,
+          size: 12,
+          color: AppColors.success,
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            'Privacy protected • No personal information shared',
+            style: TextStyle(
+              fontSize: 10,
+              color: AppColors.success,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  
   Color _getCompatibilityColor(double score) {
     if (score >= 0.9) return AppColors.electricGreen;
     if (score >= 0.7) return AppColors.success;
@@ -565,15 +590,16 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
   }
   
   String _generateCompatibilityReason(ConnectionMetrics connection) {
-    final score = connection.vibeAlignment;
+    final score = connection.currentCompatibility;
+    final insightsGained = connection.learningOutcomes['insights_gained'] as int? ?? 0;
     
     if (score >= 0.9) {
       return 'Your AIs share exceptional vibe alignment and complementary learning patterns. '
-          'They\'ve exchanged ${connection.sharedInsights} insights with high mutual benefit, '
+          'They\'ve exchanged $insightsGained insights with high mutual benefit, '
           'creating optimal conditions for cross-personality learning.';
     } else if (score >= 0.7) {
       return 'Your AIs have strong vibe compatibility and aligned interests. '
-          'They\'ve shared ${connection.sharedInsights} insights, showing good potential '
+          'They\'ve shared $insightsGained insights, showing good potential '
           'for meaningful learning exchanges.';
     } else if (score >= 0.5) {
       return 'Your AIs found moderate compatibility through shared learning dimensions. '

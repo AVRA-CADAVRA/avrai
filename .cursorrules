@@ -110,6 +110,7 @@ Then synthesize comprehensive answer.
 - **Master Plan System:** `.cursorrules_master_plan` (automated workflow for new features)
 - **SPOTS Philosophy:** `docs/plans/philosophy_implementation/SPOTS_PHILOSOPHY_AND_ARCHITECTURE.md` (CRITICAL - all work must align)
 - **Development Guide:** `README_DEVELOPMENT.md`
+- **Documentation Protocol:** `docs/agents/REFACTORING_PROTOCOL.md` (MANDATORY for all documentation)
 
 ---
 
@@ -141,7 +142,61 @@ Then synthesize comprehensive answer.
 
 ---
 
+## 📁 Documentation Organization Protocol (MANDATORY)
+
+**ALL agents MUST follow the Documentation Refactoring Protocol when creating or organizing documentation.**
+
+### Refactoring Protocol (MANDATORY)
+
+**Before creating ANY documentation, you MUST:**
+
+1. **Read the refactoring protocol:**
+   ```
+   read_file('docs/agents/REFACTORING_PROTOCOL.md')
+   ```
+
+2. **Follow the mandatory folder structure:**
+   - Phase-specific docs → `docs/agents/prompts/[phase]/` and `docs/agents/tasks/[phase]/`
+   - Shared docs → `docs/agents/status/`, `docs/agents/protocols/`, `docs/agents/reference/`
+   - Reports → `docs/agents/reports/agent_X/[phase]/`
+
+3. **Critical Rules:**
+   - ✅ **DO:** Create phase folders in `prompts/` and `tasks/`
+   - ✅ **DO:** Update SINGLE status tracker (`status/status_tracker.md`) with new phase sections
+   - ✅ **DO:** Organize reports by agent first, then phase
+   - ❌ **DO NOT:** Create files in `docs/` root (e.g., `docs/PHASE_3_TASKS.md`)
+   - ❌ **DO NOT:** Create phase-specific status trackers (use single file)
+   - ❌ **DO NOT:** Create phase-specific protocols (use shared protocols)
+
+4. **When creating documentation:**
+   - Check if it's phase-specific or shared
+   - Place in correct folder per protocol
+   - Update status tracker (single file) if needed
+   - Follow file naming conventions
+
+**Reference:** `docs/agents/REFACTORING_PROTOCOL.md` - **MUST READ before creating documentation**
+
+**This protocol applies to ALL phases (Phase 3+ and future phases).**
+
+---
+
 ## 🎨 Project-Specific Rules
+
+### Master Plan Notation (100% Adherence Required)
+- ✅ **ALWAYS use Phase.Section.Subsection (X.Y.Z) format** for all work references
+- ✅ **Format:** Phase X, Section Y, Subsection Z
+- ✅ **Shorthand:** X.Y.Z (e.g., 1.1.1 = Phase 1, Section 1, Subsection 1)
+- ✅ **Section only:** X.Y (e.g., 1.1 = Phase 1, Section 1)
+- ❌ **NEVER use "Week" or "Day" terminology** - use "Section" and "Subsection" instead
+- ❌ **NEVER mix old and new formats** - consistency is mandatory
+- **This applies to:**
+  - Master Plan references
+  - Status tracker updates
+  - Task assignments
+  - Agent prompts
+  - Completion reports
+  - All documentation
+- **Reference:** `docs/MASTER_PLAN.md` (Notation System section) for complete format guide
 
 ### Design Tokens (100% Adherence Required)
 - ✅ ALWAYS use `AppColors` or `AppTheme` for colors
@@ -190,6 +245,7 @@ Then synthesize comprehensive answer.
 - [ ] I have read OUR_GUTS.md - MANDATORY
 - [ ] I have read SPOTS Philosophy (docs/plans/philosophy_implementation/SPOTS_PHILOSOPHY_AND_ARCHITECTURE.md) - MANDATORY
 - [ ] I have read Development Methodology (docs/plans/methodology/DEVELOPMENT_METHODOLOGY.md) - MANDATORY
+- [ ] I have read Documentation Refactoring Protocol (docs/agents/REFACTORING_PROTOCOL.md) - MANDATORY for documentation
 - [ ] I have checked Master Plan (docs/MASTER_PLAN.md) for execution sequence
 - [ ] I have checked Master Plan Tracker (docs/MASTER_PLAN_TRACKER.md) for all plans
 - [ ] I have discovered ALL relevant plans (in docs/plans/ folders)
@@ -235,6 +291,6 @@ ALWAYS invest the 40 minutes.
 
 ---
 
-**Last Updated:** November 21, 2025  
+**Last Updated:** November 23, 2025  
 **Status:** Active - Mandatory for all AI assistants working on SPOTS
 

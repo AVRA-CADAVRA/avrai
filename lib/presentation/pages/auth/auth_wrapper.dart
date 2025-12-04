@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/presentation/pages/auth/login_page.dart';
 import 'package:spots/presentation/pages/onboarding/onboarding_page.dart';

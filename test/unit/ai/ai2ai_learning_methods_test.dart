@@ -1,9 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/ai/ai2ai_learning.dart';
 import 'package:spots/core/ai/personality_learning.dart';
-import 'package:spots/core/models/connection_metrics.dart';
-import 'package:spots/core/models/personality_profile.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart' as sp;
+import 'package:spots/core/services/storage_service.dart';
 
 void main() {
   group('AI2AI Learning Methods Tests', () {
@@ -11,11 +10,15 @@ void main() {
     late PersonalityLearning personalityLearning;
     
     setUp(() async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      personalityLearning = PersonalityLearning.withPrefs(prefs);
+      sp.SharedPreferences.setMockInitialValues({});
+      final sharedPrefs = await sp.SharedPreferences.getInstance();
+      // PersonalityLearning uses SharedPreferences from storage_service (typedef to SharedPreferencesCompat)
+      // AI2AIChatAnalyzer uses SharedPreferences from shared_preferences package
+      // Use the compat version for PersonalityLearning
+      final compatPrefs = await SharedPreferencesCompat.getInstance();
+      personalityLearning = PersonalityLearning.withPrefs(compatPrefs);
       analyzer = AI2AIChatAnalyzer(
-        prefs: prefs,
+        prefs: sharedPrefs,
         personalityLearning: personalityLearning,
       );
     });
@@ -33,9 +36,10 @@ void main() {
               context: {},
             ),
           ],
-          messageType: 'text',
+          messageType: ChatMessageType.personalitySharing,
           timestamp: DateTime.now(),
           duration: const Duration(minutes: 5),
+          metadata: {},
         );
         
         expect(event.eventId, 'test_event_1');
@@ -74,16 +78,18 @@ void main() {
       
       test('CollectiveKnowledge can be created', () {
         final knowledge = CollectiveKnowledge(
+          communityId: 'test_community',
           aggregatedInsights: [],
           emergingPatterns: [],
           consensusKnowledge: {},
           communityTrends: [],
           reliabilityScores: {},
-          timestamp: DateTime.now(),
-          participantCount: 5,
+          contributingChats: 5,
+          knowledgeDepth: 0.8,
+          lastUpdated: DateTime.now(),
         );
         
-        expect(knowledge.participantCount, 5);
+        expect(knowledge.contributingChats, 5);
         expect(knowledge.aggregatedInsights, isEmpty);
       });
       
@@ -111,31 +117,33 @@ void main() {
           optimalPartners: [],
           learningTopics: [],
           developmentAreas: [],
+          interactionStrategy: InteractionStrategy.balanced(),
           expectedOutcomes: [],
-          recommendationScore: 0.85,
+          confidenceScore: 0.85,
           generatedAt: DateTime.now(),
         );
         
         expect(recommendations.userId, 'test_user');
-        expect(recommendations.recommendationScore, 0.85);
+        expect(recommendations.confidenceScore, 0.85);
       });
       
       test('LearningEffectivenessMetrics can be created', () {
         final metrics = LearningEffectivenessMetrics(
           userId: 'test_user',
-          personalityEvolutionRate: 0.15,
-          knowledgeAcquisitionSpeed: 0.8,
-          insightQualityScore: 0.9,
+          timeWindow: const Duration(days: 30),
+          evolutionRate: 0.15,
+          knowledgeAcquisition: 0.8,
+          insightQuality: 0.9,
           trustNetworkGrowth: 0.7,
           collectiveContribution: 0.6,
+          totalInteractions: 10,
           overallEffectiveness: 0.75,
-          measurementWindow: const Duration(days: 30),
-          timestamp: DateTime.now(),
+          measuredAt: DateTime.now(),
         );
         
         expect(metrics.userId, 'test_user');
         expect(metrics.overallEffectiveness, 0.75);
-        expect(metrics.personalityEvolutionRate, 0.15);
+        expect(metrics.evolutionRate, 0.15);
       });
     });
     
@@ -151,9 +159,10 @@ void main() {
             timestamp: DateTime.now().subtract(Duration(minutes: 10 - i)),
             context: {},
           )),
-          messageType: 'text',
+          messageType: ChatMessageType.personalitySharing,
           timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
           duration: const Duration(minutes: 8),
+          metadata: {},
         );
         
         final deepConversation = AI2AIChatEvent(
@@ -165,9 +174,10 @@ void main() {
             timestamp: DateTime.now().subtract(Duration(minutes: 30 - i * 2)),
             context: {},
           )),
-          messageType: 'text',
+          messageType: ChatMessageType.experienceSharing,
           timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
           duration: const Duration(minutes: 30),
+          metadata: {},
         );
         
         final groupInteraction = AI2AIChatEvent(
@@ -179,9 +189,10 @@ void main() {
             timestamp: DateTime.now().subtract(Duration(minutes: 20 - i)),
             context: {},
           )),
-          messageType: 'text',
+          messageType: ChatMessageType.insightExchange,
           timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
           duration: const Duration(minutes: 20),
+          metadata: {},
         );
         
         expect(rapidExchange.messages.length, 8);
@@ -212,9 +223,10 @@ void main() {
               context: {},
             ),
           ],
-          messageType: 'text',
+          messageType: ChatMessageType.personalitySharing,
           timestamp: DateTime.now(),
           duration: const Duration(minutes: 5),
+          metadata: {},
         );
         
         final socialChat = AI2AIChatEvent(
@@ -234,9 +246,10 @@ void main() {
               context: {},
             ),
           ],
-          messageType: 'text',
+          messageType: ChatMessageType.experienceSharing,
           timestamp: DateTime.now(),
           duration: const Duration(minutes: 5),
+          metadata: {},
         );
         
         // Verify keyword presence
@@ -258,9 +271,10 @@ void main() {
               context: {},
             ),
           ],
-          messageType: 'text',
+          messageType: ChatMessageType.personalitySharing,
           timestamp: DateTime.now().subtract(Duration(days: i)),
           duration: const Duration(minutes: 5),
+          metadata: {},
         ));
         
         // Verify chat intervals
@@ -351,18 +365,22 @@ void main() {
           dimensionGroups.putIfAbsent(insight.dimension, () => []).add(insight);
         }
         
-        expect(dimensionGroups['adventure']!.length, 2);
-        expect(dimensionGroups['social']!.length, 1);
+        expect(dimensionGroups['adventure']?.length, 2);
+        expect(dimensionGroups['social']?.length, 1);
         
         // Calculate consensus for adventure dimension
-        final adventureInsights = dimensionGroups['adventure']!;
-        final avgValue = adventureInsights.map((i) => i.value).reduce((a, b) => a + b) / 
-                        adventureInsights.length;
-        final avgReliability = adventureInsights.map((i) => i.reliability).reduce((a, b) => a + b) / 
-                              adventureInsights.length;
-        
-        expect(avgValue, closeTo(0.8, 0.1));
-        expect(avgReliability, closeTo(0.85, 0.05));
+        final adventureInsights = dimensionGroups['adventure'];
+        if (adventureInsights != null && adventureInsights.isNotEmpty) {
+          final avgValue = adventureInsights.map((i) => i.value).reduce((a, b) => a + b) / 
+                          adventureInsights.length;
+          final avgReliability = adventureInsights.map((i) => i.reliability).reduce((a, b) => a + b) / 
+                                adventureInsights.length;
+          
+          expect(avgValue, closeTo(0.8, 0.1));
+          expect(avgReliability, closeTo(0.85, 0.05));
+        } else {
+          fail('Adventure insights should not be null or empty');
+        }
       });
       
       test('Knowledge reliability scoring', () {

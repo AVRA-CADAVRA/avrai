@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/connection_metrics.dart';
+import 'package:spots/core/models/collaborative_activity_metrics.dart';
 import 'package:spots/core/ai/personality_learning.dart';
-import 'package:spots/core/ai/cloud_learning.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ExpectedOutcome {
@@ -1572,6 +1572,140 @@ class AI2AIChatAnalyzer {
   
   double _calculateOverallEffectiveness(double evolution, double knowledge, double quality, double trust) {
     return (evolution + knowledge + quality + trust) / 4.0;
+  }
+  
+  /// Analyze collaborative activity patterns from AI2AI conversations
+  /// Phase 7 Week 40: Track list creation during AI2AI conversations
+  /// Privacy-safe: Returns aggregate metrics only, no user data
+  Future<CollaborativeActivityMetrics> _analyzeCollaborativeActivity(
+    String userId,
+    List<AI2AIChatEvent> chats,
+  ) async {
+    try {
+      if (chats.isEmpty) {
+        return CollaborativeActivityMetrics.empty();
+      }
+      
+      developer.log('Analyzing collaborative activity for user: $userId (${chats.length} chats)', name: _logName);
+      
+      // Track collaborative list creation
+      int totalCollaborativeLists = 0;
+      int groupChatLists = 0;
+      int dmLists = 0;
+      final groupSizes = <int, int>{};
+      final activityByHour = <int, int>{};
+      int totalPlanningSessions = 0;
+      double totalSessionDuration = 0.0;
+      int listsWithSpots = 0;
+      final timeDeltas = <Duration>[];
+      
+      // Get action history service (if available)
+      // Note: This is a simplified implementation - in production would inject service
+      // For now, we'll analyze based on chat patterns and metadata
+      
+      for (final chat in chats) {
+        // Check if this chat led to list creation
+        // Look for planning keywords in messages
+        bool hasPlanningKeywords = false;
+        for (final message in chat.messages) {
+          final content = message.content.toLowerCase();
+          if (content.contains('list') || 
+              content.contains('plan') || 
+              content.contains('create') ||
+              content.contains('collaborate') ||
+              content.contains('together')) {
+            hasPlanningKeywords = true;
+            break;
+          }
+        }
+        
+        if (hasPlanningKeywords) {
+          totalPlanningSessions++;
+          totalSessionDuration += chat.duration.inMinutes.toDouble();
+        }
+        
+        // Detect list creation (simplified - would check action history in production)
+        // For now, estimate based on chat characteristics
+        final groupSize = chat.participants.length;
+        final isGroupChat = groupSize >= 3;
+        
+        // Estimate list creation probability based on chat depth and planning keywords
+        final listCreationProbability = hasPlanningKeywords && chat.messages.length >= 3 ? 0.3 : 0.0;
+        
+        if (listCreationProbability > 0.1) {
+          totalCollaborativeLists++;
+          
+          // Categorize by group size
+          groupSizes[groupSize] = (groupSizes[groupSize] ?? 0) + 1;
+          
+          if (isGroupChat) {
+            groupChatLists++;
+          } else {
+            dmLists++;
+          }
+          
+          // Track activity by hour
+          final hour = chat.timestamp.hour;
+          activityByHour[hour] = (activityByHour[hour] ?? 0) + 1;
+          
+          // Estimate follow-through (lists with spots added)
+          if (chat.messages.length >= 5) {
+            listsWithSpots++;
+          }
+          
+          // Estimate time delta (simplified)
+          timeDeltas.add(Duration(minutes: 5)); // Placeholder
+        }
+      }
+      
+      if (totalCollaborativeLists == 0) {
+        return CollaborativeActivityMetrics.empty();
+      }
+      
+      // Calculate metrics
+      final collaborationRate = totalCollaborativeLists / chats.length;
+      final avgSessionDuration = totalPlanningSessions > 0 
+          ? totalSessionDuration / totalPlanningSessions 
+          : 0.0;
+      final followThroughRate = totalCollaborativeLists > 0
+          ? listsWithSpots / totalCollaborativeLists
+          : 0.0;
+      
+      // Estimate average list size and collaborator count (simplified)
+      final avgListSize = 8.3; // Placeholder - would calculate from actual lists
+      final avgCollaboratorCount = groupSizes.entries
+          .map((e) => e.key * e.value)
+          .fold(0, (sum, val) => sum + val) / 
+          totalCollaborativeLists;
+      
+      return CollaborativeActivityMetrics(
+        totalCollaborativeLists: totalCollaborativeLists,
+        groupChatLists: groupChatLists,
+        dmLists: dmLists,
+        avgListSize: avgListSize,
+        avgCollaboratorCount: avgCollaboratorCount,
+        groupSizeDistribution: groupSizes,
+        collaborationRate: collaborationRate,
+        totalPlanningSessions: totalPlanningSessions,
+        avgSessionDuration: avgSessionDuration,
+        followThroughRate: followThroughRate,
+        activityByHour: activityByHour,
+        collectionStart: chats.isNotEmpty 
+            ? chats.map((c) => c.timestamp).reduce((a, b) => a.isBefore(b) ? a : b)
+            : DateTime.now(),
+        lastUpdated: DateTime.now(),
+        measurementWindow: chats.isNotEmpty
+            ? chats.map((c) => c.timestamp).reduce((a, b) => a.isAfter(b) ? a : b)
+                .difference(chats.map((c) => c.timestamp).reduce((a, b) => a.isBefore(b) ? a : b))
+            : Duration.zero,
+        totalUsersContributing: 1, // Count only, no IDs
+        containsUserData: false,
+        isAnonymized: true,
+      );
+    } catch (e) {
+      developer.log('Error analyzing collaborative activity: $e', name: _logName);
+      return CollaborativeActivityMetrics.empty();
+    }
   }
 }
 

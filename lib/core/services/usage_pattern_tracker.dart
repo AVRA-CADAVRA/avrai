@@ -1,13 +1,17 @@
-import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:spots/core/models/usage_pattern.dart';
+import 'package:spots/core/services/logger.dart';
 
 /// OUR_GUTS.md: "Always Learning With You"
 /// Tracks how users engage with SPOTS to adapt AI behavior
 /// Philosophy: The key adapts to YOUR usage style
 class UsagePatternTracker {
   static const String _logName = 'UsagePatternTracker';
+  final AppLogger _logger = const AppLogger(
+    defaultTag: 'SPOTS',
+    minimumLevel: LogLevel.debug,
+  );
   static const String _storageKey = 'usage_pattern_';
   
   final SharedPreferences _prefs;
@@ -31,8 +35,13 @@ class UsagePatternTracker {
       
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return UsagePattern.fromJson(json);
-    } catch (e) {
-      developer.log('Error loading usage pattern: $e', name: _logName);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error loading usage pattern: $userId',
+        error: e,
+        stackTrace: stackTrace,
+        tag: _logName,
+      );
       return UsagePattern(
         userId: userId,
         firstUsed: DateTime.now(),
@@ -47,8 +56,13 @@ class UsagePatternTracker {
       final key = '$_storageKey${pattern.userId}';
       final jsonString = jsonEncode(pattern.toJson());
       await _prefs.setString(key, jsonString);
-    } catch (e) {
-      developer.log('Error saving usage pattern: $e', name: _logName);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error saving usage pattern: ${pattern.userId}',
+        error: e,
+        stackTrace: stackTrace,
+        tag: _logName,
+      );
     }
   }
   
@@ -105,9 +119,9 @@ class UsagePatternTracker {
     
     await _saveUsagePattern(updated);
     
-    developer.log(
+    _logger.debug(
       'Spot visit tracked: ${pattern.primaryMode} -> ${updated.primaryMode}',
-      name: _logName,
+      tag: _logName,
     );
   }
   
@@ -163,9 +177,9 @@ class UsagePatternTracker {
     
     await _saveUsagePattern(updated);
     
-    developer.log(
+    _logger.debug(
       'Event attendance tracked: ${pattern.primaryMode} -> ${updated.primaryMode}',
-      name: _logName,
+      tag: _logName,
     );
   }
   
@@ -203,9 +217,9 @@ class UsagePatternTracker {
     
     await _saveUsagePattern(updated);
     
-    developer.log(
+    _logger.debug(
       'Community join tracked: ${pattern.primaryMode} -> ${updated.primaryMode}',
-      name: _logName,
+      tag: _logName,
     );
   }
   

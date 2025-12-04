@@ -5,12 +5,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/common/offline_indicator_widget.dart';
-import 'package:spots/test/widget/helpers/widget_test_helpers.dart';
 
 void main() {
-  setUpAll(() {
-    WidgetTestHelpers.setupTestEnvironment();
-  });
 
   group('OfflineIndicatorWidget', () {
     testWidgets('shows indicator when offline', (tester) async {

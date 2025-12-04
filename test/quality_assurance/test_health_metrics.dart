@@ -4,8 +4,7 @@
 /// Focus: Ensure deployment-ready code quality through comprehensive test analysis
 
 import 'dart:io';
-import 'dart:convert';
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:path/path.dart' as path;
 
 /// Comprehensive test health scoring system for SPOTS
@@ -341,7 +340,12 @@ class TestHealthMetrics {
       
       // Check for test descriptions
       final testCount = 'test('.allMatches(content).length;
-      final descriptiveTests = RegExp(r'test\(["\'][\w\s]{10,}["\']').allMatches(content).length;
+      // Match test() calls with descriptive strings (at least 10 chars)
+      // Use separate patterns for single and double quotes
+      final singleQuotePattern = RegExp(r"test\('[\w\s]{10,}'");
+      final doubleQuotePattern = RegExp(r'test\("[\w\s]{10,}"');
+      final descriptiveTests = singleQuotePattern.allMatches(content).length + 
+                               doubleQuotePattern.allMatches(content).length;
       if (testCount > 0) {
         fileScore += (descriptiveTests / testCount) * 0.4;
       }
@@ -363,9 +367,9 @@ class TestHealthMetrics {
   }
   
   static Future<CoverageData> _parseLcovCoverage(File lcovFile) async {
-    final content = await lcovFile.readAsString();
+    await lcovFile.readAsString();
     // Simplified LCOV parsing - in real implementation, use proper LCOV parser
-    final lines = content.split('\n');
+    // TODO: Implement proper LCOV parsing
     double overall = 0.0;
     final modules = <String, double>{};
     
@@ -476,8 +480,6 @@ class TestHealthMetrics {
   }
   
   static double _analyzeSingleFileAssertions(String content) {
-    double score = 0.0;
-    
     final assertions = ['expect(', 'assert', 'verify('];
     final testCount = 'test('.allMatches(content).length;
     

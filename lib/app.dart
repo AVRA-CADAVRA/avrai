@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';
@@ -6,7 +5,6 @@ import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
 import 'package:spots/presentation/blocs/lists/lists_bloc.dart';
 import 'package:spots/presentation/routes/app_router.dart';
-import 'package:go_router/go_router.dart';
 import 'package:spots/injection_container.dart' as di;
 
 class SpotsApp extends StatelessWidget {

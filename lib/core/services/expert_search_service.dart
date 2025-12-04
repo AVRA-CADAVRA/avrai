@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/services/logger.dart';
@@ -73,6 +72,7 @@ class ExpertSearchService {
   }
 
   /// Get top experts in a category
+  /// Includes Local level experts and above
   Future<List<ExpertSearchResult>> getTopExperts(
     String category, {
     String? location,
@@ -81,7 +81,7 @@ class ExpertSearchService {
     return searchExperts(
       category: category,
       location: location,
-      minLevel: ExpertiseLevel.city, // At least city level
+      minLevel: ExpertiseLevel.local, // Include Local level experts
       maxResults: maxResults,
     );
   }

@@ -18,7 +18,7 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
 
 ## 📋 New Components Requiring Tests
 
-### Priority 1: Critical Services (6 components)
+### Priority 1: Critical Services (9 components)
 
 **New Services:**
 1. [ ] `lib/core/services/action_history_service.dart` ⚠️ NEW
@@ -26,39 +26,70 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
    - **Complexity:** High (persistence, retrieval, undo logic)
    - **Test Priority:** CRITICAL
    - **Estimated Effort:** 2-3 hours
+   - **Owner:** Agent 1 (Action History)
 
 2. [ ] `lib/core/services/enhanced_connectivity_service.dart` ⚠️ NEW
    - **Purpose:** Robust offline detection with HTTP ping
    - **Complexity:** High (network state, HTTP verification)
    - **Test Priority:** CRITICAL
    - **Estimated Effort:** 2-3 hours
+   - **Owner:** System Service
 
 3. [ ] `lib/core/services/ai_improvement_tracking_service.dart` ⚠️ NEW
    - **Purpose:** Track AI self-improvement metrics
    - **Complexity:** Medium (metrics storage, retrieval)
    - **Test Priority:** HIGH
    - **Estimated Effort:** 1.5-2 hours
+   - **Owner:** System Service
+
+**Existing Services Missing Tests:**
+4. [ ] `lib/core/services/stripe_service.dart` ⚠️ EXISTING - Missing Tests
+   - **Purpose:** Stripe payment API wrapper
+   - **Complexity:** High (payment processing, error handling, API integration)
+   - **Test Priority:** CRITICAL (Payment is critical for MVP)
+   - **Estimated Effort:** 2-3 hours
+   - **Owner:** Agent 1 (Payment Processing)
+   - **Note:** Service is fully implemented, only tests missing
+
+5. [ ] `lib/core/services/event_template_service.dart` ⚠️ EXISTING - Missing Tests
+   - **Purpose:** Event template management for easy event creation
+   - **Complexity:** Medium (template caching, filtering, categorization)
+   - **Test Priority:** HIGH (Event creation is core feature)
+   - **Estimated Effort:** 1.5-2 hours
+   - **Owner:** Agent 2 (Event Discovery & Hosting)
+   - **Note:** Service is fully implemented, only tests missing
+
+6. [ ] `lib/core/services/contextual_personality_service.dart` ⚠️ EXISTING - Missing Tests
+   - **Purpose:** Context-aware personality analysis
+   - **Complexity:** Medium (context analysis, personality adaptation)
+   - **Test Priority:** MEDIUM (AI enhancement feature)
+   - **Estimated Effort:** 1.5-2 hours
+   - **Owner:** Agent 3 (Expertise UI & Testing) or System Service
+   - **Note:** Service is fully implemented, only tests missing
 
 **Updated Services:**
-4. [ ] `lib/core/services/llm_service.dart` ⚠️ UPDATED
+7. [ ] `lib/core/services/llm_service.dart` ⚠️ UPDATED
    - **Changes:** Added real SSE streaming via `chatStream()` method
    - **New Tests Needed:** Streaming response handling, SSE connection
    - **Test Priority:** CRITICAL
    - **Estimated Effort:** 1-2 hours (update existing tests)
+   - **Owner:** System Service
 
-5. [ ] `lib/core/services/admin_god_mode_service.dart` ⚠️ UPDATED
+8. [ ] `lib/core/services/admin_god_mode_service.dart` ⚠️ UPDATED
    - **Changes:** Enhanced with additional admin capabilities
    - **New Tests Needed:** New admin methods
    - **Test Priority:** HIGH
    - **Estimated Effort:** 1 hour (update existing tests)
+   - **Owner:** System Service
 
-6. [ ] `lib/core/ai/action_parser.dart` ⚠️ UPDATED
+9. [ ] `lib/core/ai/action_parser.dart` ⚠️ UPDATED
    - **Changes:** Enhanced action parsing capabilities
    - **New Tests Needed:** New action types
    - **Test Priority:** HIGH
    - **Estimated Effort:** 1 hour (update existing tests)
+   - **Owner:** System Service
 
-**Subtotal Effort:** 9-13 hours
+**Subtotal Effort:** 13-19 hours (increased from 9-13 hours due to 3 additional services)
 
 ---
 
@@ -264,31 +295,37 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
 
 | Priority | Components | Estimated Effort |
 |----------|------------|------------------|
-| **Priority 1: Critical Services** | 6 | 9-13 hours |
+| **Priority 1: Critical Services** | 9 | 13-19 hours |
 | **Priority 2: Models & Data** | 2 | 2 hours |
 | **Priority 3: Pages** | 8 | 13-18 hours |
 | **Priority 4: Widgets** | 16 | 23-33 hours |
 | **Priority 5: Infrastructure** | 2 | 2 hours |
-| **TOTAL** | **34** | **49-68 hours** |
+| **TOTAL** | **37** | **53-74 hours** |
 
-**Estimated Timeline:** 2-3 weeks (with focused effort)
+**Estimated Timeline:** 3-4 weeks (with focused effort) - Updated due to 3 additional services
 
 ---
 
 ## 🎯 Implementation Plan
 
 ### Week 1: Critical Components
-**Days 1-2: Critical Services**
-- [ ] Create `action_history_service_test.dart`
+**Days 1-2: Critical Services (New)**
+- [ ] Create `action_history_service_test.dart` (Agent 1)
 - [ ] Create `enhanced_connectivity_service_test.dart`
+- [ ] Create `ai_improvement_tracking_service_test.dart`
+
+**Days 3-4: Critical Services (Existing - Missing Tests)**
+- [ ] Create `stripe_service_test.dart` (Agent 1 - CRITICAL)
+- [ ] Create `event_template_service_test.dart` (Agent 2)
+- [ ] Create `contextual_personality_service_test.dart` (Agent 3 or System)
 - [ ] Update `llm_service_test.dart` (SSE streaming tests)
 
-**Days 3-4: Action/LLM UI Widgets**
+**Days 5-6: Action/LLM UI Widgets**
 - [ ] Create `action_success_widget_test.dart`
 - [ ] Create `streaming_response_widget_test.dart`
 - [ ] Create `ai_thinking_indicator_test.dart`
 
-**Day 5: Updated Components**
+**Day 7: Updated Components**
 - [ ] Update `ai_command_processor_test.dart`
 - [ ] Create `action_history_entry_test.dart`
 
@@ -314,7 +351,7 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
 - [ ] Create `ai_improvement_impact_widget_test.dart`
 
 **Days 3-4: Remaining Services & Pages**
-- [ ] Create `ai_improvement_tracking_service_test.dart`
+- [ ] Complete any remaining service tests from Days 1-4
 - [ ] Create `discovery_settings_page_test.dart`
 - [ ] Update `home_page_test.dart`
 - [ ] Update `profile_page_test.dart`
@@ -331,7 +368,7 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
 ## 📈 Success Criteria
 
 **Completion Requirements:**
-- [ ] All 34 components have comprehensive tests
+- [ ] All 37 components have comprehensive tests (34 original + 3 missing services)
 - [ ] All tests compile successfully
 - [ ] All tests pass (99%+ pass rate)
 - [ ] Coverage meets Phase 3 targets (90%+ critical, 85%+ high priority)
@@ -393,12 +430,12 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
 
 | Category | Effort |
 |----------|--------|
-| **Component Tests** | 49-68 hours |
+| **Component Tests** | 53-74 hours |
 | **Integration Tests** | 8-12 hours |
 | **Documentation** | 2-3 hours |
-| **TOTAL** | **59-83 hours** |
+| **TOTAL** | **63-89 hours** |
 
-**Timeline:** 3-4 weeks (with focused effort)
+**Timeline:** 3-4 weeks (with focused effort) - Updated timeline
 
 ---
 
@@ -406,13 +443,15 @@ After Test Suite Phase 4 completion (Nov 20, 2025, 3:55 PM CST), **approximately
 
 1. **Immediate (Today):**
    - [ ] Verify which federated learning widget tests already exist
+   - [ ] Create test for `stripe_service.dart` (CRITICAL - Agent 1, payment processing)
    - [ ] Create test for `action_history_service.dart` (most critical)
    - [ ] Create test for `enhanced_connectivity_service.dart`
 
 2. **This Week:**
-   - [ ] Complete all Priority 1 service tests
+   - [ ] Complete all Priority 1 service tests (9 services total: 3 new + 3 existing missing + 3 updated)
    - [ ] Complete critical UI widget tests (action success, streaming, thinking)
    - [ ] Update `ai_command_processor_test.dart`
+   - **Agent Coordination:** Agent 1 (stripe_service), Agent 2 (event_template_service), Agent 3 (contextual_personality_service)
 
 3. **Next 2-3 Weeks:**
    - [ ] Complete all page tests

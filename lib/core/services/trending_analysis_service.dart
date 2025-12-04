@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 class TrendingAnalysisService {
   static Map<String, dynamic> analyzeTrends(List<Map<String, dynamic>> data) {

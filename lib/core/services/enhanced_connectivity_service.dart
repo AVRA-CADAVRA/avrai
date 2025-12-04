@@ -30,10 +30,8 @@ class EnhancedConnectivityService {
   Future<bool> hasBasicConnectivity() async {
     try {
       final result = await _connectivity.checkConnectivity();
-      if (result is List) {
-        return !result.contains(ConnectivityResult.none);
-      }
-      return result != ConnectivityResult.none;
+      return !result.contains(ConnectivityResult.none);
+          return result != ConnectivityResult.none;
     } catch (e) {
       developer.log('Basic connectivity check failed: $e', name: _logName);
       return false;
@@ -89,10 +87,8 @@ class EnhancedConnectivityService {
   /// Stream of connectivity changes (basic connectivity only)
   Stream<bool> get connectivityStream {
     return _connectivity.onConnectivityChanged.map((result) {
-      if (result is List) {
-        return !result.contains(ConnectivityResult.none);
-      }
-      return result != ConnectivityResult.none;
+      return !result.contains(ConnectivityResult.none);
+          return result != ConnectivityResult.none;
     });
   }
   
@@ -116,7 +112,9 @@ class EnhancedConnectivityService {
     final internet = basic ? await hasInternetAccess() : false;
     
     final result = await _connectivity.checkConnectivity();
-    final connectionType = result is List ? result.first : result;
+    final connectionType = result is List 
+        ? (result.isNotEmpty ? result.first : ConnectivityResult.none)
+        : result as ConnectivityResult;
     
     return ConnectivityStatus(
       hasBasicConnectivity: basic,

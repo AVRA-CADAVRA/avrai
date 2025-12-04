@@ -169,29 +169,51 @@ The user's AI personality is actively learning from the network. Consider this i
       )
     }
 
-    // Create SSE stream
+    // Create SSE stream with enhanced error handling
     const encoder = new TextEncoder()
     const body = new ReadableStream({
       async start(controller) {
+        let reader: ReadableStreamDefaultReader<Uint8Array> | null = null
+        let timeoutId: number | null = null
+        const STREAM_TIMEOUT = 300000 // 5 minutes timeout for long responses
+        
         try {
-          const reader = response.body?.getReader()
+          reader = response.body?.getReader()
           if (!reader) {
             controller.enqueue(encoder.encode('data: {"error": "No response body"}\n\n'))
             controller.close()
             return
           }
 
+          // Set timeout for long-running streams
+          timeoutId = setTimeout(() => {
+            console.error('Stream timeout after 5 minutes')
+            controller.enqueue(
+              encoder.encode('data: {"error": "Stream timeout - response too long"}\n\n')
+            )
+            controller.enqueue(encoder.encode('data: {"done": true}\n\n'))
+            controller.close()
+            reader?.cancel()
+          }, STREAM_TIMEOUT)
+
           let buffer = ''
+          let hasReceivedData = false
           
           while (true) {
             const { done, value } = await reader.read()
             
             if (done) {
+              // Clear timeout on successful completion
+              if (timeoutId) clearTimeout(timeoutId)
+              
               // Send completion event
               controller.enqueue(encoder.encode('data: {"done": true}\n\n'))
               controller.close()
               break
             }
+
+            // Mark that we've received data
+            hasReceivedData = true
 
             // Decode chunk
             buffer += new TextDecoder().decode(value)
@@ -210,9 +232,33 @@ The user's AI personality is actively learning from the network. Consider this i
               try {
                 const data = JSON.parse(dataMatch[1])
                 
+                // Check for Gemini API errors
+                if (data.error) {
+                  console.error('Gemini API error in stream:', data.error)
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ error: data.error.message || String(data.error) })}\n\n`)
+                  )
+                  controller.enqueue(encoder.encode('data: {"done": true}\n\n'))
+                  controller.close()
+                  if (timeoutId) clearTimeout(timeoutId)
+                  return
+                }
+                
                 // Extract text from Gemini response
                 if (data.candidates && data.candidates.length > 0) {
-                  const text = data.candidates[0].content?.parts?.[0]?.text
+                  const candidate = data.candidates[0]
+                  
+                  // Check for finish reason (error or safety)
+                  if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+                    console.warn('Gemini finish reason:', candidate.finishReason)
+                    if (candidate.finishReason === 'SAFETY') {
+                      controller.enqueue(
+                        encoder.encode('data: {"error": "Response blocked by safety filters"}\n\n')
+                      )
+                    }
+                  }
+                  
+                  const text = candidate.content?.parts?.[0]?.text
                   if (text) {
                     // Send text chunk to client
                     controller.enqueue(
@@ -222,15 +268,28 @@ The user's AI personality is actively learning from the network. Consider this i
                 }
               } catch (e) {
                 console.error('Error parsing Gemini SSE data:', e)
+                // Continue processing - don't break the stream on parse errors
               }
             }
           }
         } catch (e) {
           console.error('Stream error:', e)
+          // Send error event before closing
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: String(e) })}\n\n`)
           )
+          controller.enqueue(encoder.encode('data: {"done": true}\n\n'))
           controller.close()
+        } finally {
+          // Cleanup
+          if (timeoutId) clearTimeout(timeoutId)
+          if (reader) {
+            try {
+              await reader.cancel()
+            } catch (e) {
+              console.error('Error canceling reader:', e)
+            }
+          }
         }
       },
     })

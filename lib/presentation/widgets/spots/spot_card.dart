@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/category_colors.dart';
@@ -25,7 +24,7 @@ class SpotCard extends StatelessWidget {
           backgroundColor: _getCategoryColor(spot.category),
           child: Icon(
             CategoryStyles.iconFor(spot.category),
-            color: Colors.white,
+            color: AppColors.white,
           ),
         ),
         title: Text(spot.name),
@@ -43,7 +42,7 @@ class SpotCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                    decoration: BoxDecoration(
-                     color: _getCategoryColor(spot.category).withOpacity(0.2),
+                     color: _getCategoryColor(spot.category).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

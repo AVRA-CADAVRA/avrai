@@ -82,7 +82,7 @@ class LearningInsightsWidget extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         leading: CircleAvatar(
-          backgroundColor: _getInsightColor(insight).withOpacity(0.2),
+          backgroundColor: _getInsightColor(insight).withValues(alpha: 0.2),
           child: Icon(
             _getInsightIcon(insight),
             color: _getInsightColor(insight),

@@ -18,7 +18,7 @@ class BusinessAccountsViewerPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.business, size: 64, color: Colors.grey),
+          Icon(Icons.business, size: 64, color: AppColors.grey500,
           const SizedBox(height: 16),
           Text(
             'Business Accounts Viewer',
@@ -28,7 +28,7 @@ class BusinessAccountsViewerPage extends StatelessWidget {
           Text(
             'View and manage business accounts',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
+                  color: AppColors.grey500
                 ),
           ),
           // TODO: Add business accounts list and management

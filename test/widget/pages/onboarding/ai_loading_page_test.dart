@@ -3,7 +3,7 @@ import 'package:spots/presentation/pages/onboarding/ai_loading_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/presentation/blocs/lists/lists_bloc.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 import '../../../mocks/mock_blocs.dart';
 
 /// Widget tests for AILoadingPage

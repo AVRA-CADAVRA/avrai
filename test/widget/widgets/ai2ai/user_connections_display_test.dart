@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:spots/presentation/widgets/ai2ai/user_connections_display.dart';
 import 'package:spots/core/monitoring/connection_monitor.dart';
-import '../../../helpers/widget_test_helpers.dart';
-import '../../../helpers/test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for UserConnectionsDisplay
 /// Tests display of active AI2AI connections
@@ -31,21 +31,14 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 3,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.75,
-          averageLatency: Duration(milliseconds: 100),
-          averageThroughput: 1000.0,
-          totalMessagesExchanged: 150,
-          averageQualityScore: 0.8,
-          totalLearningEvents: 25,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.75),
         topPerformingConnections: ['conn-1', 'conn-2', 'conn-3'],
         connectionsNeedingAttention: [],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),
         optimizationOpportunities: [],
         averageConnectionDuration: Duration(minutes: 15),
         totalAlertsGenerated: 0,
-        generatedAt: TestHelpers.createTestDateTime(),
+        generatedAt: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -70,21 +63,14 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 2,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.8,
-          averageLatency: Duration(milliseconds: 50),
-          averageThroughput: 2000.0,
-          totalMessagesExchanged: 200,
-          averageQualityScore: 0.9,
-          totalLearningEvents: 30,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.8),
         topPerformingConnections: ['connection-12345', 'connection-67890'],
         connectionsNeedingAttention: [],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),
         optimizationOpportunities: [],
         averageConnectionDuration: Duration(minutes: 20),
         totalAlertsGenerated: 0,
-        generatedAt: TestHelpers.createTestDateTime(),
+        generatedAt: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -104,21 +90,14 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 1,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.5,
-          averageLatency: Duration.zero,
-          averageThroughput: 0.0,
-          totalMessagesExchanged: 0,
-          averageQualityScore: 0.5,
-          totalLearningEvents: 0,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.5),
         topPerformingConnections: ['conn-1'],
         connectionsNeedingAttention: [],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),
         optimizationOpportunities: [],
         averageConnectionDuration: Duration.zero,
         totalAlertsGenerated: 0,
-        generatedAt: TestHelpers.createTestDateTime(),
+        generatedAt: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(

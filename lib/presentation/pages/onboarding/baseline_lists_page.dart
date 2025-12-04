@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/theme/app_theme.dart';
 
 class BaselineListsPage extends StatefulWidget {
   final List<String> baselineLists;
@@ -226,10 +226,10 @@ class _BaselineListsPageState extends State<BaselineListsPage>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -278,7 +278,7 @@ class _BaselineListsPageState extends State<BaselineListsPage>
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                         child: Icon(
                           _getListIcon(listName),
                           color: AppTheme.primaryColor,
@@ -301,7 +301,7 @@ class _BaselineListsPageState extends State<BaselineListsPage>
                         color: AppTheme.primaryColor,
                         size: 24,
                       ),
-                      tileColor: AppTheme.primaryColor.withOpacity(0.05),
+                      tileColor: AppTheme.primaryColor.withValues(alpha: 0.05),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

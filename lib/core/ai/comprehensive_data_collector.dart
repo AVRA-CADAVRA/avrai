@@ -1,10 +1,5 @@
 import 'dart:developer' as developer;
-import 'dart:math';
-import 'package:spots/core/models/user.dart';
-import 'package:spots/core/models/spot.dart';
-import 'package:spots/core/models/list.dart';
 import 'package:spots/core/ml/pattern_recognition.dart';
-import 'package:spots/core/models/unified_models.dart';
 
 /// Comprehensive Data Collector for AI Learning
 /// Collects all available data for continuous AI improvement

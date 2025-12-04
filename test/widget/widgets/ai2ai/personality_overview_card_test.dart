@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/ai2ai/personality_overview_card.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/constants/vibe_constants.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 import '../../../helpers/test_helpers.dart';
 
 /// Widget tests for PersonalityOverviewCard

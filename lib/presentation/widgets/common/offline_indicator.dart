@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';
 
@@ -14,10 +14,10 @@ class OfflineIndicator extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.offlineColor.withOpacity(0.1),
+              color: AppTheme.offlineColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.offlineColor.withOpacity(0.3),
+                color: AppTheme.offlineColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),

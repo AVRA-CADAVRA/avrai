@@ -19,13 +19,11 @@ class AppTheme {
     final colorScheme = const ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.electricGreen,
-      onPrimary: Colors.black,
+      onPrimary: AppColors.black,
       secondary: AppColors.grey600,
-      onSecondary: Colors.white,
+      onSecondary: AppColors.white,
       error: AppColors.error,
-      onError: Colors.white,
-      background: AppColors.white,
-      onBackground: AppColors.textPrimary,
+      onError: AppColors.white,
       surface: AppColors.white,
       onSurface: AppColors.textPrimary,
     );
@@ -53,7 +51,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.grey200,
-          foregroundColor: Colors.black,
+          foregroundColor: AppColors.black,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -126,13 +124,11 @@ class AppTheme {
     final colorScheme = const ColorScheme(
       brightness: Brightness.dark,
       primary: AppColors.electricGreen,
-      onPrimary: Colors.black,
+      onPrimary: AppColors.black,
       secondary: AppColors.grey600,
-      onSecondary: Colors.white,
+      onSecondary: AppColors.white,
       error: AppColors.error,
-      onError: Colors.white,
-      background: AppColors.grey900,
-      onBackground: AppColors.white,
+      onError: AppColors.white,
       surface: AppColors.grey900,
       onSurface: AppColors.white,
     );
@@ -141,8 +137,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.grey900,
-      textTheme:
-          GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
+      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
         bodyColor: AppColors.white,
         displayColor: AppColors.white,
       ),
@@ -161,7 +156,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.grey200,
-          foregroundColor: Colors.black,
+          foregroundColor: AppColors.black,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),

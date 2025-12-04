@@ -4,7 +4,6 @@ import 'package:spots/core/services/ai2ai_realtime_service.dart';
 import 'package:spots/core/ai2ai/connection_orchestrator.dart';
 import 'package:spots_network/spots_network.dart';
 import 'package:spots/core/ai2ai/aipersonality_node.dart';
-import 'package:spots/core/models/user_vibe.dart';
 
 class MockRealtimeBackend extends Mock implements RealtimeBackend {}
 class MockVibeConnectionOrchestrator extends Mock implements VibeConnectionOrchestrator {}

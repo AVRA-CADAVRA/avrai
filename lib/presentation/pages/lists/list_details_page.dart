@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:spots/core/theme/colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
@@ -76,7 +77,7 @@ class ListDetailsPage extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
                boxShadow: [
                  BoxShadow(
-                   color: Colors.black.withOpacity(0.1),
+                   color: AppColors.black.withValues(alpha: 0.1),
                    blurRadius: 4,
                    offset: const Offset(0, 2),
                  ),
@@ -172,7 +173,7 @@ class ListDetailsPage extends StatelessWidget {
                           Icon(
                             Icons.location_off_outlined,
                             size: 64,
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(

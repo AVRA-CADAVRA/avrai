@@ -1,5 +1,4 @@
 import 'package:spots/core/models/list.dart';
-import 'package:spots/core/models/unified_models.dart';
 abstract class ListsRemoteDataSource {
   Future<List<SpotList>> getLists();
   Future<List<SpotList>> getPublicLists({int? limit});

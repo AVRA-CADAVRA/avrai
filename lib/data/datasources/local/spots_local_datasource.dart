@@ -1,5 +1,4 @@
 import 'package:spots/core/models/spot.dart';
-import 'package:spots/core/models/unified_models.dart';
 abstract class SpotsLocalDataSource {
   Future<List<Spot>> getAllSpots();
   Future<Spot?> getSpotById(String id);

@@ -1,11 +1,6 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math';
-import 'package:spots/core/constants/vibe_constants.dart';
-import 'package:spots/core/models/personality_profile.dart';
-import 'package:spots/core/models/connection_metrics.dart';
-import 'package:spots/core/models/user_vibe.dart';
-import 'package:spots/core/ai2ai/connection_orchestrator.dart';
-import 'package:spots/core/services/storage_service.dart' hide SharedPreferences;
 import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
 
 /// OUR_GUTS.md: "Network analytics that monitor AI2AI personality network health while preserving privacy"
@@ -661,6 +656,50 @@ class NetworkAnalytics {
   
   double _calculateCurrentEfficiencyScore(ConnectionEfficiencyMetrics conn, List<LearningBottleneck> bottlenecks, ResourceOptimizationMetrics resource) => 0.75;
   double _calculatePotentialEfficiencyScore(ConnectionEfficiencyMetrics conn, PerformanceImprovementMetrics improvements) => 0.85;
+  
+  /// Stream network health updates
+  /// Emits initial value immediately, then periodic updates every 5-10 seconds
+  Stream<NetworkHealthReport> streamNetworkHealth() async* {
+    // Emit initial value immediately
+    try {
+      yield await analyzeNetworkHealth();
+    } catch (e) {
+      developer.log('Error in streamNetworkHealth initial value: $e', name: _logName);
+      yield NetworkHealthReport.degraded();
+    }
+    
+    // Then emit periodic updates every 8 seconds
+    await for (final _ in Stream.periodic(const Duration(seconds: 8), (_) => null)) {
+      try {
+        yield await analyzeNetworkHealth();
+      } catch (e) {
+        developer.log('Error in streamNetworkHealth periodic update: $e', name: _logName);
+        yield NetworkHealthReport.degraded();
+      }
+    }
+  }
+  
+  /// Stream real-time metrics updates
+  /// Emits initial value immediately, then periodic updates every 5-10 seconds
+  Stream<RealTimeMetrics> streamRealTimeMetrics() async* {
+    // Emit initial value immediately
+    try {
+      yield await collectRealTimeMetrics();
+    } catch (e) {
+      developer.log('Error in streamRealTimeMetrics initial value: $e', name: _logName);
+      yield RealTimeMetrics.zero();
+    }
+    
+    // Then emit periodic updates every 7 seconds
+    await for (final _ in Stream.periodic(const Duration(seconds: 7), (_) => null)) {
+      try {
+        yield await collectRealTimeMetrics();
+      } catch (e) {
+        developer.log('Error in streamRealTimeMetrics periodic update: $e', name: _logName);
+        yield RealTimeMetrics.zero();
+      }
+    }
+  }
 }
 
 // Supporting classes for network analytics

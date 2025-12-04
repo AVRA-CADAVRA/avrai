@@ -21,7 +21,6 @@ import 'package:spots/domain/usecases/search/hybrid_search_usecase.dart';
 import 'package:spots/core/services/search_cache_service.dart';
 import 'package:spots/core/services/ai_search_suggestions_service.dart';
 import 'package:spots/data/repositories/hybrid_search_repository.dart';
-import 'package:geolocator/geolocator.dart';
 import '../helpers/bloc_test_helpers.dart';
 
 // Auth Use Case Mocks
@@ -152,10 +151,10 @@ class MockBehaviorSetup {
         .thenAnswer((_) async => TestDataFactory.createTestSpots(3));
     
     when(() => BlocMockFactory.createSpotUseCase.call(any()))
-        .thenAnswer((_) async {});
+        .thenAnswer((_) async => TestDataFactory.createTestSpot());
     
     when(() => BlocMockFactory.updateSpotUseCase.call(any()))
-        .thenAnswer((_) async {});
+        .thenAnswer((_) async => TestDataFactory.createTestSpot());
     
     when(() => BlocMockFactory.deleteSpotUseCase.call(any()))
         .thenAnswer((_) async {});
@@ -182,10 +181,10 @@ class MockBehaviorSetup {
         .thenAnswer((_) async => TestDataFactory.createTestLists(5));
     
     when(() => BlocMockFactory.createListUseCase.call(any()))
-        .thenAnswer((_) async {});
+        .thenAnswer((_) async => TestDataFactory.createTestList());
     
     when(() => BlocMockFactory.updateListUseCase.call(any()))
-        .thenAnswer((_) async {});
+        .thenAnswer((_) async => TestDataFactory.createTestList());
     
     when(() => BlocMockFactory.deleteListUseCase.call(any()))
         .thenAnswer((_) async {});

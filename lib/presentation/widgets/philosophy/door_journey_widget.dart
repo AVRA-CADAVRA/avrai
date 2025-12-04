@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/models/usage_pattern.dart';
 
 /// OUR_GUTS.md: "See your door journey"
@@ -96,7 +96,7 @@ class DoorJourneyWidget extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -136,9 +136,9 @@ class DoorJourneyWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: modeInfo.color.withOpacity(0.1),
+        color: modeInfo.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: modeInfo.color.withOpacity(0.3)),
+        border: Border.all(color: modeInfo.color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

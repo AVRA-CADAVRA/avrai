@@ -99,18 +99,23 @@ class _PrivacyControlsWidgetState extends State<PrivacyControlsWidget> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.grey50,
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.success.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.verified_user, size: 16, color: AppColors.success),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'All data is anonymized and privacy-preserving. Your identity is never exposed.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
                           ),
                     ),
                   ),

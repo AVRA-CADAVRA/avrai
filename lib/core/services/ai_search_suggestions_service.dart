@@ -2,7 +2,6 @@ import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 import 'package:spots/core/models/spot.dart';
-import 'package:spots/data/repositories/hybrid_search_repository.dart';
 
 /// AI-Powered Search Suggestions Service for Phase 4
 /// OUR_GUTS.md: "Effortless, Seamless Discovery" - Intelligent, context-aware search assistance

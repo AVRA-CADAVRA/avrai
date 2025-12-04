@@ -1,6 +1,4 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/services/logger.dart';
 
@@ -258,9 +256,9 @@ class ExpertiseMatchingService {
   }) {
     if (userLevel == null || otherLevel == null) return 0.0;
 
-    // Both should have meaningful expertise
-    if (userLevel.index < ExpertiseLevel.city.index ||
-        otherLevel.index < ExpertiseLevel.city.index) {
+    // Both should have meaningful expertise (Local level or higher)
+    if (userLevel.index < ExpertiseLevel.local.index ||
+        otherLevel.index < ExpertiseLevel.local.index) {
       return 0.0;
     }
 

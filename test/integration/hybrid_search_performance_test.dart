@@ -7,7 +7,6 @@ import 'package:spots/core/services/ai_search_suggestions_service.dart';
 import 'package:spots/data/repositories/hybrid_search_repository.dart';
 import 'package:spots/presentation/blocs/search/hybrid_search_bloc.dart';
 import 'package:spots/domain/usecases/search/hybrid_search_usecase.dart';
-import 'package:geolocator/geolocator.dart';
 
 // Generate mocks
 @GenerateMocks([
@@ -28,7 +27,7 @@ void main() {
       mockUseCase = MockHybridSearchUseCase();
       mockCacheService = MockSearchCacheService();
       mockSuggestionsService = MockAISearchSuggestionsService();
-      
+
       bloc = HybridSearchBloc(
         hybridSearchUseCase: mockUseCase,
         cacheService: mockCacheService,
@@ -44,7 +43,7 @@ void main() {
       test('should use cache for repeated searches', () async {
         // Arrange
         final testResult = _createTestSearchResult();
-        
+
         when(mockCacheService.getCachedResult(
           query: 'coffee',
           maxResults: 50,
@@ -61,7 +60,7 @@ void main() {
           maxResults: 50,
           includeExternal: true,
         )).called(1);
-        
+
         expect(bloc.state, isA<HybridSearchLoaded>());
         final state = bloc.state as HybridSearchLoaded;
         expect(state.fromCache, true);
@@ -70,8 +69,12 @@ void main() {
       test('should cache new search results', () async {
         // Arrange
         final testResult = _createTestSearchResult();
-        
-        when(mockCacheService.getCachedResult(any)).thenReturn(Future.value(null));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(null));
         when(mockUseCase.searchSpots(
           query: 'restaurant',
           maxResults: 50,
@@ -99,7 +102,7 @@ void main() {
           'hit_rate_percent': '71.4',
           'total_requests': 7,
         };
-        
+
         when(mockCacheService.getCacheStatistics()).thenReturn(mockStats);
 
         // Act
@@ -130,8 +133,7 @@ void main() {
         // Arrange
         when(mockCacheService.clearCache(preserveOffline: true))
             .thenReturn(Future.value());
-        when(mockSuggestionsService.clearLearningData())
-            .thenReturn(null);
+        when(mockSuggestionsService.clearLearningData()).thenReturn(null);
 
         // Act
         bloc.add(ClearSearchCache());
@@ -161,7 +163,7 @@ void main() {
             context: 'Perfect for morning',
           ),
         ];
-        
+
         when(mockSuggestionsService.generateSuggestions(
           query: 'cof',
           userLocation: any,
@@ -182,8 +184,12 @@ void main() {
       test('should learn from search behavior', () async {
         // Arrange
         final testResult = _createTestSearchResult();
-        
-        when(mockCacheService.getCachedResult(any)).thenReturn(Future.value(null));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(null));
         when(mockUseCase.searchSpots(
           query: 'pizza',
           maxResults: 50,
@@ -216,8 +222,9 @@ void main() {
           },
           'total_searches': 7,
         };
-        
-        when(mockSuggestionsService.getSearchPatterns()).thenReturn(mockPatterns);
+
+        when(mockSuggestionsService.getSearchPatterns())
+            .thenReturn(mockPatterns);
 
         // Act
         final patterns = bloc.getSearchPatterns();
@@ -232,8 +239,12 @@ void main() {
       test('should complete search within performance threshold', () async {
         // Arrange
         final testResult = _createTestSearchResult();
-        
-        when(mockCacheService.getCachedResult(any)).thenReturn(Future.value(null));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(null));
         when(mockUseCase.searchSpots(
           query: 'test',
           maxResults: 50,
@@ -254,8 +265,12 @@ void main() {
       test('should handle large result sets efficiently', () async {
         // Arrange
         final largeResult = _createLargeSearchResult(100); // 100 spots
-        
-        when(mockCacheService.getCachedResult(any)).thenReturn(Future.value(null));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(null));
         when(mockUseCase.searchSpots(
           query: 'popular',
           maxResults: 100,
@@ -276,8 +291,12 @@ void main() {
       test('should maintain community-first ranking under load', () async {
         // Arrange
         final mixedResult = _createMixedCommunityExternalResult();
-        
-        when(mockCacheService.getCachedResult(any)).thenReturn(Future.value(null));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(null));
         when(mockUseCase.searchSpots(
           query: 'mixed',
           maxResults: 50,
@@ -308,31 +327,53 @@ void main() {
             icon: 'search',
           ),
         ];
-        
-        when(mockCacheService.getCachedResult(any)).thenReturn(Future.value(null));
-        when(mockUseCase.searchSpots(any)).thenReturn(Future.value(testResult));
-        when(mockSuggestionsService.generateSuggestions(any))
-            .thenReturn(Future.value(suggestions));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(null));
+        when(mockUseCase.searchSpots(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(testResult));
+        when(mockSuggestionsService.generateSuggestions(
+          query: anyNamed('query'),
+          userLocation: anyNamed('userLocation'),
+          communityTrends: anyNamed('communityTrends'),
+        )).thenReturn(Future.value(suggestions));
 
         // Act - Search, then get suggestions
         bloc.add(SearchHybridSpots(query: 'integration'));
         await Future.delayed(const Duration(milliseconds: 100));
-        
+
         bloc.add(GetSearchSuggestions(query: 'int'));
         await Future.delayed(const Duration(milliseconds: 100));
 
         // Assert
         expect(bloc.state, isA<HybridSearchSuggestionsLoaded>());
-        verify(mockSuggestionsService.learnFromSearch(any)).called(1);
-        verify(mockCacheService.cacheResult(any)).called(1);
+        verify(mockSuggestionsService.learnFromSearch(
+          query: anyNamed('query'),
+          results: anyNamed('results'),
+        )).called(1);
+        verify(mockCacheService.cacheResult(
+          query: anyNamed('query'),
+          result: anyNamed('result'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).called(1);
       });
 
       test('should handle offline scenarios gracefully', () async {
         // Arrange - Simulate offline with cached data
         final cachedResult = _createTestSearchResult();
-        
-        when(mockCacheService.getCachedResult(any))
-            .thenReturn(Future.value(cachedResult));
+
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenReturn(Future.value(cachedResult));
 
         // Act
         bloc.add(SearchHybridSpots(query: 'offline'));
@@ -349,10 +390,16 @@ void main() {
     group('Error Handling Tests', () {
       test('should handle cache failures gracefully', () async {
         // Arrange
-        when(mockCacheService.getCachedResult(any))
-            .thenThrow(Exception('Cache error'));
-        when(mockUseCase.searchSpots(any))
-            .thenThrow(Exception('Search error'));
+        when(mockCacheService.getCachedResult(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenThrow(Exception('Cache error'));
+        when(mockUseCase.searchSpots(
+          query: anyNamed('query'),
+          maxResults: anyNamed('maxResults'),
+          includeExternal: anyNamed('includeExternal'),
+        )).thenThrow(Exception('Search error'));
 
         // Act
         bloc.add(SearchHybridSpots(query: 'error'));
@@ -364,8 +411,11 @@ void main() {
 
       test('should recover from AI suggestions errors', () async {
         // Arrange
-        when(mockSuggestionsService.generateSuggestions(any))
-            .thenThrow(Exception('AI error'));
+        when(mockSuggestionsService.generateSuggestions(
+          query: anyNamed('query'),
+          userLocation: anyNamed('userLocation'),
+          communityTrends: anyNamed('communityTrends'),
+        )).thenThrow(Exception('AI error'));
 
         // Act
         bloc.add(GetSearchSuggestions(query: 'error'));
@@ -421,19 +471,21 @@ HybridSearchResult _createTestSearchResult() {
 }
 
 HybridSearchResult _createLargeSearchResult(int count) {
-  final spots = List.generate(count, (index) => Spot(
-    id: 'test_$index',
-    name: 'Test Spot $index',
-    description: 'Test description $index',
-    latitude: 40.7128 + (index * 0.001),
-    longitude: -74.0060 + (index * 0.001),
-    category: 'Test',
-    rating: 4.0 + (index % 10) * 0.1,
-    createdBy: 'test_user',
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-    tags: ['test', 'community'],
-  ));
+  final spots = List.generate(
+      count,
+      (index) => Spot(
+            id: 'test_$index',
+            name: 'Test Spot $index',
+            description: 'Test description $index',
+            latitude: 40.7128 + (index * 0.001),
+            longitude: -74.0060 + (index * 0.001),
+            category: 'Test',
+            rating: 4.0 + (index % 10) * 0.1,
+            createdBy: 'test_user',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            tags: ['test', 'community'],
+          ));
 
   return HybridSearchResult(
     spots: spots,
@@ -446,34 +498,38 @@ HybridSearchResult _createLargeSearchResult(int count) {
 }
 
 HybridSearchResult _createMixedCommunityExternalResult() {
-  final communitySpots = List.generate(6, (index) => Spot(
-    id: 'community_$index',
-    name: 'Community Spot $index',
-    description: 'Community description $index',
-    latitude: 40.7128 + (index * 0.001),
-    longitude: -74.0060 + (index * 0.001),
-    category: 'Community',
-    rating: 4.5,
-    createdBy: 'community_user',
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-    tags: ['community'],
-  ));
+  final communitySpots = List.generate(
+      6,
+      (index) => Spot(
+            id: 'community_$index',
+            name: 'Community Spot $index',
+            description: 'Community description $index',
+            latitude: 40.7128 + (index * 0.001),
+            longitude: -74.0060 + (index * 0.001),
+            category: 'Community',
+            rating: 4.5,
+            createdBy: 'community_user',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            tags: ['community'],
+          ));
 
-  final externalSpots = List.generate(4, (index) => Spot(
-    id: 'external_$index',
-    name: 'External Spot $index',
-    description: 'External description $index',
-    latitude: 40.7128 + (index * 0.002),
-    longitude: -74.0060 + (index * 0.002),
-    category: 'External',
-    rating: 4.0,
-    createdBy: 'google_places_api',
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-    tags: ['external_data', 'google_places'],
-    metadata: {'source': 'google_places', 'is_external': true},
-  ));
+  final externalSpots = List.generate(
+      4,
+      (index) => Spot(
+            id: 'external_$index',
+            name: 'External Spot $index',
+            description: 'External description $index',
+            latitude: 40.7128 + (index * 0.002),
+            longitude: -74.0060 + (index * 0.002),
+            category: 'External',
+            rating: 4.0,
+            createdBy: 'google_places_api',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            tags: ['external_data', 'google_places'],
+            metadata: {'source': 'google_places', 'is_external': true},
+          ));
 
   return HybridSearchResult(
     spots: [...communitySpots, ...externalSpots],

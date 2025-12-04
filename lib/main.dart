@@ -1,6 +1,4 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:sembast/sembast.dart';
 import 'package:spots/app.dart';
 import 'package:spots/injection_container.dart' as di;
@@ -9,7 +7,6 @@ import 'package:spots/data/datasources/local/sembast_database.dart';
 import 'package:spots/data/datasources/local/auth_sembast_datasource.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'firebase_options.dart';
 import 'package:spots/core/services/storage_health_checker.dart';
 import 'package:spots/core/services/logger.dart';

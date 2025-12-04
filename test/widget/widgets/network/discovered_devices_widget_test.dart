@@ -9,11 +9,10 @@ import 'package:get_it/get_it.dart';
 import 'package:spots/core/network/device_discovery.dart';
 import 'package:spots/core/ai2ai/connection_orchestrator.dart';
 import 'package:spots/presentation/widgets/network/discovered_devices_widget.dart';
-import 'package:spots/test/widget/helpers/widget_test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 void main() {
   setUpAll(() {
-    WidgetTestHelpers.setupTestEnvironment();
   });
 
   tearDown(() {

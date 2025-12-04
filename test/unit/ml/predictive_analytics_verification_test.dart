@@ -1,4 +1,3 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/ml/predictive_analytics.dart';
 import 'package:spots/core/models/user.dart';

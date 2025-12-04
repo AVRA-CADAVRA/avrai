@@ -14,8 +14,6 @@
 /// OUR_GUTS.md: "Privacy and Control Are Non-Negotiable"
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/widgets.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:shared_preferences/shared_preferences.dart' as real_prefs;

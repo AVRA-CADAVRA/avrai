@@ -1,7 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:typed_data';
-import '../models/connection_config.dart';
-import '../models/api_response.dart';
 
 /// Simple working example of Supabase backend
 /// This demonstrates the concept without complex interface requirements
@@ -49,7 +47,7 @@ class SupabaseWorkingExample {
           'id': user.id,
           'email': user.email,
           'name': user.userMetadata?['name'] ?? '',
-          'createdAt': user.createdAt?.toString(),
+          'createdAt': user.createdAt.toString(),
           'isEmailVerified': user.emailConfirmedAt != null,
         };
       }
@@ -77,7 +75,7 @@ class SupabaseWorkingExample {
           'id': response.user!.id,
           'email': response.user!.email,
           'name': response.user!.userMetadata?['name'] ?? '',
-          'createdAt': response.user!.createdAt?.toIso8601String(),
+          'createdAt': response.user!.createdAt.toIso8601String(),
           'isEmailVerified': response.user!.emailConfirmedAt != null,
         };
       }
@@ -106,7 +104,7 @@ class SupabaseWorkingExample {
           'id': response.user!.id,
           'email': response.user!.email,
           'name': response.user!.userMetadata?['name'] ?? '',
-          'createdAt': response.user!.createdAt?.toIso8601String(),
+          'createdAt': response.user!.createdAt.toIso8601String(),
           'isEmailVerified': response.user!.emailConfirmedAt != null,
         };
       }

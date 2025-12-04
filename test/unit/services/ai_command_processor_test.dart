@@ -20,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:spots/presentation/widgets/common/ai_command_processor.dart';
 import 'package:spots/core/services/llm_service.dart';
-import 'package:spots/core/models/unified_models.dart';
 
 import 'ai_command_processor_test.mocks.dart';
 

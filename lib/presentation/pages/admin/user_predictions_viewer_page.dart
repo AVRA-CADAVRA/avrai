@@ -18,7 +18,7 @@ class UserPredictionsViewerPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.psychology, size: 64, color: Colors.grey),
+          Icon(Icons.psychology, size: 64, color: AppColors.grey500,
           const SizedBox(height: 16),
           Text(
             'User Predictions Viewer',
@@ -28,7 +28,7 @@ class UserPredictionsViewerPage extends StatelessWidget {
           Text(
             'Search for a user to view their predictions',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
+                  color: AppColors.grey500
                 ),
           ),
           // TODO: Add user search and predictions display

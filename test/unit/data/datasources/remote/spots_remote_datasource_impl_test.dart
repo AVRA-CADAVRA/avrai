@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:spots/data/datasources/remote/spots_remote_datasource_impl.dart';
 import 'package:spots_network/spots_network.dart';

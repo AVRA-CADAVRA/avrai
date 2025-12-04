@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/theme/app_theme.dart';
+import 'package:spots/core/theme/app_theme.dart';
 
 class FriendsRespectPage extends StatefulWidget {
   final List<String> respectedLists;
@@ -257,7 +257,7 @@ class _FriendsRespectPageState extends State<FriendsRespectPage> {
                             ListTile(
                               onTap: () => _showListDetails(list),
                               leading: CircleAvatar(
-                                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                                 child: Icon(
                                   _getCategoryIcon(list['category'] as String),
                                   color: AppTheme.primaryColor,
@@ -444,7 +444,7 @@ class _FriendsRespectPageState extends State<FriendsRespectPage> {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                    backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                     child: Icon(
                       _getCategoryIcon(list['category'] as String),
                       color: AppTheme.primaryColor,
@@ -487,7 +487,7 @@ class _FriendsRespectPageState extends State<FriendsRespectPage> {
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                         child: Icon(
                           _getSpotIcon(spot['category'] as String),
                           color: AppTheme.primaryColor,

@@ -12,7 +12,6 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/ai/action_models.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 
 /// Dialog widget that shows action preview before execution
 /// 

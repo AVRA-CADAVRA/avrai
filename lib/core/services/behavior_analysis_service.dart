@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 class BehaviorAnalysisService {
   static Map<String, dynamic> analyzeUserBehavior(List<Map<String, dynamic>> actions) {

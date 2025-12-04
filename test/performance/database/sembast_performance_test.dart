@@ -6,7 +6,6 @@ import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_memory.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/list.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/data/datasources/local/sembast_database.dart';
 import 'package:spots/data/datasources/local/spots_sembast_datasource.dart';
 import 'package:spots/data/datasources/local/lists_sembast_datasource.dart';

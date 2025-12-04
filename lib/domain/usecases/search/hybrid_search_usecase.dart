@@ -1,4 +1,3 @@
-import 'package:spots/core/models/spot.dart';
 import 'package:spots/data/repositories/hybrid_search_repository.dart';
 
 /// Hybrid Search Use Case

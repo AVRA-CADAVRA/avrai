@@ -17,7 +17,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/network/device_discovery.dart';
 import 'package:get_it/get_it.dart';
 import 'dart:async';

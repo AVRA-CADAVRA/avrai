@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/contextual_personality.dart';
-import 'package:spots/core/constants/vibe_constants.dart';
 
 /// OUR_GUTS.md: "Your doors stay yours"
 /// Phase 3: Contextual Personality Service

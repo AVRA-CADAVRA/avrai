@@ -1,7 +1,9 @@
 import 'dart:developer' as developer;
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/personality_profile.dart';
+import 'package:spots/core/models/multi_path_expertise.dart';
 import 'package:spots/core/services/storage_service.dart';
+import 'package:spots/core/services/golden_expert_ai_influence_service.dart';
 
 // Lightweight preferences abstraction to allow in-memory prefs during tests
 abstract class PreferencesLike {
@@ -46,13 +48,20 @@ class PersonalityLearning {
   PersonalityProfile? _currentProfile;
   bool _isLearning = false;
   
+  // Golden expert influence service
+  final GoldenExpertAIInfluenceService _goldenExpertService;
+  
   // Callback for personality evolution events
   Function(String userId, PersonalityProfile evolvedProfile)? onPersonalityEvolved;
   
   // Zero-arg constructor for tests (in-memory prefs)
-  PersonalityLearning() : _prefs = _InMemoryPreferences();
+  PersonalityLearning() 
+      : _prefs = _InMemoryPreferences(),
+        _goldenExpertService = GoldenExpertAIInfluenceService();
   // App constructor using real SharedPreferences
-  PersonalityLearning.withPrefs(SharedPreferences prefs) : _prefs = _SharedPreferencesAdapter(prefs);
+  PersonalityLearning.withPrefs(SharedPreferences prefs) 
+      : _prefs = _SharedPreferencesAdapter(prefs),
+        _goldenExpertService = GoldenExpertAIInfluenceService();
   
   /// Set callback for personality evolution events
   void setEvolutionCallback(Function(String userId, PersonalityProfile evolvedProfile) callback) {
@@ -90,10 +99,16 @@ class PersonalityLearning {
   }
   
   /// Evolve personality based on user action
+  /// 
+  /// **Parameters:**
+  /// - `userId`: User ID
+  /// - `action`: User action
+  /// - `localExpertise`: Optional LocalExpertise for golden expert weighting
   Future<PersonalityProfile> evolveFromUserAction(
     String userId,
-    UserAction action,
-  ) async {
+    UserAction action, {
+    LocalExpertise? localExpertise,
+  }) async {
     if (_currentProfile == null) {
       await initializePersonality(userId);
     }
@@ -112,10 +127,21 @@ class PersonalityLearning {
       final dimensionUpdates = await _analyzeActionForDimensions(action);
       final confidenceUpdates = await _analyzeActionForConfidence(action);
       
-      // Apply learning rate to dimension updates
+      // Calculate golden expert weight if applicable
+      double influenceWeight = 1.0;
+      if (localExpertise != null) {
+        influenceWeight = _goldenExpertService.calculateInfluenceWeight(localExpertise);
+        developer.log(
+          'Applying golden expert weight: $influenceWeight',
+          name: _logName,
+        );
+      }
+      
+      // Apply learning rate and golden expert weight to dimension updates
       final adjustedUpdates = <String, double>{};
       dimensionUpdates.forEach((dimension, change) {
-        adjustedUpdates[dimension] = change * VibeConstants.personalityLearningRate;
+        adjustedUpdates[dimension] = 
+            change * VibeConstants.personalityLearningRate * influenceWeight;
       });
       
       // Calculate new authenticity score

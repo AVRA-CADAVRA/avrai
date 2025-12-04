@@ -196,7 +196,7 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator> with SingleTi
               gradient: LinearGradient(
                 colors: [
                   AppColors.electricGreen,
-                  AppColors.neonPink,
+                  AppColors.electricGreen,
                 ],
               ),
               shape: BoxShape.circle,

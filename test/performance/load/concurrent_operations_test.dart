@@ -2,13 +2,11 @@
 /// Ensures optimal performance under high concurrent load for production deployment
 /// OUR_GUTS.md: "Self-improving ecosystem" - Scalable, robust performance
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fake_async/fake_async.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:spots/data/datasources/remote/spots_remote_datasource.dart';
 import 'package:spots/data/datasources/local/spots_local_datasource.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/list.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/data/repositories/spots_repository_impl.dart';
 import 'package:spots/data/repositories/lists_repository_impl.dart';
 import 'package:spots/data/repositories/hybrid_search_repository.dart';
@@ -26,7 +24,6 @@ import 'package:spots/core/services/ai_search_suggestions_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:isolate';
 import '../../helpers/test_helpers.dart';
 
 void main() {

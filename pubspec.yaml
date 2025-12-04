@@ -73,6 +73,10 @@ dependencies:
   # Payment Processing - Agent 1: Payment Processing & Revenue
   flutter_stripe: ^11.1.0
   
+  # PDF Generation - Tax Compliance
+  pdf: ^3.11.0
+  printing: ^5.13.0
+  
   # Development & Code Generation
   json_annotation: ^4.8.1
   build_runner: ^2.4.7
@@ -94,6 +98,9 @@ dependencies:
   flutter_nsd: ^1.6.0  # Network Service Discovery / mDNS (Android, iOS, macOS, Windows)
   wifi_iot: ^0.3.19  # WiFi Direct and WiFi management (Android)
 
+  shared_preferences: any
+  path: any
+  spots_core: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -123,6 +130,15 @@ dev_dependencies:
   build_runner: ^2.4.7
   # patrol: ^3.16.0
 
+  connectivity_plus_platform_interface: any
+  shared_preferences: any
+  spots_core: any
+  supabase: any
+  storage_client: any
+  logging: any
+  realtime_client: any
+  web_socket_channel: any
+  path: any
 flutter:
   uses-material-design: true
   assets:

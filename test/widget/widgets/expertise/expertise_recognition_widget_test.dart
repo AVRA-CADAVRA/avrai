@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/expertise/expertise_recognition_widget.dart';
 import 'package:spots/core/models/unified_user.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for ExpertiseRecognitionWidget
 /// Tests expertise recognition display

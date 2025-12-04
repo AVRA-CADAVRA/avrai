@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:spots/app.dart';
-import 'package:spots/core/models/unified_models.dart';
-import 'package:spots/presentation/pages/auth/login_page.dart';
 import 'package:spots/presentation/pages/onboarding/onboarding_page.dart';
 import 'package:spots/presentation/pages/onboarding/homebase_selection_page.dart';
 import 'package:spots/presentation/pages/home/home_page.dart';

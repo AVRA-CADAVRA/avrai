@@ -4,8 +4,10 @@ import 'package:spots/core/models/expertise_event.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/services/event_template_service.dart';
+import 'package:spots/core/services/expertise_event_service.dart';
+import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/app_theme.dart';
-import 'package:get_it/get_it.dart';
+import 'package:spots/presentation/pages/events/event_published_page.dart';
 
 /// OUR_GUTS.md: "The key opens doors to events"
 /// Easy Event Hosting - Phase 2: Quick Event Builder
@@ -29,7 +31,8 @@ class QuickEventBuilderPage extends StatefulWidget {
 }
 
 class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
-  final _templateService = GetIt.I<EventTemplateService>();
+  final _templateService = EventTemplateService();
+  final _eventService = ExpertiseEventService();
   
   int _currentStep = 0;
   EventTemplate? _selectedTemplate;
@@ -39,6 +42,8 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
   double? _price;
   String? _customTitle;
   String? _customDescription;
+  bool _isLoading = false;
+  String? _error;
   
   @override
   void initState() {
@@ -102,8 +107,8 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
         actions: [
           if (_currentStep > 0)
             TextButton(
-              onPressed: _canGoBack ? _previousStep : null,
-              child: Text('Back', style: TextStyle(color: AppColors.primary)),
+              onPressed: _canGoBack && !_isLoading ? _previousStep : null,
+              child: Text('Back', style: TextStyle(color: AppTheme.primaryColor)),
             ),
         ],
       ),
@@ -133,11 +138,11 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
               height: 4,
               margin: EdgeInsets.only(right: index < 3 ? 8 : 0),
               decoration: BoxDecoration(
-                color: isCompleted || isActive
-                    ? AppColors.primary
-                    : AppColors.surface.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
+                  color: isCompleted || isActive
+                      ? AppTheme.primaryColor
+                      : AppColors.grey300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
             ),
           );
         }),
@@ -209,21 +214,21 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            width: 2,
-          ),
-        ),
+          decoration: BoxDecoration(
+              color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                width: 2,
+              ),
+            ),
         child: Row(
           children: [
             Container(
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -262,14 +267,14 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.2),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             tag,
                             style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.primary,
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                         );
@@ -280,7 +285,7 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppColors.primary, size: 28),
+              Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 28),
           ],
         ),
       ),
@@ -341,6 +346,10 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
             backgroundColor: AppColors.surface,
             foregroundColor: AppColors.textPrimary,
             padding: const EdgeInsets.all(20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppColors.grey300),
+            ),
           ),
         ),
       ],
@@ -358,14 +367,14 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            width: 2,
-          ),
-        ),
+          decoration: BoxDecoration(
+              color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                width: 2,
+              ),
+            ),
         child: Row(
           children: [
             Expanded(
@@ -391,7 +400,7 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppColors.primary),
+              Icon(Icons.check_circle, color: AppTheme.primaryColor),
           ],
         ),
       ),
@@ -465,7 +474,7 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
         Center(
           child: Column(
             children: [
-              Icon(Icons.location_on, size: 64, color: AppColors.primary.withOpacity(0.5)),
+              Icon(Icons.location_on, size: 64, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
               const SizedBox(height: 16),
               Text(
                 'Spot selection UI coming soon',
@@ -580,7 +589,7 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
+          Icon(icon, size: 20, color: AppTheme.primaryColor),
           const SizedBox(width: 12),
           Text(
             text,
@@ -605,30 +614,72 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
         ],
       ),
       child: SafeArea(
-        child: ElevatedButton(
-          onPressed: _canProceed ? _nextStep : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_error != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: TextStyle(
+                          color: AppColors.error,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _canProceed && !_isLoading ? _nextStep : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.white,
+                        ),
+                      )
+                    : Text(
+                        _currentStep == 3 ? 'Publish Event' : 'Continue',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
             ),
-          ),
-          child: Text(
-            _currentStep == 3 ? 'Publish Event' : 'Continue',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -665,21 +716,78 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
     }
   }
   
-  void _publishEvent() {
-    // In full implementation, this would save to database
-    // For now, just show success and close
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Event published successfully! 🎉'),
-        backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context, true);
+  Future<void> _publishEvent() async {
+    if (_selectedTemplate == null || _selectedDateTime == null) {
+      setState(() {
+        _error = 'Please complete all required steps';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
     });
+
+    try {
+      // Create event from template
+      final templateEvent = _templateService.createEventFromTemplate(
+        template: _selectedTemplate!,
+        host: widget.currentUser,
+        startTime: _selectedDateTime!,
+        selectedSpots: _selectedSpots,
+        customTitle: _customTitle,
+        customDescription: _customDescription,
+        customMaxAttendees: _maxAttendees,
+        customPrice: _price,
+      );
+
+      // Create event via service
+      final event = await _eventService.createEvent(
+        host: widget.currentUser,
+        title: templateEvent.title,
+        description: templateEvent.description,
+        category: templateEvent.category,
+        eventType: templateEvent.eventType,
+        startTime: templateEvent.startTime,
+        endTime: templateEvent.endTime,
+        spots: templateEvent.spots,
+        location: templateEvent.location,
+        latitude: templateEvent.latitude,
+        longitude: templateEvent.longitude,
+        maxAttendees: templateEvent.maxAttendees,
+        price: templateEvent.price,
+        isPublic: templateEvent.isPublic,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        // Navigate to success page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventPublishedPage(event: event),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to publish event: $e';
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }
 

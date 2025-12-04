@@ -104,9 +104,6 @@ Future<void> _testSupabaseService() async {
     
     // Test client access
     final client = supabaseService.client;
-    if (client == null) {
-      throw Exception('Supabase client is null');
-    }
     print('  ✓ Supabase client accessible');
     
   } catch (e) {

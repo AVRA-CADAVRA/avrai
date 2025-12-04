@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/constants/vibe_constants.dart';
 
 /// Widget displaying personality overview with dimensions, confidence, and archetype
 class PersonalityOverviewCard extends StatelessWidget {
@@ -35,7 +34,7 @@ class PersonalityOverviewCard extends StatelessWidget {
                     profile.archetype.toUpperCase(),
                     style: const TextStyle(fontSize: 10),
                   ),
-                  backgroundColor: AppColors.success.withOpacity(0.2),
+                  backgroundColor: AppColors.success.withValues(alpha: 0.2),
                 ),
               ],
             ),

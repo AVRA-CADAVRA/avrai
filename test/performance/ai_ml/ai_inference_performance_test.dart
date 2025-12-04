@@ -2,20 +2,14 @@
 /// Ensures optimal AI system performance for production deployment
 /// OUR_GUTS.md: "Self-improving ecosystem" - Efficient AI learning and inference
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fake_async/fake_async.dart';
 import 'package:spots/core/ai/ai_master_orchestrator.dart';
 import 'package:spots/core/ai/continuous_learning_system.dart';
 import 'package:spots/core/ai/personality_learning.dart';
-import 'package:spots/core/ai/ai_self_improvement_system.dart';
-import 'package:spots/core/ai/advanced_communication.dart';
-import 'package:spots/core/ai/collaboration_networks.dart';
-import 'package:spots/core/ai/comprehensive_data_collector.dart';
 import 'package:spots/core/ml/pattern_recognition_system.dart';
 import 'package:spots/core/ml/predictive_analytics.dart';
 import 'package:spots/core/ml/nlp_processor.dart';
 import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/models/user_role.dart';
-import 'package:spots/core/models/spot.dart';
 import 'dart:math' as math;
 
 void main() {

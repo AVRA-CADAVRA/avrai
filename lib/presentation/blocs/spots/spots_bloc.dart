@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/domain/usecases/spots/get_spots_usecase.dart';
 import 'package:spots/domain/usecases/spots/get_spots_from_respected_lists_usecase.dart';
@@ -145,7 +145,7 @@ class SpotsBloc extends Bloc<SpotsEvent, SpotsState> {
         final allSpots = [...currentState.spots, ...currentState.respectedSpots];
         final filteredSpots = allSpots.where((spot) {
           return spot.name.toLowerCase().contains(query) ||
-              (spot.description?.toLowerCase().contains(query) ?? false) ||
+              (spot.description.toLowerCase().contains(query) ?? false) ||
               spot.category.toLowerCase().contains(query) ||
               (spot.address?.toLowerCase().contains(query) ?? false);
         }).toList();

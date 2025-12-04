@@ -16,22 +16,67 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/monitoring/network_analytics.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Widget displaying user-specific privacy metrics
-class PrivacyMetricsWidget extends StatelessWidget {
-  /// Privacy metrics for the current user
-  final PrivacyMetrics privacyMetrics;
+class PrivacyMetricsWidget extends StatefulWidget {
+  const PrivacyMetricsWidget({super.key});
 
-  const PrivacyMetricsWidget({
-    super.key,
-    required this.privacyMetrics,
-  });
+  @override
+  State<PrivacyMetricsWidget> createState() => _PrivacyMetricsWidgetState();
+}
+
+class _PrivacyMetricsWidgetState extends State<PrivacyMetricsWidget> {
+  PrivacyMetrics? _privacyMetrics;
+  bool _isLoading = true;
+  String? _errorMessage;
+  NetworkAnalytics? _networkAnalytics;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrivacyMetrics();
+  }
+
+  Future<void> _loadPrivacyMetrics() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Get SharedPreferences for NetworkAnalytics
+      final prefs = await SharedPreferences.getInstance();
+      _networkAnalytics = NetworkAnalytics(prefs: prefs);
+
+      // Get privacy metrics from network health report
+      final healthReport = await _networkAnalytics!.analyzeNetworkHealth();
+      _privacyMetrics = healthReport.privacyMetrics;
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load privacy metrics: ${e.toString()}';
+          _isLoading = false;
+          _privacyMetrics = null;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final overallScore = privacyMetrics.overallPrivacyScore;
+    if (_isLoading || _privacyMetrics == null) {
+      return _buildLoadingOrErrorState();
+    }
+
+    final overallScore = _privacyMetrics!.overallPrivacyScore;
     final scoreColor = _getScoreColor(overallScore);
     final scoreLabel = _getScoreLabel(overallScore);
 
@@ -52,7 +97,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.electricGreen.withOpacity(0.1),
+                    color: AppColors.electricGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -72,79 +117,86 @@ class PrivacyMetricsWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.info_outline,
-                    color: AppColors.textSecondary,
-                    size: 20,
+                Semantics(
+                  label: 'Learn more about privacy metrics',
+                  button: true,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.info_outline,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () => _showPrivacyInfoDialog(context),
+                    tooltip: 'Learn more about privacy',
                   ),
-                  onPressed: () => _showPrivacyInfoDialog(context),
-                  tooltip: 'Learn more about privacy',
                 ),
               ],
             ),
             const SizedBox(height: 16),
             // Overall Privacy Score
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: scoreColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: scoreColor.withOpacity(0.3),
-                  width: 1,
+            Semantics(
+              label: 'Overall Privacy Score: ${(overallScore * 100).round()}%, $scoreLabel',
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: scoreColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: scoreColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Overall Privacy Score',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: scoreColor,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${(overallScore * 100).round()}%',
-                          style: const TextStyle(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Overall Privacy Score',
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                           ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: scoreColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${(overallScore * 100).round()}%',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.surface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      scoreLabel,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: scoreColor,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    scoreLabel,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: scoreColor,
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: overallScore,
-                      backgroundColor: AppColors.grey200,
-                      valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
-                      minHeight: 8,
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: overallScore,
+                        backgroundColor: AppColors.grey200,
+                        valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                        minHeight: 8,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -160,7 +212,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
             // Anonymization Level
             _buildMetricRow(
               'Anonymization Level',
-              privacyMetrics.anonymizationLevel,
+              _privacyMetrics!.anonymizationLevel,
               Icons.visibility_off,
               isGood: true,
             ),
@@ -168,7 +220,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
             // Re-identification Risk
             _buildMetricRow(
               'Re-identification Risk',
-              privacyMetrics.reidentificationRisk,
+              _privacyMetrics!.reidentificationRisk,
               Icons.shield_outlined,
               isRisk: true,
             ),
@@ -176,7 +228,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
             // Data Security Score
             _buildMetricRow(
               'Data Security Score',
-              privacyMetrics.dataSecurityScore,
+              _privacyMetrics!.dataSecurityScore,
               Icons.security,
               isGood: true,
             ),
@@ -184,7 +236,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
             // Data Exposure Level
             _buildMetricRow(
               'Data Exposure Level',
-              privacyMetrics.dataExposureLevel,
+              _privacyMetrics!.dataExposureLevel,
               Icons.warning_outlined,
               isRisk: true,
             ),
@@ -192,7 +244,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
             // Encryption Strength
             _buildMetricRow(
               'Encryption Strength',
-              privacyMetrics.encryptionStrength,
+              _privacyMetrics!.encryptionStrength,
               Icons.vpn_key,
               isGood: true,
             ),
@@ -203,10 +255,85 @@ class PrivacyMetricsWidget extends StatelessWidget {
             // Compliance Rate
             _buildMetricRow(
               'Privacy Compliance Rate',
-              privacyMetrics.complianceRate,
+              _privacyMetrics!.complianceRate,
               Icons.check_circle_outline,
               isGood: true,
             ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingOrErrorState() {
+    if (_isLoading) {
+      return Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: AppColors.electricGreen,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.error.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _errorMessage ?? 'An error occurred',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: _loadPrivacyMetrics,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.electricGreen,
+                  foregroundColor: AppColors.white,
+                ),
+              ),
             ],
           ),
         ),
@@ -280,16 +407,16 @@ class PrivacyMetricsWidget extends StatelessWidget {
   }
 
   Widget _buildViolationsRow() {
-    final violations = privacyMetrics.privacyViolations;
+    final violations = _privacyMetrics!.privacyViolations;
     final color = violations == 0 ? AppColors.electricGreen : AppColors.error;
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -314,7 +441,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -410,7 +537,7 @@ class PrivacyMetricsWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.electricGreen.withOpacity(0.1),
+                  color: AppColors.electricGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(

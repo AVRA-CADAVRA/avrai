@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
 
@@ -185,7 +184,7 @@ class _UniversalAISearchState extends State<UniversalAISearch> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: AppColors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),

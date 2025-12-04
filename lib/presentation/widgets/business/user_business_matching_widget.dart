@@ -206,7 +206,7 @@ class UserBusinessMatchingWidget extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: isGoodMatch
-                          ? AppColors.electricGreen.withOpacity(0.1)
+                          ? AppColors.electricGreen.withValues(alpha: 0.1)
                           : AppColors.grey200,
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -253,7 +253,7 @@ class UserBusinessMatchingWidget extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.electricGreen.withOpacity(0.1),
+                        color: AppColors.electricGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(

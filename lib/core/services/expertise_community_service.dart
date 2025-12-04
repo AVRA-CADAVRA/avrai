@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/models/expertise_community.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/expertise_level.dart';

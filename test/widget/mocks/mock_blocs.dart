@@ -9,111 +9,71 @@ import 'package:spots/core/models/user.dart';
 
 /// Mock AuthBloc for widget testing
 class MockAuthBloc extends Mock implements AuthBloc {
-  @override
-  Stream<AuthState> get stream => Stream.value(AuthInitial());
+  AuthState? _state;
+  Stream<AuthState>? _stream;
+  bool _isClosed = false;
 
   @override
-  AuthState get state => AuthInitial();
+  AuthState get state => _state ?? AuthInitial();
 
   @override
-  void add(AuthEvent event) {}
+  Stream<AuthState> get stream => _stream ?? Stream.value(AuthInitial());
 
   @override
-  Future<void> close() async {}
+  Future<void> close() async {
+    _isClosed = true;
+  }
 
   @override
-  bool get isClosed => false;
+  bool get isClosed => _isClosed;
+
+  void setState(AuthState state) {
+    _state = state;
+    _stream = Stream.value(state);
+  }
 }
 
 /// Mock ListsBloc for widget testing
-class MockListsBloc extends Mock implements ListsBloc {
-  @override
-  Stream<ListsState> get stream => Stream.value(ListsInitial());
-
-  @override
-  ListsState get state => ListsInitial();
-
-  @override
-  void add(ListsEvent event) {}
-
-  @override
-  Future<void> close() async {}
-
-  @override
-  bool get isClosed => false;
-}
+class MockListsBloc extends Mock implements ListsBloc {}
 
 /// Mock SpotsBloc for widget testing
-class MockSpotsBloc extends Mock implements SpotsBloc {
-  @override
-  Stream<SpotsState> get stream => Stream.value(SpotsInitial());
-
-  @override
-  SpotsState get state => SpotsInitial();
-
-  @override
-  void add(SpotsEvent event) {}
-
-  @override
-  Future<void> close() async {}
-
-  @override
-  bool get isClosed => false;
-}
+class MockSpotsBloc extends Mock implements SpotsBloc {}
 
 /// Mock HybridSearchBloc for widget testing
-class MockHybridSearchBloc extends Mock implements HybridSearchBloc {
-  @override
-  Stream<HybridSearchState> get stream => Stream.value(HybridSearchInitial());
-
-  @override
-  HybridSearchState get state => HybridSearchInitial();
-
-  @override
-  void add(HybridSearchEvent event) {}
-
-  @override
-  Future<void> close() async {}
-
-  @override
-  bool get isClosed => false;
-}
+class MockHybridSearchBloc extends Mock implements HybridSearchBloc {}
 
 /// Helper class to create mock blocs with predefined states
 class MockBlocFactory {
   /// Creates an authenticated mock auth bloc
-  static MockAuthBloc createAuthenticatedAuthBloc() {
+  static MockAuthBloc createAuthenticatedAuthBloc({UserRole role = UserRole.user, bool isAgeVerified = true}) {
     final mockBloc = MockAuthBloc();
-    when(mockBloc.state).thenReturn(Authenticated(
-      user: MockBlocFactory._createTestUser(),
-    ));
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(Authenticated(
-      user: MockBlocFactory._createTestUser(),
-    )));
+    final user = MockBlocFactory._createTestUser(role: role, isAgeVerified: isAgeVerified);
+    final authenticatedState = Authenticated(user: user);
+    mockBloc.setState(authenticatedState);
     return mockBloc;
   }
 
   /// Creates an unauthenticated mock auth bloc
   static MockAuthBloc createUnauthenticatedAuthBloc() {
     final mockBloc = MockAuthBloc();
-    when(mockBloc.state).thenReturn(Unauthenticated());
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(Unauthenticated()));
+    final unauthenticatedState = Unauthenticated();
+    mockBloc.setState(unauthenticatedState);
     return mockBloc;
   }
 
   /// Creates a loading mock auth bloc
   static MockAuthBloc createLoadingAuthBloc() {
     final mockBloc = MockAuthBloc();
-    when(mockBloc.state).thenReturn(AuthLoading());
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(AuthLoading()));
+    final loadingState = AuthLoading();
+    mockBloc.setState(loadingState);
     return mockBloc;
   }
 
   /// Creates an error mock auth bloc
   static MockAuthBloc createErrorAuthBloc(String message) {
     final mockBloc = MockAuthBloc();
-    when(mockBloc.state).thenReturn(AuthError(message));
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(AuthError(message)));
+    final errorState = AuthError(message);
+    mockBloc.setState(errorState);
     return mockBloc;
   }
 
@@ -180,13 +140,14 @@ class MockBlocFactory {
   }
 
   /// Creates a test user for mocking purposes
-  static User _createTestUser() {
+  static User _createTestUser({UserRole role = UserRole.user, bool isAgeVerified = true}) {
     final now = DateTime.now();
     return User(
       id: 'test-user-id',
       email: 'test@example.com',
       name: 'Test User',
-      role: UserRole.user,
+      displayName: 'Test User Display',
+      role: role,
       createdAt: now,
       updatedAt: now,
     );

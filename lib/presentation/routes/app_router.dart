@@ -12,6 +12,7 @@ import 'package:spots/presentation/pages/lists/lists_page.dart';
 import 'package:spots/presentation/pages/map/map_page.dart';
 import 'package:spots/presentation/pages/profile/profile_page.dart';
 import 'package:spots/presentation/pages/profile/ai_personality_status_page.dart';
+import 'package:spots/presentation/pages/expertise/expertise_dashboard_page.dart';
 import 'package:spots/presentation/pages/onboarding/onboarding_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:spots/presentation/pages/onboarding/ai_loading_page.dart';
@@ -26,13 +27,23 @@ import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/data/datasources/local/onboarding_completion_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
-import 'package:flutter/foundation.dart';
 // Phase 1 Integration: Device Discovery & AI2AI Connections
 import 'package:spots/presentation/pages/network/device_discovery_page.dart';
 import 'package:spots/presentation/pages/network/ai2ai_connections_page.dart';
 import 'package:spots/presentation/pages/settings/discovery_settings_page.dart';
 // Phase 2.1: Federated Learning
 import 'package:spots/presentation/pages/settings/federated_learning_page.dart';
+// Phase 7, Week 37: AI Self-Improvement Visibility
+import 'package:spots/presentation/pages/settings/ai_improvement_page.dart';
+// Phase 7, Week 38: AI2AI Learning Methods UI
+import 'package:spots/presentation/pages/settings/ai2ai_learning_methods_page.dart';
+// Phase 7, Section 39: Continuous Learning UI
+import 'package:spots/presentation/pages/settings/continuous_learning_page.dart';
+// Phase 4.5: Partnerships Page
+import 'package:spots/presentation/pages/profile/partnerships_page.dart';
+// Phase 6, Week 29: Communities & Clubs
+import 'package:spots/presentation/pages/communities/community_page.dart';
+import 'package:spots/presentation/pages/clubs/club_page.dart';
 
 class AppRouter {
   // Route path helpers for legacy Navigator.pushNamed usages
@@ -139,6 +150,30 @@ class AppRouter {
               builder: (c, s) => const AIPersonalityStatusPage(),
             ),
             GoRoute(
+              path: 'profile/expertise-dashboard',
+              builder: (c, s) => const ExpertiseDashboardPage(),
+            ),
+            // Phase 4.5: Partnerships Page
+            GoRoute(
+              path: 'profile/partnerships',
+              builder: (c, s) => const PartnershipsPage(),
+            ),
+            // Phase 6, Week 29: Communities & Clubs
+            GoRoute(
+              path: 'community/:id',
+              builder: (c, s) {
+                final id = s.pathParameters['id']!;
+                return CommunityPage(communityId: id);
+              },
+            ),
+            GoRoute(
+              path: 'club/:id',
+              builder: (c, s) {
+                final id = s.pathParameters['id']!;
+                return ClubPage(clubId: id);
+              },
+            ),
+            GoRoute(
               path: 'admin/ai2ai',
               builder: (c, s) => const AI2AIAdminDashboard(),
             ),
@@ -159,6 +194,21 @@ class AppRouter {
             GoRoute(
               path: 'federated-learning',
               builder: (c, s) => const FederatedLearningPage(),
+            ),
+            // Phase 7, Week 37: AI Self-Improvement Visibility
+            GoRoute(
+              path: 'ai-improvement',
+              builder: (c, s) => const AIImprovementPage(),
+            ),
+            // Phase 7, Week 38: AI2AI Learning Methods UI
+            GoRoute(
+              path: 'ai2ai-learning-methods',
+              builder: (c, s) => const AI2AILearningMethodsPage(),
+            ),
+            // Phase 7, Section 39: Continuous Learning UI
+            GoRoute(
+              path: 'continuous-learning',
+              builder: (c, s) => const ContinuousLearningPage(),
             ),
             GoRoute(
               path: 'supabase-test',

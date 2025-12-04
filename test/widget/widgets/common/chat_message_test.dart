@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/common/chat_message.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 import '../../../helpers/test_helpers.dart';
 
 /// Widget tests for ChatMessage

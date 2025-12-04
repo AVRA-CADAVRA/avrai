@@ -1,6 +1,5 @@
 import 'dart:developer' as developer;
 import 'package:spots/core/models/community_validation.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/unified_list.dart';
 import 'package:spots/core/services/storage_service.dart' hide SharedPreferences;

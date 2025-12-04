@@ -3,13 +3,10 @@
 /// OUR_GUTS.md: "Effortless, Seamless Discovery" - Smooth, responsive UI
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:golden_toolkit/golden_toolkit.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/list.dart';
-import 'package:spots/core/models/unified_models.dart';
-import 'package:spots/presentation/pages/home/home_page.dart';
+import 'package:spots/core/theme/colors.dart';
 // Shim missing widgets with lightweight stand-ins
-import 'package:spots/presentation/pages/map/map_page.dart';
 import 'package:flutter/widgets.dart' as fw;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
@@ -19,8 +16,6 @@ import 'package:spots/domain/usecases/spots/get_spots_from_respected_lists_useca
 import 'package:spots/domain/usecases/spots/create_spot_usecase.dart';
 import 'package:spots/domain/usecases/spots/update_spot_usecase.dart';
 import 'package:spots/domain/usecases/spots/delete_spot_usecase.dart';
-import 'package:spots/presentation/blocs/search/hybrid_search_bloc.dart';
-import 'dart:math' as math;
 
 // Local stand-in widgets to satisfy performance tests
 class SpotListWidget extends fw.StatelessWidget {
@@ -323,7 +318,7 @@ void main() {
               duration: const Duration(milliseconds: 300),
               width: 100,
               height: 100,
-              color: Colors.blue,
+                color: AppColors.electricGreen,
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () {},
@@ -344,7 +339,7 @@ void main() {
                   duration: const Duration(milliseconds: 300),
                   width: 200,
                   height: 200,
-                  color: Colors.red,
+                  color: AppColors.error,
                 ),
                 Expanded(
                   child: SpotListWidget(spots: _generateLargeSpotList(200)),
@@ -376,7 +371,7 @@ void main() {
                   duration: Duration(milliseconds: 200 + index * 50),
                   width: 50.0 + index * 10,
                   height: 50.0,
-                  color: Colors.primaries[index % Colors.primaries.length],
+                  color: _getTestColor(index),
                 ),
               ),
             ),
@@ -395,7 +390,7 @@ void main() {
                     duration: Duration(milliseconds: 200 + index * 50),
                     width: 100.0 + index * 20,
                     height: 100.0,
-                    color: Colors.primaries[(index + 5) % Colors.primaries.length],
+                    color: _getTestColor(index + 5),
                   ),
                 ),
               ),
@@ -535,7 +530,7 @@ void main() {
               child: Container(
                 width: 200,
                 height: 200,
-                color: Colors.blue,
+                color: AppColors.electricGreen,
                 child: const Center(child: Text('Tap me rapidly')),
               ),
             ),
@@ -667,6 +662,23 @@ SpotsBloc _createMockSpotsBloc() {
     updateSpotUseCase: UpdateSpotUseCase(repo),
     deleteSpotUseCase: DeleteSpotUseCase(repo),
   );
+}
+
+// Helper function to get test colors using AppColors (design token compliant)
+Color _getTestColor(int index) {
+  final colors = [
+    AppColors.electricGreen,
+    AppColors.grey600,
+    AppColors.grey500,
+    AppColors.grey400,
+    AppColors.grey700,
+    AppColors.error,
+    AppColors.warning,
+    AppColors.grey300,
+    AppColors.grey800,
+    AppColors.grey200,
+  ];
+  return colors[index % colors.length];
 }
 
 // Deprecated mocks kept for reference; real in-memory fakes are used above.

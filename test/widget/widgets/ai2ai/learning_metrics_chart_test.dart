@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/ai2ai/learning_metrics_chart.dart';
 import 'package:spots/core/monitoring/network_analytics.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import "../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for LearningMetricsChart
 /// Tests learning metrics chart display

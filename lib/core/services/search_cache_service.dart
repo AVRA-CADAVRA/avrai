@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:spots/core/services/logger.dart';
 import 'package:sembast/sembast.dart';
 import 'package:spots/core/models/spot.dart';

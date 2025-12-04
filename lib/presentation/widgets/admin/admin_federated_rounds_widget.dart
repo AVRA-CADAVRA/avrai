@@ -121,7 +121,7 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.electricGreen.withOpacity(0.1),
+            color: AppColors.electricGreen.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
@@ -289,7 +289,7 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -394,10 +394,10 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.electricGreen.withOpacity(0.05),
+                  color: AppColors.electricGreen.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppColors.electricGreen.withOpacity(0.2),
+                    color: AppColors.electricGreen.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -554,7 +554,7 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
             height: 40,
             decoration: BoxDecoration(
               color: participant.isActive 
-                  ? AppColors.electricGreen.withOpacity(0.1)
+                  ? AppColors.electricGreen.withValues(alpha: 0.1)
                   : AppColors.grey200,
               borderRadius: BorderRadius.circular(20),
             ),
@@ -631,7 +631,7 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -665,7 +665,7 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.electricGreen.withOpacity(0.1),
+        color: AppColors.electricGreen.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(

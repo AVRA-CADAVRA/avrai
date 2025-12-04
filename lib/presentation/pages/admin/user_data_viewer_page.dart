@@ -99,30 +99,30 @@ class _UserDataViewerPageState extends State<UserDataViewerPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.search, size: 64, color: Colors.grey),
+                      Icon(Icons.search, size: 64, color: AppColors.grey500,
                       const SizedBox(height: 16),
                       Text(
                         'Search for users to view their data',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey,
+                              color: AppColors.grey500
                             ),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: AppColors.electricGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.privacy_tip, color: Colors.blue, size: 20),
+                            Icon(Icons.privacy_tip, color: AppColors.electricGreen, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Privacy: User IDs, AI Signatures, and location data (vibe indicators) are visible. No personal data (name, email, phone, home address) is displayed.',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.blue.shade700,
+                                      color: AppColors.grey700,
                                       fontSize: 11,
                                     ),
                               ),
@@ -139,8 +139,8 @@ class _UserDataViewerPageState extends State<UserDataViewerPage> {
                     final result = _searchResults[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Colors.blue.withOpacity(0.2),
-                        child: const Icon(Icons.person, color: Colors.blue),
+                        backgroundColor: AppColors.electricGreen.withValues(alpha: 0.2),
+                        child: const Icon(Icons.person, color: AppColors.electricGreen),
                       ),
                       title: Text(
                         'User ID: ${result.userId.substring(0, 12)}...',
@@ -157,8 +157,8 @@ class _UserDataViewerPageState extends State<UserDataViewerPage> {
                         ],
                       ),
                       trailing: result.isActive
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : const Icon(Icons.cancel, color: Colors.grey),
+                          ? const Icon(Icons.check_circle, color: AppColors.electricGreen)
+                          : const Icon(Icons.cancel, color: AppColors.grey500,
                       onTap: () {
                         Navigator.push(
                           context,

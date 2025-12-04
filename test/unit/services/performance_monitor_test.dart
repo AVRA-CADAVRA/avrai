@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:spots/core/services/performance_monitor.dart';
-import 'package:spots/core/services/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart' as real_prefs;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../mocks/mock_dependencies.dart.mocks.dart';
+import '../../mocks/mock_dependencies.mocks.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 void main() {
   group('PerformanceMonitor Tests', () {
@@ -12,9 +13,14 @@ void main() {
     late MockStorageService mockStorageService;
     late SharedPreferences prefs;
 
+    setUpAll(() async {
+      await setupTestStorage();
+      real_prefs.SharedPreferences.setMockInitialValues({});
+    });
+
     setUp(() async {
       mockStorageService = MockStorageService();
-      prefs = await SharedPreferences.getInstance();
+      prefs = await real_prefs.SharedPreferences.getInstance();
       
       monitor = PerformanceMonitor(
         storageService: mockStorageService,
@@ -27,6 +33,10 @@ void main() {
       await prefs.clear();
     });
 
+    tearDownAll(() async {
+      await cleanupTestStorage();
+    });
+
     group('trackMetric', () {
       test('tracks metric successfully', () async {
         // Arrange
@@ -34,7 +44,7 @@ void main() {
           any,
           any,
           box: anyNamed('box'),
-        )).thenAnswer((_) async {});
+        )).thenAnswer((_) async => true);
 
         // Act
         await monitor.trackMetric('test_metric', 42.0);
@@ -53,7 +63,7 @@ void main() {
           any,
           any,
           box: anyNamed('box'),
-        )).thenAnswer((_) async {});
+        )).thenAnswer((_) async => true);
 
         // Act
         await monitor.trackMetric('metric1', 10.0);
@@ -76,7 +86,7 @@ void main() {
           any,
           any,
           box: anyNamed('box'),
-        )).thenAnswer((_) async {});
+        )).thenAnswer((_) async => true);
 
         await monitor.trackMetric('memory_usage', 150.0);
         await monitor.trackMetric('response_time', 500.0);

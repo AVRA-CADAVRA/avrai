@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/ai/vibe_analysis_engine.dart';
 import 'package:spots/core/models/personality_profile.dart';
-import 'package:spots/core/models/user_vibe.dart';
 import 'package:spots/core/network/personality_data_codec.dart';
-import 'package:spots/core/network/device_discovery.dart';
+import 'package:spots/core/models/unified_user.dart';
+import 'package:spots/core/models/anonymous_user.dart';
+import 'package:spots/core/services/user_anonymization_service.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_nsd/flutter_nsd.dart';
@@ -22,7 +23,11 @@ class PersonalityAdvertisingService {
   // Advertising state
   bool _isAdvertising = false;
   AnonymizedVibeData? _currentPersonalityData;
+  AnonymousUser? _currentAnonymousUser;
   Timer? _refreshTimer;
+  
+  // Anonymization service for converting UnifiedUser to AnonymousUser
+  final UserAnonymizationService? _anonymizationService;
   
   // Platform-specific advertising implementations
   // Use dynamic to avoid importing platform-specific classes (which would pull in web code)
@@ -38,9 +43,11 @@ class PersonalityAdvertisingService {
     dynamic androidDiscovery,
     dynamic iosDiscovery,
     dynamic webDiscovery,
+    UserAnonymizationService? anonymizationService,
   }) : _androidDiscovery = androidDiscovery,
        _iosDiscovery = iosDiscovery,
-       _webDiscovery = webDiscovery;
+       _webDiscovery = webDiscovery,
+       _anonymizationService = anonymizationService;
   
   /// Start advertising personality data
   /// This makes the device discoverable by other SPOTS devices
@@ -131,6 +138,7 @@ class PersonalityAdvertisingService {
       
       _isAdvertising = false;
       _currentPersonalityData = null;
+      _currentAnonymousUser = null;
       
       developer.log('Personality advertising stopped', name: _logName);
     } catch (e) {
@@ -192,6 +200,118 @@ class PersonalityAdvertisingService {
   
   /// Get current advertised personality data
   AnonymizedVibeData? get currentPersonalityData => _currentPersonalityData;
+  
+  /// Get current anonymous user data (if user profile is being advertised)
+  AnonymousUser? get currentAnonymousUser => _currentAnonymousUser;
+
+  /// Start advertising with UnifiedUser (converts to AnonymousUser automatically)
+  /// 
+  /// **CRITICAL:** This method ensures UnifiedUser is converted to AnonymousUser
+  /// before transmission. No personal data is shared in AI2AI network.
+  /// 
+  /// **Parameters:**
+  /// - `user`: UnifiedUser to advertise (will be anonymized)
+  /// - `agentId`: Anonymous agent ID (required, must start with "agent_")
+  /// - `personality`: Personality profile to include
+  /// - `vibeAnalyzer`: UserVibeAnalyzer for vibe compilation
+  /// - `isAdmin`: If true, allows exact location (godmode/admin access)
+  /// 
+  /// **Returns:**
+  /// true if advertising started successfully
+  Future<bool> startAdvertisingWithUser(
+    UnifiedUser user,
+    String agentId,
+    PersonalityProfile personality,
+    UserVibeAnalyzer vibeAnalyzer, {
+    bool isAdmin = false,
+  }) async {
+    if (_anonymizationService == null) {
+      developer.log('UserAnonymizationService not available. Cannot advertise user profile.', name: _logName);
+      // Fallback to vibe-only advertising
+      return await startAdvertising(user.id, personality, vibeAnalyzer);
+    }
+
+    try {
+      developer.log('Starting advertising with UnifiedUser (will be anonymized): ${user.id}', name: _logName);
+      
+      // Convert UnifiedUser to AnonymousUser
+      final anonymousUser = await _anonymizationService!.anonymizeUser(
+        user,
+        agentId,
+        personality,
+        isAdmin: isAdmin,
+      );
+      
+      _currentAnonymousUser = anonymousUser;
+      
+      // Also compile vibe for compatibility with existing advertising
+      final userVibe = await vibeAnalyzer.compileUserVibe(user.id, personality);
+      final anonymizedVibe = await PrivacyProtection.anonymizeUserVibe(userVibe);
+      _currentPersonalityData = anonymizedVibe;
+      
+      // Start platform-specific advertising with anonymized data
+      bool success = false;
+      
+      if (kIsWeb) {
+        success = await _startWebAdvertising(anonymizedVibe);
+      } else {
+        switch (defaultTargetPlatform) {
+          case TargetPlatform.android:
+            success = await _startAndroidAdvertising(anonymizedVibe);
+            break;
+          case TargetPlatform.iOS:
+            success = await _startIOSAdvertising(anonymizedVibe);
+            break;
+          default:
+            developer.log('Platform not supported for advertising', name: _logName);
+            return false;
+        }
+      }
+      
+      if (success) {
+        _isAdvertising = true;
+        _startRefreshTimer(user.id, personality, vibeAnalyzer);
+        developer.log('User profile advertising started successfully (anonymized)', name: _logName);
+        return true;
+      } else {
+        developer.log('Failed to start user profile advertising', name: _logName);
+        return false;
+      }
+    } catch (e) {
+      developer.log('Error starting user profile advertising: $e', name: _logName);
+      return false;
+    }
+  }
+
+  /// Validate that no UnifiedUser is being sent directly in AI2AI network
+  /// 
+  /// This is a safety check to prevent accidental personal data leaks.
+  void validateNoUnifiedUserInPayload(Map<String, dynamic> payload) {
+    final forbiddenFields = ['id', 'email', 'displayName', 'photoUrl', 'userId'];
+    
+    for (final field in forbiddenFields) {
+      if (payload.containsKey(field)) {
+        throw Exception(
+          'CRITICAL: UnifiedUser field "$field" detected in AI2AI payload. '
+          'All user data must be converted to AnonymousUser before transmission. '
+          'Use startAdvertisingWithUser() method.'
+        );
+      }
+    }
+    
+    // Recursively check nested objects
+    for (final value in payload.values) {
+      if (value is Map<String, dynamic>) {
+        validateNoUnifiedUserInPayload(value);
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map<String, dynamic>) {
+            validateNoUnifiedUserInPayload(item);
+          }
+        }
+      }
+    }
+  }
   
   // Platform-specific advertising implementations
   

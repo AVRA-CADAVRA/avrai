@@ -21,8 +21,10 @@ void main() {
       real_prefs.SharedPreferences.setMockInitialValues({});
       mockPrefs = await real_prefs.SharedPreferences.getInstance();
       
-      // Create mock personality learning - use SharedPreferencesCompat
-      compatPrefs = await SharedPreferencesCompat.getInstance();
+      // Create mock personality learning - use SharedPreferencesCompat with mock storage
+      // Use mock storage to avoid platform channel requirements
+      final mockStorage = MockGetStorage.getInstance();
+      compatPrefs = await SharedPreferencesCompat.getInstance(storage: mockStorage);
       mockPersonalityLearning = PersonalityLearning.withPrefs(compatPrefs);
     });
     

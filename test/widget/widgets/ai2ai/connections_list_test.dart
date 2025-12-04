@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:spots/presentation/widgets/ai2ai/connections_list.dart';
 import 'package:spots/core/monitoring/connection_monitor.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 import '../../../helpers/test_helpers.dart';
 
 /// Widget tests for ConnectionsList
@@ -29,14 +30,7 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 3,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.8,
-          averageLatency: Duration(milliseconds: 50),
-          averageThroughput: 2000.0,
-          totalMessagesExchanged: 200,
-          averageQualityScore: 0.9,
-          totalLearningEvents: 30,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.8),
         topPerformingConnections: ['conn-1', 'conn-2'],
         connectionsNeedingAttention: [],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),
@@ -63,14 +57,7 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 2,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.5,
-          averageLatency: Duration(milliseconds: 200),
-          averageThroughput: 500.0,
-          totalMessagesExchanged: 50,
-          averageQualityScore: 0.4,
-          totalLearningEvents: 5,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.5),
         topPerformingConnections: [],
         connectionsNeedingAttention: ['conn-3', 'conn-4'],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),
@@ -97,14 +84,7 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 2,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.75,
-          averageLatency: Duration(milliseconds: 100),
-          averageThroughput: 1000.0,
-          totalMessagesExchanged: 150,
-          averageQualityScore: 0.8,
-          totalLearningEvents: 25,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.75),
         topPerformingConnections: ['conn-1'],
         connectionsNeedingAttention: [],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),
@@ -135,14 +115,7 @@ void main() {
       // Arrange
       final overview = ActiveConnectionsOverview(
         totalActiveConnections: 1,
-        aggregateMetrics: AggregateConnectionMetrics(
-          averageCompatibility: 0.8,
-          averageLatency: Duration(milliseconds: 50),
-          averageThroughput: 2000.0,
-          totalMessagesExchanged: 200,
-          averageQualityScore: 0.9,
-          totalLearningEvents: 30,
-        ),
+        aggregateMetrics: AggregateConnectionMetrics(0.8),
         topPerformingConnections: ['connection-12345'],
         connectionsNeedingAttention: [],
         learningVelocityDistribution: LearningVelocityDistribution.normal(),

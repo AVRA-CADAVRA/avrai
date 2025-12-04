@@ -1,9 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/expertise/expertise_progress_widget.dart';
 import 'package:spots/core/models/expertise_progress.dart';
 import 'package:spots/core/models/expertise_level.dart';
-import '../../../helpers/widget_test_helpers.dart';
-import '../../../helpers/test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for ExpertiseProgressWidget
 /// Tests expertise progress display
@@ -17,12 +17,15 @@ void main() {
         progressPercentage: 50.0,
         nextLevel: ExpertiseLevel.city,
         location: 'Brooklyn',
-        contributions: {
-          'spotsCreated': 5,
-          'listsCreated': 2,
-          'reviewsWritten': 10,
+        contributionBreakdown: {
+          'spots': 5,
+          'lists': 2,
+          'reviews': 10,
         },
+        totalContributions: 17,
+        requiredContributions: 30,
         nextSteps: ['Create 3 more spots', 'Write 5 more reviews'],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -47,8 +50,11 @@ void main() {
         progressPercentage: 75.0,
         nextLevel: ExpertiseLevel.city,
         location: 'Manhattan',
-        contributions: {},
+        contributionBreakdown: {},
+        totalContributions: 0,
+        requiredContributions: 0,
         nextSteps: [],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -71,12 +77,15 @@ void main() {
         progressPercentage: 100.0,
         nextLevel: null,
         location: 'Global',
-        contributions: {
-          'spotsCreated': 100,
-          'listsCreated': 50,
-          'reviewsWritten': 200,
+        contributionBreakdown: {
+          'spots': 100,
+          'lists': 50,
+          'reviews': 200,
         },
+        totalContributions: 350,
+        requiredContributions: 0,
         nextSteps: [],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -100,12 +109,15 @@ void main() {
         progressPercentage: 50.0,
         nextLevel: ExpertiseLevel.city,
         location: 'Brooklyn',
-        contributions: {
-          'spotsCreated': 5,
-          'listsCreated': 2,
-          'reviewsWritten': 10,
+        contributionBreakdown: {
+          'spots': 5,
+          'lists': 2,
+          'reviews': 10,
         },
+        totalContributions: 17,
+        requiredContributions: 30,
         nextSteps: ['Create 3 more spots'],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -129,10 +141,13 @@ void main() {
         progressPercentage: 50.0,
         nextLevel: ExpertiseLevel.city,
         location: 'Brooklyn',
-        contributions: {
-          'spotsCreated': 5,
+        contributionBreakdown: {
+          'spots': 5,
         },
+        totalContributions: 5,
+        requiredContributions: 30,
         nextSteps: ['Create 3 more spots'],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -156,8 +171,11 @@ void main() {
         progressPercentage: 50.0,
         nextLevel: ExpertiseLevel.city,
         location: 'Brooklyn',
-        contributions: {},
+        contributionBreakdown: {},
+        totalContributions: 0,
+        requiredContributions: 0,
         nextSteps: [],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(
@@ -186,8 +204,11 @@ void main() {
         progressPercentage: 50.0,
         nextLevel: ExpertiseLevel.city,
         location: 'Brooklyn',
-        contributions: {},
+        contributionBreakdown: {},
+        totalContributions: 0,
+        requiredContributions: 0,
         nextSteps: [],
+        lastUpdated: DateTime.now(),
       );
 
       final widget = WidgetTestHelpers.createTestableWidget(

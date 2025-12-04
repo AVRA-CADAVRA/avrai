@@ -15,7 +15,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/services/ai_improvement_tracking_service.dart';
 
 /// Widget displaying AI improvement metrics section
@@ -84,52 +83,61 @@ class _AIImprovementSectionState extends State<AIImprovementSection> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Card(
-        margin: EdgeInsets.only(bottom: 16),
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Center(
-            child: CircularProgressIndicator(),
+      return Semantics(
+        label: 'Loading AI improvement metrics',
+        child: const Card(
+          margin: EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
           ),
         ),
       );
     }
     
     if (_metrics == null) {
-      return const Card(
-        margin: EdgeInsets.only(bottom: 16),
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Center(
-            child: Text('No improvement data available'),
+      return Semantics(
+        label: 'No improvement data available',
+        child: const Card(
+          margin: EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Center(
+              child: Text('No improvement data available'),
+            ),
           ),
         ),
       );
     }
     
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildOverallScore(),
-            const SizedBox(height: 24),
-            _buildAccuracySection(),
-            const SizedBox(height: 24),
-            _buildPerformanceScores(),
-            const SizedBox(height: 24),
-            _buildDimensionScores(),
-            const SizedBox(height: 16),
-            _buildImprovementRate(),
-          ],
+    return Semantics(
+      label: 'AI Improvement Metrics',
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 20),
+              _buildOverallScore(),
+              const SizedBox(height: 24),
+              _buildAccuracySection(),
+              const SizedBox(height: 24),
+              _buildPerformanceScores(),
+              const SizedBox(height: 24),
+              _buildDimensionScores(),
+              const SizedBox(height: 16),
+              _buildImprovementRate(),
+            ],
+          ),
         ),
       ),
     );
@@ -161,14 +169,18 @@ class _AIImprovementSectionState extends State<AIImprovementSection> {
             ),
           ),
         ),
-        IconButton(
-          icon: const Icon(
-            Icons.info_outline,
-            color: AppColors.textSecondary,
-            size: 20,
+        Semantics(
+          label: 'Learn more about AI improvement metrics',
+          button: true,
+          child: IconButton(
+            icon: const Icon(
+              Icons.info_outline,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
+            onPressed: _showInfoDialog,
+            tooltip: 'Learn more',
           ),
-          onPressed: _showInfoDialog,
-          tooltip: 'Learn more',
         ),
       ],
     );
@@ -213,11 +225,15 @@ class _AIImprovementSectionState extends State<AIImprovementSection> {
             ],
           ),
           const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: score,
-            backgroundColor: AppColors.grey200,
-            valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
-            minHeight: 8,
+          Semantics(
+            label: 'Overall AI performance: ${(score * 100).toStringAsFixed(1)}%',
+            value: '${(score * 100).toStringAsFixed(1)}%',
+            child: LinearProgressIndicator(
+              value: score,
+              backgroundColor: AppColors.grey200,
+              valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+              minHeight: 8,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -328,10 +344,14 @@ class _AIImprovementSectionState extends State<AIImprovementSection> {
           const SizedBox(width: 12),
           SizedBox(
             width: 80,
-            child: LinearProgressIndicator(
-              value: score,
-              backgroundColor: AppColors.grey200,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+            child: Semantics(
+              label: '$label: ${(score * 100).toStringAsFixed(0)}%',
+              value: '${(score * 100).toStringAsFixed(0)}%',
+              child: LinearProgressIndicator(
+                value: score,
+                backgroundColor: AppColors.grey200,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -417,12 +437,16 @@ class _AIImprovementSectionState extends State<AIImprovementSection> {
           );
         }).toList(),
         if (_metrics!.dimensionScores.length > 6)
-          TextButton(
-            onPressed: () {
-              // Show all dimensions dialog
-              _showAllDimensionsDialog();
-            },
-            child: const Text('View all dimensions'),
+          Semantics(
+            label: 'View all improvement dimensions',
+            button: true,
+            child: TextButton(
+              onPressed: () {
+                // Show all dimensions dialog
+                _showAllDimensionsDialog();
+              },
+              child: const Text('View all dimensions'),
+            ),
           ),
       ],
     );
@@ -445,10 +469,14 @@ class _AIImprovementSectionState extends State<AIImprovementSection> {
         const SizedBox(width: 12),
         SizedBox(
           width: 100,
-          child: LinearProgressIndicator(
-            value: score,
-            backgroundColor: AppColors.grey200,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
+          child: Semantics(
+            label: '$label: ${(score * 100).toStringAsFixed(0)}%',
+            value: '${(score * 100).toStringAsFixed(0)}%',
+            child: LinearProgressIndicator(
+              value: score,
+              backgroundColor: AppColors.grey200,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
           ),
         ),
         const SizedBox(width: 12),

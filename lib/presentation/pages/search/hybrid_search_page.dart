@@ -323,7 +323,7 @@ class _HybridSearchPageState extends State<HybridSearchPage> {
                   _searchController.text = category;
                   _performSearch(category);
                 },
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
               );
             }).toList(),
           ),

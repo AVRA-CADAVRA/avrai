@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
 
@@ -31,7 +30,7 @@ class ChatMessage extends StatelessWidget {
               child: const Icon(
                 Icons.smart_toy,
                 size: 16,
-                color: Colors.white,
+                color: AppColors.white,
               ),
             ),
             const SizedBox(width: 8),
@@ -53,7 +52,7 @@ class ChatMessage extends StatelessWidget {
                   Text(
                     message,
                     style: TextStyle(
-                      color: isUser ? Colors.black : null,
+                      color: isUser ? AppColors.black : null,
                       fontSize: 16,
                     ),
                   ),
@@ -62,7 +61,7 @@ class ChatMessage extends StatelessWidget {
                     _formatTimestamp(timestamp),
                     style: TextStyle(
                       color: isUser 
-                          ? Colors.black.withOpacity(0.6)
+                          ? AppColors.black.withValues(alpha: 0.6)
                           : AppColors.grey600,
                       fontSize: 12,
                     ),
@@ -79,7 +78,7 @@ class ChatMessage extends StatelessWidget {
               child: const Icon(
                 Icons.person,
                 size: 16,
-                color: Colors.white,
+                color: AppColors.white,
               ),
             ),
           ],

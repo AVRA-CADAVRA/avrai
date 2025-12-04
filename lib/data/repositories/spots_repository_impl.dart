@@ -1,5 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/models/spot.dart';
+import 'package:spots/core/models/spot.dart';
 import 'package:spots/data/datasources/local/spots_local_datasource.dart';
 import 'package:spots/data/datasources/remote/spots_remote_datasource.dart';
 import 'package:spots/domain/repositories/spots_repository.dart';
@@ -155,10 +155,8 @@ class SpotsRepositoryImpl implements SpotsRepository {
       if (result is ConnectivityResult) {
         return result == ConnectivityResult.none;
       }
-      if (result is List) {
-        return result.contains(ConnectivityResult.none);
-      }
-      return false;
+      return result.contains(ConnectivityResult.none);
+          return false;
     } catch (_) {
       // On failure, assume offline to be safe
       return true;

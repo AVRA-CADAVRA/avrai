@@ -43,10 +43,10 @@ class ExpertiseBadgeWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: pinColor.withOpacity(0.1),
+        color: pinColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: pinColor.withOpacity(0.3),
+          color: pinColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -90,10 +90,10 @@ class ExpertiseBadgeWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: pinColor.withOpacity(0.1),
+        color: pinColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: pinColor.withOpacity(0.3),
+          color: pinColor.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -155,7 +155,7 @@ class ExpertIndicator extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.electricGreen.withOpacity(0.1),
+        color: AppColors.electricGreen.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: const Icon(

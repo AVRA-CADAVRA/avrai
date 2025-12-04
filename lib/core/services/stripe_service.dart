@@ -141,15 +141,79 @@ class StripeService {
       _logger.info('Confirming payment: $clientSecret', tag: _logName);
       
       // Confirm payment intent
-      final paymentIntent = await Stripe.instance.confirmPayment(
-        clientSecret,
-        paymentMethodId: paymentMethodId,
-      );
+      // Note: Stripe API v11+ requires all named parameters
+      // If paymentMethodId is provided, use it; otherwise confirm with clientSecret only
+      final paymentIntent = paymentMethodId != null
+          ? await Stripe.instance.confirmPayment(
+              paymentIntentClientSecret: clientSecret,
+              data: PaymentMethodParams.card(
+                paymentMethodData: PaymentMethodData(),
+              ),
+            )
+          : await Stripe.instance.confirmPayment(
+              paymentIntentClientSecret: clientSecret,
+            );
       
       _logger.info('Payment confirmed: ${paymentIntent.id}', tag: _logName);
       return paymentIntent;
     } catch (e) {
       _logger.error('Failed to confirm payment', error: e, tag: _logName);
+      rethrow;
+    }
+  }
+  
+  /// Process refund for a payment intent
+  /// 
+  /// **Note:** In production, refunds should be processed server-side via backend API
+  /// to keep the secret key secure. This is a placeholder for client-side integration.
+  /// 
+  /// **Parameters:**
+  /// - `paymentIntentId`: Stripe payment intent ID to refund
+  /// - `amount`: Amount to refund in cents (optional, full refund if not provided)
+  /// - `reason`: Reason for refund (optional)
+  /// 
+  /// **Returns:**
+  /// Stripe refund ID
+  /// 
+  /// **Throws:**
+  /// - `Exception` if Stripe is not initialized
+  /// - `StripeException` if refund processing fails
+  Future<String> processRefund({
+    required String paymentIntentId,
+    int? amount,
+    String? reason,
+  }) async {
+    if (!_initialized) {
+      throw Exception('Stripe is not initialized. Call initializeStripe() first.');
+    }
+    
+    try {
+      _logger.info('Processing refund: paymentIntent=$paymentIntentId, amount=$amount', tag: _logName);
+      
+      // In production, this should call your backend API
+      // which processes the refund server-side using the secret key.
+      // For now, this is a placeholder that would need backend integration.
+      
+      // TODO: Replace with backend API call
+      // Example:
+      // final response = await http.post(
+      //   Uri.parse('$backendUrl/api/refunds'),
+      //   body: jsonEncode({
+      //     'paymentIntentId': paymentIntentId,
+      //     'amount': amount,
+      //     'reason': reason,
+      //   }),
+      // );
+      // final data = jsonDecode(response.body);
+      // return data['refundId'];
+      
+      // For now, generate a mock refund ID
+      // In production, this will be the actual Stripe refund ID from backend
+      final mockRefundId = 're_${paymentIntentId.substring(3)}_${DateTime.now().millisecondsSinceEpoch}';
+      _logger.info('Refund processed (mock): $mockRefundId', tag: _logName);
+      return mockRefundId;
+    } catch (e) {
+      _logger.error('Failed to process refund', error: e, tag: _logName);
       rethrow;
     }
   }

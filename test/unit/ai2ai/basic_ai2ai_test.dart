@@ -1,4 +1,3 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/personality_profile.dart';

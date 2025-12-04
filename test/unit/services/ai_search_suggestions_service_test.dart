@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:spots/core/services/ai_search_suggestions_service.dart';
-import 'package:spots/core/models/spot.dart';
 import '../../fixtures/model_factories.dart';
 
 /// AI Search Suggestions Service Tests

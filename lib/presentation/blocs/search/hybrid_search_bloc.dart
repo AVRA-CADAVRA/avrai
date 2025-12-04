@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:spots/core/models/spot.dart';
@@ -199,7 +200,10 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
       Position? position;
       try {
         position = await Geolocator.getCurrentPosition(
-          timeLimit: const Duration(seconds: 5),
+          locationSettings: const LocationSettings(),
+        ).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw TimeoutException('Location request timed out'),
         );
       } catch (e) {
         // Location not available, continue without it

@@ -121,7 +121,7 @@ class _ActionSuccessWidgetState extends State<ActionSuccessWidget> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.black.withValues(alpha: 0),
       elevation: 0,
       child: FadeTransition(
         opacity: _fadeAnimation,
@@ -218,10 +218,10 @@ class _ActionSuccessWidgetState extends State<ActionSuccessWidget> with SingleTi
       child: Column(
         children: [
           _buildPreviewContent(),
-          if (widget.result.message.isNotEmpty) ...[
+          if ((widget.result.successMessage ?? widget.result.errorMessage ?? '').isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              widget.result.message,
+              widget.result.successMessage ?? widget.result.errorMessage ?? '',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -286,12 +286,12 @@ class _ActionSuccessWidgetState extends State<ActionSuccessWidget> with SingleTi
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.neonPink.withValues(alpha: 0.1),
+              color: AppColors.electricGreen.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.place,
-              color: AppColors.neonPink,
+              color: AppColors.electricGreen,
               size: 24,
             ),
           ),
@@ -327,7 +327,7 @@ class _ActionSuccessWidgetState extends State<ActionSuccessWidget> with SingleTi
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildMiniIcon(Icons.place, AppColors.neonPink),
+          _buildMiniIcon(Icons.place, AppColors.electricGreen),
           const SizedBox(width: 8),
           Text(
             spotName,

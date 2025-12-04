@@ -553,7 +553,7 @@ class _BusinessAccountFormWidgetState extends State<BusinessAccountFormWidget> {
               onPressed: _isLoading ? null : _submitForm,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.electricGreen,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -565,7 +565,7 @@ class _BusinessAccountFormWidgetState extends State<BusinessAccountFormWidget> {
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                       ),
                     )
                   : const Text(

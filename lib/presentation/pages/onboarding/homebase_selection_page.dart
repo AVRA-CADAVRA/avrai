@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:spots/core/models/unified_models.dart';import 'dart:developer' as developer;
 import 'package:spots/core/services/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart' if (dart.library.html) 'package:spots/presentation/pages/onboarding/web_geocoding_nominatim.dart';
+import 'package:geocoding/geocoding.dart'
+    if (dart.library.html) 'package:spots/presentation/pages/onboarding/web_geocoding_nominatim.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/services/storage_service.dart';
@@ -35,8 +35,9 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
   bool _hasLocationPermission = false;
   bool _mapLoaded = false;
   Timer? _debounceTimer;
-  final AppLogger _logger = const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
-  
+  final AppLogger _logger =
+      const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
+
   // Cache for geocoding results
   static final Map<String, String> _geocodingCache = {};
   static const String _cacheKey = 'homebase_geocoding_cache';
@@ -61,11 +62,13 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
     ];
 
     for (final location in commonLocations) {
-      final cacheKey = '${location.latitude.toStringAsFixed(4)}_${location.longitude.toStringAsFixed(4)}';
+      final cacheKey =
+          '${location.latitude.toStringAsFixed(4)}_${location.longitude.toStringAsFixed(4)}';
       if (!_geocodingCache.containsKey(cacheKey)) {
         // Preload in background
         _getNeighborhoodName(location).catchError((e) {
-          _logger.warn('HomebaseSelectionPage: Error preloading location $location: $e');
+          _logger.warn(
+              'HomebaseSelectionPage: Error preloading location $location: $e');
         });
       }
     }
@@ -77,17 +80,19 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
       final cachedLat = prefs.getDouble('cached_lat');
       final cachedLng = prefs.getDouble('cached_lng');
       final cachedNeighborhood = prefs.getString('cached_neighborhood');
-      
+
       if (cachedLat != null && cachedLng != null) {
         _currentLocation = LatLng(cachedLat, cachedLng);
         if (cachedNeighborhood != null) {
           _selectedNeighborhood = cachedNeighborhood;
           widget.onHomebaseChanged(cachedNeighborhood);
         }
-        _logger.debug('HomebaseSelectionPage: Loaded cached location: $_currentLocation, neighborhood: $_selectedNeighborhood');
+        _logger.debug(
+            'HomebaseSelectionPage: Loaded cached location: $_currentLocation, neighborhood: $_selectedNeighborhood');
       }
     } catch (e) {
-      _logger.error('HomebaseSelectionPage: Error loading cached location', error: e);
+      _logger.error('HomebaseSelectionPage: Error loading cached location',
+          error: e);
     }
   }
 
@@ -99,31 +104,32 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
       await prefs.setString('cached_neighborhood', neighborhood);
       _logger.debug('HomebaseSelectionPage: Saved location to cache');
     } catch (e) {
-      _logger.error('HomebaseSelectionPage: Error saving cached location', error: e);
+      _logger.error('HomebaseSelectionPage: Error saving cached location',
+          error: e);
     }
   }
 
   Future<void> _initializeMap() async {
     _logger.debug('HomebaseSelectionPage: Initializing map');
-    
+
     // Set a default location first to ensure map loads
     if (_currentLocation == null) {
       _currentLocation = const LatLng(40.7128, -74.0060); // NYC default
     }
-    
+
     setState(() {
       _mapLoaded = true;
     });
-    
+
     // Then try to get current location
     await _getCurrentLocation();
   }
 
   Future<void> _getCurrentLocation() async {
     if (!mounted) return;
-    
+
     _logger.debug('HomebaseSelectionPage: Getting current location');
-    
+
     setState(() {
       _isLoadingLocation = true;
     });
@@ -131,12 +137,14 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
     try {
       // Check location permission
       LocationPermission permission = await Geolocator.checkPermission();
-      _logger.debug('HomebaseSelectionPage: Initial permission status: $permission');
-      
+      _logger.debug(
+          'HomebaseSelectionPage: Initial permission status: $permission');
+
       if (permission == LocationPermission.denied) {
         _logger.debug('HomebaseSelectionPage: Requesting location permission');
         permission = await Geolocator.requestPermission();
-        _logger.debug('HomebaseSelectionPage: Permission after request: $permission');
+        _logger.debug(
+            'HomebaseSelectionPage: Permission after request: $permission');
       }
 
       if (permission == LocationPermission.whileInUse ||
@@ -148,11 +156,14 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
         Position position = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.medium, // Faster than high accuracy
-            timeLimit: Duration(seconds: 8), // Reduced from 15 seconds
           ),
+        ).timeout(
+          const Duration(seconds: 8), // Reduced from 15 seconds
+          onTimeout: () => throw TimeoutException('Location request timed out'),
         );
 
-        _logger.debug('HomebaseSelectionPage: Got position: ${position.latitude}, ${position.longitude}');
+        _logger.debug(
+            'HomebaseSelectionPage: Got position: ${position.latitude}, ${position.longitude}');
 
         // Update current location
         _currentLocation = LatLng(position.latitude, position.longitude);
@@ -163,7 +174,8 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
         // Get neighborhood name for the centered location (in parallel)
         _getNeighborhoodName(_currentLocation!);
       } else {
-        _logger.warn('HomebaseSelectionPage: Location permission denied, using default location');
+        _logger.warn(
+            'HomebaseSelectionPage: Location permission denied, using default location');
         // Default to a central location if no permission
         _mapController.move(const LatLng(40.7128, -74.0060), 15); // NYC
         _getNeighborhoodName(const LatLng(40.7128, -74.0060));
@@ -183,15 +195,18 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
   }
 
   Future<void> _getNeighborhoodName(LatLng location) async {
-    _logger.debug('HomebaseSelectionPage: Getting neighborhood name for location: ${location.latitude}, ${location.longitude}');
-    
+    _logger.debug(
+        'HomebaseSelectionPage: Getting neighborhood name for location: ${location.latitude}, ${location.longitude}');
+
     // Create cache key
-    final cacheKey = '${location.latitude.toStringAsFixed(4)}_${location.longitude.toStringAsFixed(4)}';
-    
+    final cacheKey =
+        '${location.latitude.toStringAsFixed(4)}_${location.longitude.toStringAsFixed(4)}';
+
     // Check cache first
     if (_geocodingCache.containsKey(cacheKey)) {
       final cachedResult = _geocodingCache[cacheKey]!;
-      _logger.debug('HomebaseSelectionPage: Using cached result: $cachedResult');
+      _logger
+          .debug('HomebaseSelectionPage: Using cached result: $cachedResult');
       if (mounted) {
         setState(() {
           _selectedNeighborhood = cachedResult;
@@ -201,21 +216,24 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
       await _saveCachedLocation(location, cachedResult);
       return;
     }
-    
+
     try {
       // Use a short-timeout geocoding; on web this resolves via stub quickly
       final placemarks = await placemarkFromCoordinates(
         location.latitude,
         location.longitude,
       ).timeout(const Duration(seconds: 4));
-      _logger.debug('HomebaseSelectionPage: Got ${placemarks.length} placemarks');
+      _logger
+          .debug('HomebaseSelectionPage: Got ${placemarks.length} placemarks');
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
-        _logger.debug('HomebaseSelectionPage: First placemark: ${place.name}, ${place.thoroughfare}, ${place.locality}');
+        _logger.debug(
+            'HomebaseSelectionPage: First placemark: ${place.name}, ${place.thoroughfare}, ${place.locality}');
 
         String neighborhood = _extractNeighborhood(place);
-        _logger.debug('HomebaseSelectionPage: Extracted neighborhood: $neighborhood');
+        _logger.debug(
+            'HomebaseSelectionPage: Extracted neighborhood: $neighborhood');
 
         // Cache the result
         _geocodingCache[cacheKey] = neighborhood;
@@ -244,7 +262,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
       // Try reverse geocoding as fallback with shorter timeout
       try {
         final completer = Completer<List<Placemark>>();
-        
+
         Timer(const Duration(seconds: 3), () {
           if (!completer.isCompleted) {
             completer.completeError('Reverse geocoding timeout');
@@ -280,7 +298,8 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
           }
         }
       } catch (e2) {
-        _logger.error('HomebaseSelectionPage: Error in reverse geocoding', error: e2);
+        _logger.error('HomebaseSelectionPage: Error in reverse geocoding',
+            error: e2);
         // Handle geocoding error
         if (mounted) {
           setState(() {
@@ -431,8 +450,6 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -514,7 +531,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: AppColors.black.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -531,7 +548,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                     // Loading overlay
                     if (_isLoadingLocation || !_mapLoaded)
                       Container(
-                        color: Colors.black.withOpacity(0.3),
+                        color: AppColors.black.withValues(alpha: 0.3),
                         child: const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -569,7 +586,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: AppColors.black.withValues(alpha: 0.2),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -608,7 +625,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.warning.withOpacity(0.9),
+                            color: AppColors.warning.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -652,7 +669,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.grey600.withOpacity(0.9),
+                            color: AppColors.grey600.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(

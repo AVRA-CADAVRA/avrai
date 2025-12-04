@@ -190,7 +190,7 @@ class NetworkGraphPainter extends CustomPainter {
 
       // Draw connection line
       final linePaint = Paint()
-        ..color = nodeColor.withOpacity(0.3)
+        ..color = nodeColor.withValues(alpha: 0.3)
         ..strokeWidth = 2;
       canvas.drawLine(center, nodePosition, linePaint);
 

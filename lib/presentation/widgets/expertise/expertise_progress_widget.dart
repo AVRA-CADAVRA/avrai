@@ -101,7 +101,7 @@ class ExpertiseProgressWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.electricGreen.withOpacity(0.1),
+                  color: AppColors.electricGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -133,6 +133,12 @@ class ExpertiseProgressWidget extends StatelessWidget {
               if (progress.nextSteps.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 _buildNextStepsSection(),
+              ],
+              // Locality-specific threshold info (if working toward Local level)
+              if (progress.nextLevel != null && 
+                  progress.location != null) ...[
+                const SizedBox(height: 16),
+                _buildLocalityThresholdInfo(),
               ],
             ],
           ],
@@ -205,6 +211,76 @@ class ExpertiseProgressWidget extends StatelessWidget {
               ),
             )),
       ],
+    );
+  }
+
+  Widget _buildLocalityThresholdInfo() {
+    // Extract locality from location string
+    String? extractLocality(String? location) {
+      if (location == null || location.isEmpty) return null;
+      final parts = location.split(',').map((s) => s.trim()).toList();
+      return parts.isNotEmpty ? parts.first : null;
+    }
+
+    final locality = extractLocality(progress.location);
+    if (locality == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.electricGreen.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.electricGreen.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: AppColors.electricGreen,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Locality-Specific Qualification',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.electricGreen,
+                  ),
+                ),
+              ),
+              Tooltip(
+                message: 'Thresholds adapt to what $locality values most. '
+                    'Activities valued by your locality have lower thresholds, '
+                    'making it easier to qualify as a local expert.',
+                child: Icon(
+                  Icons.help_outline,
+                  size: 14,
+                  color: AppColors.electricGreen,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your qualification requirements are adjusted based on what $locality values. '
+            'Focus on activities your locality cares about most to reach Local expert faster.',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.textPrimary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

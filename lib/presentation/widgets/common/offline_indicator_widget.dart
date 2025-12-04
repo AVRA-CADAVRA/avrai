@@ -115,7 +115,7 @@ class _OfflineIndicatorWidgetState extends State<OfflineIndicatorWidget> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                ),
+                ],
               ),
             ),
             if (widget.onRetry != null)

@@ -1,8 +1,15 @@
-import 'dart:developer' as developer;
 import 'package:spots/core/models/expertise_event.dart';
+import 'package:spots/core/models/community_event.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/spot.dart';
+import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/services/logger.dart';
+import 'package:spots/core/services/geographic_scope_service.dart';
+import 'package:spots/core/services/cross_locality_connection_service.dart'
+    show
+        CrossLocalityConnectionService,
+        ConnectedLocality;
+import 'package:spots/core/services/community_event_service.dart';
 
 /// Expertise Event Service
 /// OUR_GUTS.md: "Pins unlock new features, like event hosting"
@@ -10,9 +17,31 @@ import 'package:spots/core/services/logger.dart';
 class ExpertiseEventService {
   static const String _logName = 'ExpertiseEventService';
   final AppLogger _logger = const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
+  
+  final GeographicScopeService _geographicScopeService;
+  final CrossLocalityConnectionService _crossLocalityService;
+  final CommunityEventService _communityEventService;
+
+  // Performance optimization: In-memory event cache for O(1) lookups
+  // In production, this would be replaced with database queries with indexes
+  final Map<String, ExpertiseEvent> _eventCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheTTL = Duration(minutes: 5); // Cache events for 5 minutes
+  static const int _maxCacheSize = 1000; // Limit cache size to prevent memory issues
+
+  ExpertiseEventService({
+    GeographicScopeService? geographicScopeService,
+    CrossLocalityConnectionService? crossLocalityService,
+    CommunityEventService? communityEventService,
+  })  : _geographicScopeService =
+            geographicScopeService ?? GeographicScopeService(),
+        _crossLocalityService =
+            crossLocalityService ?? CrossLocalityConnectionService(),
+        _communityEventService =
+            communityEventService ?? CommunityEventService();
 
   /// Create a new expertise event
-  /// Requires user to have City level or higher expertise
+  /// Requires user to have Local level or higher expertise
   Future<ExpertiseEvent> createEvent({
     required UnifiedUser host,
     required String title,
@@ -32,14 +61,41 @@ class ExpertiseEventService {
     try {
       _logger.info('Creating expertise event: $title', tag: _logName);
 
-      // Verify host can host events
+      // Verify host can host events (Local level or higher)
       if (!host.canHostEvents()) {
-        throw Exception('Host must have City level or higher expertise to host events');
+        throw Exception('Host must have Local level or higher expertise to host events');
       }
 
       // Verify host has expertise in category
       if (!host.hasExpertiseIn(category)) {
         throw Exception('Host must have expertise in $category');
+      }
+
+      // Validate geographic scope if location is provided
+      if (location != null && location.isNotEmpty) {
+        try {
+          // Extract locality from location string
+          // Location format: "Locality, City, State, Country" or "Locality, City"
+          final locality = location.split(',').first.trim();
+          
+          _geographicScopeService.validateEventLocation(
+            userId: host.id,
+            user: host,
+            category: category,
+            eventLocality: locality,
+          );
+        } catch (e) {
+          // Re-throw with more context if it's a geographic scope error
+          if (e is Exception) {
+            _logger.warning(
+              'Geographic scope validation failed: ${e.toString()}',
+              tag: _logName,
+            );
+            rethrow;
+          }
+          // If it's not an Exception, wrap it
+          throw Exception('Geographic scope validation failed: ${e.toString()}');
+        }
       }
 
       final event = ExpertiseEvent(
@@ -210,7 +266,97 @@ class ExpertiseEventService {
     }
   }
 
+  /// Get event by ID
+  /// 
+  /// Fetches a single event by its unique identifier.
+  /// 
+  /// **Parameters:**
+  /// - `eventId`: Unique event identifier
+  /// 
+  /// **Returns:**
+  /// - `ExpertiseEvent?`: The event if found, `null` if not found
+  /// 
+  /// **Note:**
+  /// - Currently uses `_getAllEvents()` for filtering (same as workaround)
+  /// - In production, replace with direct database query by ID for better performance
+  /// 
+  /// **Usage:**
+  /// ```dart
+  /// final event = await eventService.getEventById('event-123');
+  /// if (event != null) {
+  ///   // Event found, display details
+  /// } else {
+  ///   // Event not found
+  /// }
+  /// ```
+  /// Get event by ID
+  /// 
+  /// Performance optimization: Uses direct cache lookup (O(1)) instead of
+  /// filtering all events (O(n)). Falls back to database query if not in cache.
+  Future<ExpertiseEvent?> getEventById(String eventId) async {
+    try {
+      _logger.info('Getting event by ID: $eventId', tag: _logName);
+      
+      // Performance optimization: Check cache first (O(1) lookup)
+      if (_eventCache.containsKey(eventId)) {
+        final cachedTimestamp = _cacheTimestamps[eventId];
+        if (cachedTimestamp != null && 
+            DateTime.now().difference(cachedTimestamp) < _cacheTTL) {
+          _logger.debug('Event found in cache: $eventId', tag: _logName);
+          return _eventCache[eventId];
+        } else {
+          // Cache expired, remove it
+          _eventCache.remove(eventId);
+          _cacheTimestamps.remove(eventId);
+        }
+      }
+      
+      // Not in cache or expired, query database directly by ID
+      // In production: SELECT * FROM events WHERE id = $eventId
+      // For now, fall back to _getAllEvents() but log warning
+      _logger.warn(
+        'Event not in cache, querying all events (performance impact). '
+        'In production, implement direct database query by ID.',
+        tag: _logName,
+      );
+      
+      final allEvents = await _getAllEvents();
+      try {
+        final event = allEvents.firstWhere(
+          (event) => event.id == eventId,
+        );
+        
+        // Cache the event for future lookups
+        _cacheEvent(event);
+        
+        return event;
+      } catch (e) {
+        // Event not found - return null (not an error condition)
+        _logger.info('Event not found: $eventId', tag: _logName);
+        return null;
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error getting event by ID: $eventId',
+        error: e,
+        stackTrace: stackTrace,
+        tag: _logName,
+      );
+      return null;
+    }
+  }
+
   /// Search events
+  /// 
+  /// **Local Expert Priority:**
+  /// - Local experts hosting in their locality rank higher than city experts
+  /// - Priority: Local expert > City expert (when hosting in locality)
+  /// - Ensures local experts are visible in their locality
+  /// 
+  /// **Community Events Integration:**
+  /// - Community events are included in search results
+  /// - Community events can be filtered separately if needed
+  /// - Community events appear alongside expert events
   Future<List<ExpertiseEvent>> searchEvents({
     String? category,
     String? location,
@@ -218,11 +364,41 @@ class ExpertiseEventService {
     DateTime? startDate,
     DateTime? endDate,
     int maxResults = 20,
+    bool includeCommunityEvents = true,
   }) async {
     try {
       final allEvents = await _getAllEvents();
       
-      return allEvents.where((event) {
+      // Get community events if included
+      List<CommunityEvent> communityEvents = [];
+      if (includeCommunityEvents) {
+        try {
+          communityEvents = await _communityEventService.getCommunityEvents(
+            category: category,
+            location: location,
+            eventType: eventType,
+            startDate: startDate,
+            endDate: endDate,
+            maxResults: maxResults,
+          );
+        } catch (e) {
+          _logger.warning(
+            'Error getting community events for search: ${e.toString()}',
+            tag: _logName,
+          );
+          // Continue without community events if there's an error
+        }
+      }
+      
+      // Combine expert events and community events
+      // CommunityEvent extends ExpertiseEvent, so they're compatible
+      final allCombinedEvents = <ExpertiseEvent>[
+        ...allEvents,
+        ...communityEvents, // CommunityEvent extends ExpertiseEvent
+      ];
+      
+      // Filter events
+      final filteredEvents = allCombinedEvents.where((event) {
         if (category != null && event.category != category) return false;
         if (location != null && event.location != null) {
           if (!event.location!.toLowerCase().contains(location.toLowerCase())) {
@@ -234,12 +410,101 @@ class ExpertiseEventService {
         if (endDate != null && event.endTime.isAfter(endDate)) return false;
         if (event.status != EventStatus.upcoming) return false;
         return true;
-      }).take(maxResults).toList()
-        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+      }).toList();
+
+      // Extract target locality from location parameter
+      String? targetLocality;
+      if (location != null) {
+        targetLocality = location.split(',').first.trim();
+      }
+
+      // Sort with local expert priority
+      filteredEvents.sort((a, b) {
+        // Calculate local expert priority boost for each event
+        final priorityA = _calculateLocalExpertPriority(
+          event: a,
+          targetLocality: targetLocality,
+        );
+        final priorityB = _calculateLocalExpertPriority(
+          event: b,
+          targetLocality: targetLocality,
+        );
+
+        // Primary sort: Local expert priority (higher priority = first)
+        final priorityComparison = priorityB.compareTo(priorityA);
+        if (priorityComparison != 0) {
+          return priorityComparison;
+        }
+
+        // Secondary sort: Start time (earlier events first)
+        return a.startTime.compareTo(b.startTime);
+      });
+
+      return filteredEvents.take(maxResults).toList();
     } catch (e) {
       _logger.error('Error searching events', error: e, tag: _logName);
       return [];
     }
+  }
+
+  /// Calculate local expert priority boost
+  /// 
+  /// **Rules:**
+  /// - Local expert hosting in their locality: 1.0 (highest priority)
+  /// - City expert hosting in locality: 0.5 (lower priority)
+  /// - Other cases: 0.0 (no boost)
+  /// 
+  /// **Returns:**
+  /// Priority boost (0.0 to 1.0) - higher means higher priority in rankings
+  double _calculateLocalExpertPriority({
+    required ExpertiseEvent event,
+    String? targetLocality,
+  }) {
+    if (targetLocality == null) {
+      return 0.0; // No locality specified, no priority boost
+    }
+
+    final host = event.host;
+    final eventLocality = _extractLocality(event.location);
+
+    // Check if event is in target locality
+    if (eventLocality == null ||
+        eventLocality.toLowerCase() != targetLocality.toLowerCase()) {
+      return 0.0; // Event not in target locality, no priority boost
+    }
+
+    // Check if host is local expert in this category
+    final category = event.category;
+    final hostLevel = host.getExpertiseLevel(category);
+
+    if (hostLevel == null) {
+      return 0.0; // No expertise in category, no priority boost
+    }
+
+    // Check if host is local level
+    if (hostLevel == ExpertiseLevel.local) {
+      // Verify host is in the same locality
+      final hostLocality = _extractLocality(host.location);
+      if (hostLocality != null &&
+          hostLocality.toLowerCase() == targetLocality.toLowerCase()) {
+        return 1.0; // Local expert hosting in their locality - highest priority
+      }
+    }
+
+    // City expert hosting in locality gets lower priority
+    if (hostLevel == ExpertiseLevel.city) {
+      return 0.5; // City expert - lower priority than local expert
+    }
+
+    // Other levels get no priority boost
+    return 0.0;
+  }
+
+  /// Extract locality from location string
+  /// Location format: "Locality, City, State, Country" or "Locality, City"
+  String? _extractLocality(String? location) {
+    if (location == null || location.isEmpty) return null;
+    return location.split(',').first.trim();
   }
 
   /// Get upcoming events in a category
@@ -251,6 +516,161 @@ class ExpertiseEventService {
       category: category,
       maxResults: maxResults,
     );
+  }
+
+  /// Search events including connected localities
+  /// 
+  /// **Cross-Locality Integration:**
+  /// - Includes events from connected localities
+  /// - Applies connection strength to ranking
+  /// - Shows events from connected localities in search results
+  /// 
+  /// **What Doors Does This Open?**
+  /// - Discovery Doors: Users discover events in connected localities
+  /// - Exploration Doors: Users can explore neighboring localities
+  /// - Connection Doors: Bring likeminded individuals around the locality into the locality
+  Future<List<ExpertiseEvent>> searchEventsWithConnectedLocalities({
+    required UnifiedUser user,
+    String? category,
+    String? location,
+    ExpertiseEventType? eventType,
+    DateTime? startDate,
+    DateTime? endDate,
+    int maxResults = 20,
+    bool includeConnectedLocalities = true,
+  }) async {
+    try {
+      // Extract target locality from location parameter
+      String? targetLocality;
+      if (location != null) {
+        targetLocality = location.split(',').first.trim();
+      }
+
+      // Get base search results
+      final baseEvents = await searchEvents(
+        category: category,
+        location: location,
+        eventType: eventType,
+        startDate: startDate,
+        endDate: endDate,
+        maxResults: maxResults,
+      );
+
+      if (!includeConnectedLocalities || targetLocality == null) {
+        return baseEvents;
+      }
+
+      // Get connected localities
+      final connectedLocalities = await _crossLocalityService.getConnectedLocalities(
+        user: user,
+        locality: targetLocality,
+      );
+
+      // Get events from connected localities
+      final connectedEvents = <ExpertiseEvent>[];
+      for (final connectedLocality in connectedLocalities) {
+        final localityEvents = await searchEvents(
+          category: category,
+          location: connectedLocality.locality,
+          eventType: eventType,
+          startDate: startDate,
+          endDate: endDate,
+          maxResults: 5, // Limit events per connected locality
+        );
+
+        // Add connection strength metadata to events (for ranking)
+        for (final event in localityEvents) {
+          connectedEvents.add(event);
+        }
+      }
+
+      // Combine base events and connected locality events
+      final allEvents = <ExpertiseEvent>[...baseEvents, ...connectedEvents];
+
+      // Remove duplicates (by event ID)
+      final uniqueEvents = <String, ExpertiseEvent>{};
+      for (final event in allEvents) {
+        uniqueEvents[event.id] = event;
+      }
+
+      // Sort with local expert priority and connection strength
+      final sortedEvents = uniqueEvents.values.toList();
+      sortedEvents.sort((a, b) {
+        // Calculate local expert priority
+        final priorityA = _calculateLocalExpertPriority(
+          event: a,
+          targetLocality: targetLocality,
+        );
+        final priorityB = _calculateLocalExpertPriority(
+          event: b,
+          targetLocality: targetLocality,
+        );
+
+        // Primary sort: Local expert priority
+        final priorityComparison = priorityB.compareTo(priorityA);
+        if (priorityComparison != 0) {
+          return priorityComparison;
+        }
+
+        // Secondary sort: Connection strength (if from connected locality)
+        final connectionA = _getConnectionStrength(
+          event: a,
+          targetLocality: targetLocality,
+          connectedLocalities: connectedLocalities,
+        );
+        final connectionB = _getConnectionStrength(
+          event: b,
+          targetLocality: targetLocality,
+          connectedLocalities: connectedLocalities,
+        );
+
+        final connectionComparison = connectionB.compareTo(connectionA);
+        if (connectionComparison != 0) {
+          return connectionComparison;
+        }
+
+        // Tertiary sort: Start time
+        return a.startTime.compareTo(b.startTime);
+      });
+
+      return sortedEvents.take(maxResults).toList();
+    } catch (e) {
+      _logger.error(
+        'Error searching events with connected localities',
+        error: e,
+        tag: _logName,
+      );
+      // Fallback to regular search
+      return searchEvents(
+        category: category,
+        location: location,
+        eventType: eventType,
+        startDate: startDate,
+        endDate: endDate,
+        maxResults: maxResults,
+      );
+    }
+  }
+
+  /// Get connection strength for an event from connected localities
+  double _getConnectionStrength({
+    required ExpertiseEvent event,
+    required String? targetLocality,
+    required List<ConnectedLocality> connectedLocalities,
+  }) {
+    if (targetLocality == null) return 0.0;
+
+    final eventLocality = _extractLocality(event.location);
+    if (eventLocality == null) return 0.0;
+
+    // Find matching connected locality
+    for (final connected in connectedLocalities) {
+      if (connected.locality.toLowerCase() == eventLocality.toLowerCase()) {
+        return connected.connectionStrength;
+      }
+    }
+
+    return 0.0; // Not in connected localities
   }
 
   /// Update event status
@@ -280,11 +700,70 @@ class ExpertiseEventService {
 
   Future<void> _saveEvent(ExpertiseEvent event) async {
     // In production, save to database
+    // Performance optimization: Update cache when event is saved
+    _cacheEvent(event);
   }
 
   Future<List<ExpertiseEvent>> _getAllEvents() async {
     // In production, query database
-    return [];
+    // Performance optimization: Return cached events if available
+    // This is a workaround until database integration
+    _cleanExpiredCache();
+    return _eventCache.values.toList();
+  }
+
+  /// Performance optimization: Cache event for O(1) lookups
+  void _cacheEvent(ExpertiseEvent event) {
+    // Enforce cache size limit to prevent memory issues
+    if (_eventCache.length >= _maxCacheSize) {
+      _evictOldestCacheEntry();
+    }
+    
+    _eventCache[event.id] = event;
+    _cacheTimestamps[event.id] = DateTime.now();
+  }
+
+  /// Remove expired cache entries
+  void _cleanExpiredCache() {
+    final now = DateTime.now();
+    final expiredKeys = <String>[];
+    
+    _cacheTimestamps.forEach((key, timestamp) {
+      if (now.difference(timestamp) >= _cacheTTL) {
+        expiredKeys.add(key);
+      }
+    });
+    
+    for (final key in expiredKeys) {
+      _eventCache.remove(key);
+      _cacheTimestamps.remove(key);
+    }
+    
+    if (expiredKeys.isNotEmpty) {
+      _logger.debug('Cleaned ${expiredKeys.length} expired cache entries', tag: _logName);
+    }
+  }
+
+  /// Evict oldest cache entry when cache is full (LRU-style eviction)
+  void _evictOldestCacheEntry() {
+    if (_cacheTimestamps.isEmpty) return;
+    
+    // Find oldest entry
+    String? oldestKey;
+    DateTime? oldestTime;
+    
+    _cacheTimestamps.forEach((key, timestamp) {
+      if (oldestTime == null || timestamp.isBefore(oldestTime!)) {
+        oldestTime = timestamp;
+        oldestKey = key;
+      }
+    });
+    
+    if (oldestKey != null) {
+      _eventCache.remove(oldestKey);
+      _cacheTimestamps.remove(oldestKey);
+      _logger.debug('Evicted oldest cache entry: $oldestKey', tag: _logName);
+    }
   }
 }
 

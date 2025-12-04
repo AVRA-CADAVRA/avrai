@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/core/models/list.dart';
+import 'package:spots/core/models/list.dart';
 
 class SpotListCard extends StatelessWidget {
   final SpotList list;

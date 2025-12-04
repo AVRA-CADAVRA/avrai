@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 class ContentAnalysisService {
   static Map<String, dynamic> analyzeContent(String content) {

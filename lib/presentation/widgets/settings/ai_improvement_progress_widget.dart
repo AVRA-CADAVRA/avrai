@@ -14,7 +14,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
-import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/services/ai_improvement_tracking_service.dart';
 
 /// Widget displaying AI improvement progress visualization
@@ -96,25 +95,28 @@ class _AIImprovementProgressWidgetState extends State<AIImprovementProgressWidge
       );
     }
     
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 16),
-            _buildDimensionSelector(),
-            const SizedBox(height: 20),
-            _buildProgressChart(),
-            const SizedBox(height: 24),
-            _buildTrendSummary(),
-          ],
+    return Semantics(
+      label: 'AI Improvement Progress Visualization',
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              _buildDimensionSelector(),
+              const SizedBox(height: 20),
+              _buildProgressChart(),
+              const SizedBox(height: 24),
+              _buildTrendSummary(),
+            ],
+          ),
         ),
       ),
     );
@@ -172,20 +174,25 @@ class _AIImprovementProgressWidgetState extends State<AIImprovementProgressWidge
           final isSelected = _selectedDimension == dimension.key;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(dimension.label),
+            child: Semantics(
+              label: 'Select ${dimension.label} dimension',
               selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedDimension = dimension.key;
-                });
-              },
-              selectedColor: AppColors.electricGreen.withValues(alpha: 0.2),
-              backgroundColor: AppColors.grey100,
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.electricGreen : AppColors.textPrimary,
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              button: true,
+              child: ChoiceChip(
+                label: Text(dimension.label),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedDimension = dimension.key;
+                  });
+                },
+                selectedColor: AppColors.electricGreen.withValues(alpha: 0.2),
+                backgroundColor: AppColors.grey100,
+                labelStyle: TextStyle(
+                  color: isSelected ? AppColors.electricGreen : AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
           );
@@ -226,9 +233,12 @@ class _AIImprovementProgressWidgetState extends State<AIImprovementProgressWidge
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: CustomPaint(
-              painter: _LineChartPainter(dataPoints),
-              child: Container(),
+            child: Semantics(
+              label: 'Progress chart for ${_getDimensionLabel(_selectedDimension)}',
+              child: CustomPaint(
+                painter: _LineChartPainter(dataPoints),
+                child: Container(),
+              ),
             ),
           ),
         ],

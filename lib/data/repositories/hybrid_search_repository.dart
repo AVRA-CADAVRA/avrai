@@ -115,7 +115,7 @@ class HybridSearchRepository {
       // Calculate distances for result metadata
       final resultsWithMetadata = finalResults.map((spot) {
         final distance = (latitude != null && longitude != null)
-            ? _calculateDistance(spot.latitude, spot.longitude, latitude!, longitude!)
+            ? _calculateDistance(spot.latitude, spot.longitude, latitude, longitude)
             : null;
         return SpotWithMetadata(
           spot: spot,
@@ -566,10 +566,8 @@ class HybridSearchRepository {
     if (_connectivity == null) return false;
     try {
       final result = await _connectivity!.checkConnectivity();
-      if (result is List) {
-        return result.contains(ConnectivityResult.none);
-      }
-      return result == ConnectivityResult.none;
+      return result.contains(ConnectivityResult.none);
+          return result == ConnectivityResult.none;
     } catch (e) {
       _logger.error('Error checking connectivity', error: e, tag: _logName);
       return false; // Assume online on error

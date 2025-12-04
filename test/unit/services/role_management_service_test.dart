@@ -2,11 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:spots/core/services/role_management_service.dart';
 import 'package:spots/core/models/user_role.dart';
-import 'package:spots/core/services/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart' as real_prefs;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../mocks/mock_dependencies.dart.mocks.dart';
+import '../../mocks/mock_dependencies.mocks.dart';
 import '../../fixtures/model_factories.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 void main() {
   group('RoleManagementService Tests', () {
@@ -14,10 +15,15 @@ void main() {
     late MockStorageService mockStorageService;
     late SharedPreferences prefs;
 
+    setUpAll(() async {
+      await setupTestStorage();
+      real_prefs.SharedPreferences.setMockInitialValues({});
+    });
+
     setUp(() async {
       mockStorageService = MockStorageService();
-      prefs = await SharedPreferences.getInstance();
-      
+      prefs = await real_prefs.SharedPreferences.getInstance();
+
       service = RoleManagementServiceImpl(
         storageService: mockStorageService,
         prefs: prefs,
@@ -26,6 +32,10 @@ void main() {
 
     tearDown(() async {
       await prefs.clear();
+    });
+
+    tearDownAll(() async {
+      await cleanupTestStorage();
     });
 
     group('assignRole', () {
@@ -39,7 +49,7 @@ void main() {
           any,
           any,
           box: anyNamed('box'),
-        )).thenAnswer((_) async {});
+        )).thenAnswer((_) async => true);
 
         // First assign curator role to grantor
         final grantorAssignment = UserRoleAssignment(
@@ -50,7 +60,7 @@ void main() {
           grantedAt: DateTime.now(),
           grantedBy: 'system',
         );
-        
+
         when(mockStorageService.getObject<List<dynamic>>(
           any,
           box: anyNamed('box'),
@@ -187,4 +197,3 @@ void main() {
     });
   });
 }
-

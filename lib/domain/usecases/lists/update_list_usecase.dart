@@ -1,5 +1,5 @@
 import 'package:spots/core/models/list.dart';
-import 'package:spots/core/models/unified_models.dart';import 'package:spots/domain/repositories/lists_repository.dart';
+import 'package:spots/domain/repositories/lists_repository.dart';
 
 class UpdateListUseCase {
   final ListsRepository repository;

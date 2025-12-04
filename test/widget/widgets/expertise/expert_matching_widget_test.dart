@@ -1,7 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/expertise/expert_matching_widget.dart';
-import 'package:spots/core/services/expertise_matching_service.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for ExpertMatchingWidget
 /// Tests expert matching display

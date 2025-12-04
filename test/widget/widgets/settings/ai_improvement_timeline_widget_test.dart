@@ -18,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/settings/ai_improvement_timeline_widget.dart';
 import 'package:spots/core/services/ai_improvement_tracking_service.dart';
-import 'package:spots/core/theme/colors.dart';
 import '../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for AIImprovementTimelineWidget

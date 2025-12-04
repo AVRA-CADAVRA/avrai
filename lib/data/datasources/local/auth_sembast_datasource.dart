@@ -1,5 +1,4 @@
 import 'package:spots/core/services/logger.dart';
-import 'package:spots/core/models/unified_models.dart';
 import 'package:sembast/sembast.dart';
 import 'package:spots/core/models/user.dart';
 import 'package:spots/data/datasources/local/auth_local_datasource.dart';

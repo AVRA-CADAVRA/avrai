@@ -1,6 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/presentation/widgets/common/ai_chat_bar.dart';
-import '../../../helpers/widget_test_helpers.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 /// Widget tests for AIChatBar
 /// Tests AI chat input bar functionality

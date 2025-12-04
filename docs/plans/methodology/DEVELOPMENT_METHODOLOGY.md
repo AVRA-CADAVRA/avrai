@@ -13,6 +13,8 @@
 3. [Cross-Referencing & Context Gathering](#cross-referencing--context-gathering)
 4. [Pre-Implementation Phase](#pre-implementation-phase)
 5. [Execution Phase](#execution-phase)
+   - [Phase 2: Integration](#phase-2-integration)
+     - [2.5 Replace Mock Data with Real Data](#25-replace-mock-data-with-real-data)
 6. [Quality Assurance](#quality-assurance)
 7. [Documentation](#documentation)
 8. [Communication](#communication)
@@ -1268,6 +1270,102 @@ TODO 2: [in_progress] Create Component B
    - Does data flow correctly?
    - Do actions work end-to-end?
 
+### 2.5 Replace Mock Data with Real Data
+
+**When to Use:** When backend service becomes available  
+**Reference:** See detailed protocol in `MOCK_DATA_REPLACEMENT_PROTOCOL.md`
+
+#### Quick Checklist (2 min)
+
+When you encounter mock data and the service is ready:
+
+```
+☑️ Step 1: Identify Mock Data
+   - Search for "// Mock data" or "// TODO: Load"
+   - Check for hardcoded fake data
+   - Verify service availability
+
+☑️ Step 2: Verify Service Exists
+   - Check service in lib/core/services/
+   - Verify registration in injection_container.dart
+   - Ensure methods match requirements
+
+☑️ Step 3: Replace Incrementally
+   - Add service dependency via DI
+   - Replace mock with service call
+   - Handle loading/error states
+   - Update UI with real data
+
+☑️ Step 4: Test with Real Data
+   - Test with actual backend
+   - Validate data mapping
+   - Handle edge cases
+
+☑️ Step 5: Clean Up
+   - Remove hardcoded mock data
+   - Remove "// Mock data" comments
+   - Remove unused variables
+```
+
+#### Full Protocol (10 min)
+
+**See detailed protocol:** `docs/plans/methodology/MOCK_DATA_REPLACEMENT_PROTOCOL.md`
+
+**Key Steps:**
+
+1. **Identify Mock Data**
+   ```bash
+   # Search for mock data
+   grep -r "// Mock data" lib/presentation/
+   grep -r "// TODO: Load" lib/presentation/
+   ```
+
+2. **Verify Service Availability**
+   ```dart
+   // Check service exists and is registered
+   glob_file_search('**/*service_name*.dart')
+   grep('ServiceName', path: 'lib/injection_container.dart')
+   ```
+
+3. **Replace Incrementally**
+   ```dart
+   // Before (mock):
+   await Future.delayed(const Duration(seconds: 1));
+   _brandAccount = BrandAccount(id: 'brand-mock-1', ...);
+   
+   // After (real):
+   final service = context.read<BrandAccountService>();
+   final brand = await service.getBrandAccountByUserId(userId);
+   setState(() => _brandAccount = brand);
+   ```
+
+4. **Test with Real Data**
+   - Test with actual backend
+   - Validate data mapping
+   - Handle edge cases (null, errors, empty)
+
+5. **Clean Up**
+   - Remove all mock code
+   - Update comments
+   - Remove unused variables
+
+#### Common Scenarios
+
+**Scenario 1: UI Mock Data**
+- **Location:** `lib/presentation/pages/`
+- **Example:** `brand_dashboard_page.dart` (lines 40-121)
+- **Pattern:** Replace hardcoded data with service calls
+
+**Scenario 2: Service Integration**
+- **Location:** Service layer
+- **Pattern:** Use repository pattern (already handles offline/online)
+
+**Scenario 3: Offline-First Pattern**
+- **SPOTS Architecture:** Repository pattern handles local + remote
+- **Key Point:** Connect UI to repository, not directly to service
+
+**See full examples in:** `MOCK_DATA_REPLACEMENT_PROTOCOL.md`
+
 ### Phase 3: Polish & Complete
 
 **Don't stop at "it compiles":**
@@ -1627,7 +1725,7 @@ EOF
 
 3. Integration
    ├─► Wire backend to frontend
-   ├─► Replace mocks with real data
+   ├─► Replace mocks with real data (see Section 2.5)
    └─► End-to-end tests
 
 4. Polish

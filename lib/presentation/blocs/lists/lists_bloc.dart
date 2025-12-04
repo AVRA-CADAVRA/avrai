@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:spots/core/models/unified_models.dart';import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/domain/usecases/lists/create_list_usecase.dart';
 import 'package:spots/domain/usecases/lists/delete_list_usecase.dart';

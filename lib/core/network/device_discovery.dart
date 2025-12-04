@@ -1,8 +1,6 @@
 import 'dart:developer' as developer;
 import 'dart:async';
-import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/ai/privacy_protection.dart';
-import 'package:spots/core/models/user_vibe.dart';
 import 'package:spots/core/network/device_discovery_factory.dart';
 
 /// Device Discovery Service for Phase 6: Physical Layer

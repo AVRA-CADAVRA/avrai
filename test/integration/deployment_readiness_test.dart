@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:spots/app.dart';
-import 'package:spots/core/models/unified_models.dart';
-import 'package:spots/core/services/performance_monitor.dart';
-import 'package:spots/core/services/deployment_validator.dart';
-import 'package:spots/core/services/security_validator.dart';
 import 'package:spots/data/repositories/auth_repository_impl.dart';
 import 'package:spots/data/repositories/spots_repository_impl.dart';
 import 'package:spots/data/datasources/remote/spots_remote_datasource.dart';
@@ -13,7 +9,6 @@ import 'package:spots/data/datasources/local/spots_local_datasource.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/data/repositories/lists_repository_impl.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Deployment Readiness Integration Test
 /// 

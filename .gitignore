@@ -42,6 +42,10 @@ android/local.properties
 coverage/
 *.lock
 
+# Backup directories (exclude from Gradle scanning)
+backups/
+**/backups/
+
 # Config files with API keys (use environment variables or .env files instead)
 lib/google_places_config.dart
 lib/supabase_config.dart

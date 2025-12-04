@@ -123,25 +123,129 @@ class AnonymousCommunicationProtocol {
   }
   
   // Private helper methods
+  /// Enhanced anonymization validation with deep recursive checking
+  /// CRITICAL: Blocks suspicious payloads (throws exceptions) instead of just logging
   Future<void> _validateAnonymousPayload(Map<String, dynamic> payload) async {
-    // Check for any user-identifying information
-    final forbiddenKeys = ['userId', 'email', 'name', 'phone', 'address', 'personalInfo'];
+    // Check for forbidden keys at top level
+    final forbiddenKeys = [
+      'userId', 'user_id', 'userid',
+      'email', 'emailAddress', 'email_address',
+      'name', 'displayName', 'display_name', 'fullName', 'full_name',
+      'phone', 'phoneNumber', 'phone_number', 'mobile', 'telephone',
+      'address', 'streetAddress', 'street_address', 'homeAddress', 'home_address',
+      'personalInfo', 'personal_info', 'personalData', 'personal_data',
+      'ssn', 'socialSecurityNumber', 'social_security_number',
+      'creditCard', 'credit_card', 'cardNumber', 'card_number',
+    ];
     
-    for (final key in forbiddenKeys) {
-      if (payload.containsKey(key)) {
-        throw AnonymousCommunicationException('Payload contains user data: $key');
+    // Recursively validate the entire payload structure
+    final violations = <String>[];
+    _validateRecursive(payload, forbiddenKeys, violations, '');
+    
+    if (violations.isNotEmpty) {
+      throw AnonymousCommunicationException(
+        'Payload contains forbidden user data: ${violations.join(", ")}'
+      );
+    }
+    
+    // Deep pattern matching for personal information
+    final payloadString = jsonEncode(payload);
+    final patternViolations = _checkPatterns(payloadString);
+    
+    if (patternViolations.isNotEmpty) {
+      throw AnonymousCommunicationException(
+        'Payload contains suspicious patterns: ${patternViolations.join(", ")}'
+      );
+    }
+  }
+  
+  /// Recursively validate nested objects and arrays
+  void _validateRecursive(
+    dynamic value,
+    List<String> forbiddenKeys,
+    List<String> violations,
+    String path,
+  ) {
+    if (value is Map) {
+      for (final entry in value.entries) {
+        final key = entry.key.toString().toLowerCase();
+        final fullPath = path.isEmpty ? key : '$path.$key';
+        
+        // Check if key matches any forbidden pattern
+        for (final forbidden in forbiddenKeys) {
+          if (key.contains(forbidden.toLowerCase())) {
+            violations.add('$fullPath (matches: $forbidden)');
+          }
+        }
+        
+        // Recursively check nested values
+        _validateRecursive(entry.value, forbiddenKeys, violations, fullPath);
+      }
+    } else if (value is List) {
+      for (int i = 0; i < value.length; i++) {
+        _validateRecursive(value[i], forbiddenKeys, violations, '$path[$i]');
+      }
+    }
+  }
+  
+  /// Check for suspicious patterns in payload string
+  List<String> _checkPatterns(String payloadString) {
+    final violations = <String>[];
+    final lowerPayload = payloadString.toLowerCase();
+    
+    // Email regex pattern
+    final emailPattern = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
+    if (emailPattern.hasMatch(payloadString)) {
+      violations.add('email_address_detected');
+    }
+    
+    // Phone number patterns (US formats)
+    final phonePatterns = [
+      RegExp(r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'), // (XXX) XXX-XXXX, XXX-XXX-XXXX
+      RegExp(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}'), // XXX-XXX-XXXX
+      RegExp(r'\+1[-.\s]?\d{3}[-.\s]?\d{3}[-.\s]?\d{4}'), // +1 XXX XXX XXXX
+    ];
+    for (final pattern in phonePatterns) {
+      if (pattern.hasMatch(payloadString)) {
+        violations.add('phone_number_detected');
+        break;
       }
     }
     
-    // Deep scan for potential user data
-    final payloadString = jsonEncode(payload).toLowerCase();
-    final suspiciousPatterns = ['user_', 'personal_', '@', 'phone', 'address'];
-    
-    for (final pattern in suspiciousPatterns) {
-      if (payloadString.contains(pattern)) {
-        developer.log('Warning: Potentially suspicious data pattern detected', name: _logName);
+    // Address patterns
+    final addressPatterns = [
+      RegExp(r'\d+\s+[a-zA-Z\s]+(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|way|court|ct|plaza|pl)', caseSensitive: false),
+      RegExp(r'p\.?o\.?\s*box\s+\d+', caseSensitive: false), // PO Box
+      RegExp(r'apt\.?\s*\d+|apartment\s+\d+', caseSensitive: false), // Apartment
+    ];
+    for (final pattern in addressPatterns) {
+      if (pattern.hasMatch(lowerPayload)) {
+        violations.add('address_detected');
+        break;
       }
     }
+    
+    // SSN pattern (XXX-XX-XXXX)
+    final ssnPattern = RegExp(r'\d{3}-\d{2}-\d{4}');
+    if (ssnPattern.hasMatch(payloadString)) {
+      violations.add('ssn_detected');
+    }
+    
+    // Credit card patterns (be careful with false positives)
+    // Only flag if it looks like a credit card number (13-19 digits, possibly with spaces/dashes)
+    final creditCardPattern = RegExp(r'\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{3,4}\b');
+    if (creditCardPattern.hasMatch(payloadString)) {
+      // Additional validation: check if it's not just a long number (like a timestamp)
+      final match = creditCardPattern.firstMatch(payloadString);
+      if (match != null) {
+        final digits = match.group(0)!.replaceAll(RegExp(r'[^0-9]'), '');
+        if (digits.length >= 13 && digits.length <= 19) {
+          violations.add('credit_card_detected');
+        }
+      }
+    }
+    
+    return violations;
   }
   
   Future<String> _generateEphemeralKey() async {
