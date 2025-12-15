@@ -1,30 +1,46 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:spots/core/services/supabase_service.dart';
+import '../../helpers/platform_channel_helper.dart';
 
+import 'supabase_service_test.mocks.dart';
 
 @GenerateMocks([SupabaseClient, GoTrueClient, RealtimeClient, PostgrestClient])
 void main() {
   group('SupabaseService Tests', () {
     late SupabaseService service;
+    late MockSupabaseClient mockClient;
+    late MockGoTrueClient mockAuth;
 
     setUp(() {
       service = SupabaseService();
+      mockClient = MockSupabaseClient();
+      mockAuth = MockGoTrueClient();
+
+      // Ensure unit tests do not depend on Supabase.instance initialization.
+      when(mockClient.auth).thenReturn(mockAuth);
+      when(mockAuth.currentUser).thenReturn(null);
+      SupabaseService.useClientForTests(mockClient);
     });
 
+    tearDown(() {
+      SupabaseService.resetClientForTests();
+    });
+
+    // Removed: Property assignment tests
+    // Service initialization tests focus on behavior (singleton pattern, availability), not property assignment
+
     group('Initialization', () {
-      test('should be a singleton instance', () {
+      test(
+          'should be a singleton instance, have isAvailable return true, or expose client',
+          () {
+        // Test business logic: service initialization
         final instance1 = SupabaseService();
         final instance2 = SupabaseService();
         expect(instance1, same(instance2));
-      });
-
-      test('should have isAvailable return true', () {
         expect(service.isAvailable, isTrue);
-      });
-
-      test('should expose client', () {
         expect(service.client, isNotNull);
         expect(service.client, isA<SupabaseClient>());
       });
@@ -40,15 +56,15 @@ void main() {
     });
 
     group('Authentication', () {
-      test('should get current user', () {
+      test(
+          'should get current user and handle sign in, sign up, and sign out operations',
+          () async {
+        // Test business logic: authentication operations
         final user = service.currentUser;
         // Can be null if not signed in
         expect(user, anyOf(isNull, isA<User>()));
-      });
 
-      test('should sign in with email and password', () async {
-        // Note: This requires actual Supabase setup or mocking
-        // For now, we verify the method exists
+        // Test authentication methods (require actual Supabase setup or mocking)
         try {
           await service.signInWithEmail('test@example.com', 'password123');
           // If successful, test passes
@@ -56,10 +72,7 @@ void main() {
           // Expected to fail in test environment without real Supabase
           expect(e, isA<Exception>());
         }
-      });
 
-      test('should sign up with email and password', () async {
-        // Note: This requires actual Supabase setup or mocking
         try {
           await service.signUpWithEmail('test@example.com', 'password123');
           // If successful, test passes
@@ -67,10 +80,7 @@ void main() {
           // Expected to fail in test environment without real Supabase
           expect(e, isA<Exception>());
         }
-      });
 
-      test('should sign out', () async {
-        // Note: This requires actual Supabase setup or mocking
         try {
           await service.signOut();
           // If successful, test passes
@@ -82,55 +92,37 @@ void main() {
     });
 
     group('Spot Operations', () {
-      test('should create spot with required fields', () async {
-        // Note: This requires actual Supabase setup or mocking
+      test(
+          'should create spots with required and optional fields, and retrieve spots by various criteria',
+          () async {
+        // Test business logic: spot creation and retrieval operations
+        // Note: These require actual Supabase setup or mocking
         try {
-          final result = await service.createSpot(
+          // Test creation with required fields
+          final resultWithFields = await service.createSpot(
             name: 'Test Spot',
             latitude: 40.7128,
             longitude: -74.0060,
             description: 'A test spot',
             tags: ['restaurant', 'dinner'],
           );
-          expect(result, isA<Map<String, dynamic>>());
-          expect(result['name'], equals('Test Spot'));
-        } catch (e) {
-          // Expected to fail in test environment without real Supabase
-          expect(e, isA<Exception>());
-        }
-      });
+          expect(resultWithFields, isA<Map<String, dynamic>>());
+          expect(resultWithFields['name'], equals('Test Spot'));
 
-      test('should create spot without optional fields', () async {
-        // Note: This requires actual Supabase setup or mocking
-        try {
-          final result = await service.createSpot(
+          // Test creation without optional fields
+          final resultMinimal = await service.createSpot(
             name: 'Test Spot',
             latitude: 40.7128,
             longitude: -74.0060,
           );
-          expect(result, isA<Map<String, dynamic>>());
-        } catch (e) {
-          // Expected to fail in test environment without real Supabase
-          expect(e, isA<Exception>());
-        }
-      });
+          expect(resultMinimal, isA<Map<String, dynamic>>());
 
-      test('should get all spots', () async {
-        // Note: This requires actual Supabase setup or mocking
-        try {
-          final result = await service.getSpots();
-          expect(result, isA<List<Map<String, dynamic>>>());
-        } catch (e) {
-          // Expected to fail in test environment without real Supabase
-          expect(e, isA<Exception>());
-        }
-      });
+          // Test retrieval operations
+          final allSpots = await service.getSpots();
+          expect(allSpots, isA<List<Map<String, dynamic>>>());
 
-      test('should get spots by user', () async {
-        // Note: This requires actual Supabase setup or mocking
-        try {
-          final result = await service.getSpotsByUser('test-user-id');
-          expect(result, isA<List<Map<String, dynamic>>>());
+          final userSpots = await service.getSpotsByUser('test-user-id');
+          expect(userSpots, isA<List<Map<String, dynamic>>>());
         } catch (e) {
           // Expected to fail in test environment without real Supabase
           expect(e, isA<Exception>());
@@ -139,41 +131,28 @@ void main() {
     });
 
     group('Spot List Operations', () {
-      test('should create spot list', () async {
-        // Note: This requires actual Supabase setup or mocking
+      test(
+          'should create spot lists, retrieve all lists, and add spots to lists',
+          () async {
+        // Test business logic: spot list operations
+        // Note: These require actual Supabase setup or mocking
         try {
-          final result = await service.createSpotList(
+          final createResult = await service.createSpotList(
             name: 'Test List',
             description: 'A test list',
             tags: ['food'],
           );
-          expect(result, isA<Map<String, dynamic>>());
-        } catch (e) {
-          // Expected to fail in test environment without real Supabase
-          expect(e, isA<Exception>());
-        }
-      });
+          expect(createResult, isA<Map<String, dynamic>>());
 
-      test('should get all spot lists', () async {
-        // Note: This requires actual Supabase setup or mocking
-        try {
-          final result = await service.getSpotLists();
-          expect(result, isA<List<Map<String, dynamic>>>());
-        } catch (e) {
-          // Expected to fail in test environment without real Supabase
-          expect(e, isA<Exception>());
-        }
-      });
+          final allLists = await service.getSpotLists();
+          expect(allLists, isA<List<Map<String, dynamic>>>());
 
-      test('should add spot to list', () async {
-        // Note: This requires actual Supabase setup or mocking
-        try {
-          final result = await service.addSpotToList(
+          final addResult = await service.addSpotToList(
             listId: 'test-list-id',
             spotId: 'test-spot-id',
             note: 'Great spot!',
           );
-          expect(result, isA<Map<String, dynamic>>());
+          expect(addResult, isA<Map<String, dynamic>>());
         } catch (e) {
           // Expected to fail in test environment without real Supabase
           expect(e, isA<Exception>());
@@ -182,26 +161,19 @@ void main() {
     });
 
     group('User Profile Operations', () {
-      test('should update user profile', () async {
-        // Note: This requires actual Supabase setup or mocking
+      test('should update and retrieve user profiles', () async {
+        // Test business logic: user profile operations
+        // Note: These require actual Supabase setup or mocking
         try {
-          final result = await service.updateUserProfile(
+          final updateResult = await service.updateUserProfile(
             name: 'Test User',
             bio: 'Test bio',
             location: 'Test Location',
           );
-          expect(result, isA<Map<String, dynamic>>());
-        } catch (e) {
-          // Expected to fail in test environment without real Supabase
-          expect(e, isA<Exception>());
-        }
-      });
+          expect(updateResult, isA<Map<String, dynamic>>());
 
-      test('should get user profile', () async {
-        // Note: This requires actual Supabase setup or mocking
-        try {
-          final result = await service.getUserProfile('test-user-id');
-          expect(result, anyOf(isNull, isA<Map<String, dynamic>>()));
+          final getResult = await service.getUserProfile('test-user-id');
+          expect(getResult, anyOf(isNull, isA<Map<String, dynamic>>()));
         } catch (e) {
           // Expected to fail in test environment without real Supabase
           expect(e, isA<Exception>());
@@ -210,16 +182,17 @@ void main() {
     });
 
     group('Real-time Streams', () {
-      test('should get spots stream', () {
-        final stream = service.getSpotsStream();
-        expect(stream, isA<Stream<List<Map<String, dynamic>>>>());
-      });
-
-      test('should get spot lists stream', () {
-        final stream = service.getSpotListsStream();
-        expect(stream, isA<Stream<List<Map<String, dynamic>>>>());
+      test('should get spots stream or get spot lists stream', () {
+        // Test business logic: real-time stream operations
+        final spotsStream = service.getSpotsStream();
+        expect(spotsStream, isA<Stream<List<Map<String, dynamic>>>>());
+        final listsStream = service.getSpotListsStream();
+        expect(listsStream, isA<Stream<List<Map<String, dynamic>>>>());
       });
     });
   });
-}
 
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+}

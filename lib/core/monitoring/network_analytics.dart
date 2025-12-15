@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 
 /// OUR_GUTS.md: "Network analytics that monitor AI2AI personality network health while preserving privacy"
 /// Comprehensive network analytics system for monitoring AI2AI personality learning effectiveness
@@ -9,18 +9,24 @@ class NetworkAnalytics {
   static const String _logName = 'NetworkAnalytics';
   
   // Storage keys for analytics data
-  static const String _networkMetricsKey = 'network_metrics';
-  static const String _performanceHistoryKey = 'performance_history';
-  static const String _healthStatusKey = 'health_status';
+  // ignore: unused_field
+  static const String _networkMetricsKey = 'network_metrics'; // Reserved for future persistent storage
+  // ignore: unused_field
+  static const String _performanceHistoryKey = 'performance_history'; // Reserved for future persistent storage
+  // ignore: unused_field
+  static const String _healthStatusKey = 'health_status'; // Reserved for future persistent storage
   
-  final SharedPreferences _prefs;
+  // ignore: unused_field
+  final SharedPreferencesCompat _prefs; // Reserved for future persistent storage integration
   
   // Analytics state
-  final Map<String, NetworkMetrics> _cachedMetrics = {};
+  // ignore: unused_field
+  final Map<String, NetworkMetrics> _cachedMetrics = {}; // Reserved for future caching optimization
   final List<PerformanceSnapshot> _performanceHistory = [];
-  final Map<String, SystemHealthIndicator> _healthIndicators = {};
+  // ignore: unused_field
+  final Map<String, SystemHealthIndicator> _healthIndicators = {}; // Reserved for future health monitoring
   
-  NetworkAnalytics({required SharedPreferences prefs}) : _prefs = prefs;
+  NetworkAnalytics({required SharedPreferencesCompat prefs}) : _prefs = prefs;
   
   /// Analyze overall network health and performance
   Future<NetworkHealthReport> analyzeNetworkHealth() async {

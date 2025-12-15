@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:spots/core/models/user.dart' as user_model;
 import 'package:spots/presentation/pages/home/home_page.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
@@ -8,6 +7,14 @@ import '../helpers/widget_test_helpers.dart';
 import '../mocks/mock_blocs.dart';
 
 void main() {
+  setUpAll(() async {
+    await WidgetTestHelpers.setupWidgetTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await WidgetTestHelpers.cleanupWidgetTestEnvironment();
+  });
+
   group('Role-Based UI Widget Tests', () {
     late MockAuthBloc mockAuthBloc;
 
@@ -70,8 +77,7 @@ void main() {
     group('Collaborator Role UI Tests', () {
       testWidgets('shows enhanced permissions for collaborator role', (WidgetTester tester) async {
         // Arrange
-        final collaboratorUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: collaboratorUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -87,8 +93,7 @@ void main() {
 
       testWidgets('enables list editing for collaborators', (WidgetTester tester) async {
         // Arrange
-        final collaboratorUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: collaboratorUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -103,8 +108,7 @@ void main() {
 
       testWidgets('shows contribution tracking for collaborators', (WidgetTester tester) async {
         // Arrange
-        final collaboratorUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: collaboratorUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -121,8 +125,7 @@ void main() {
     group('Curator Role UI Tests', () {
       testWidgets('shows full permissions for curator role', (WidgetTester tester) async {
         // Arrange
-        final curatorUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: curatorUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -138,8 +141,7 @@ void main() {
 
       testWidgets('enables moderation tools for curators', (WidgetTester tester) async {
         // Arrange
-        final curatorUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: curatorUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -154,8 +156,7 @@ void main() {
 
       testWidgets('shows advanced analytics for curators', (WidgetTester tester) async {
         // Arrange
-        final curatorUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: curatorUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -172,8 +173,7 @@ void main() {
     group('Age Verification UI Tests', () {
       testWidgets('shows age verification prompt for unverified users', (WidgetTester tester) async {
         // Arrange
-        final unverifiedUser = WidgetTestHelpers.createTestUserForAuth();
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: unverifiedUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user, isAgeVerified: false);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -188,8 +188,7 @@ void main() {
 
       testWidgets('blocks age-restricted content for unverified users', (WidgetTester tester) async {
         // Arrange
-        final unverifiedUser = WidgetTestHelpers.createTestUserForAuth();
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: unverifiedUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user, isAgeVerified: false);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -204,8 +203,7 @@ void main() {
 
       testWidgets('enables full access for age-verified users', (WidgetTester tester) async {
         // Arrange
-        final verifiedUser = WidgetTestHelpers.createTestUserForAuth();
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: verifiedUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user, isAgeVerified: true);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -222,8 +220,7 @@ void main() {
     group('Permission-Based UI Visibility', () {
       testWidgets('shows create list button based on permissions', (WidgetTester tester) async {
         // Arrange - User with list creation permissions
-        final userWithPermissions = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: userWithPermissions);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -238,8 +235,7 @@ void main() {
 
       testWidgets('hides moderation tools for non-moderators', (WidgetTester tester) async {
         // Arrange
-        final regularUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: regularUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -254,8 +250,7 @@ void main() {
 
       testWidgets('adapts UI based on privacy settings', (WidgetTester tester) async {
         // Arrange
-        final privateUser = WidgetTestHelpers.createTestUserForAuth();
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: privateUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),
@@ -273,8 +268,8 @@ void main() {
       testWidgets('handles role changes gracefully', (WidgetTester tester) async {
         // Arrange
         final followerUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: followerUser);
-        when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
+        mockAuthBloc.setStream(Stream.fromIterable([
           Authenticated(user: followerUser),
           Authenticated(user: WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user)),
         ]));
@@ -296,8 +291,7 @@ void main() {
 
       testWidgets('shows role upgrade notifications', (WidgetTester tester) async {
         // Arrange
-        final upgradedUser = WidgetTestHelpers.createTestUserForAuth(role: user_model.UserRole.user);
-        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: upgradedUser);
+        mockAuthBloc = MockBlocFactory.createAuthenticatedAuthBloc(role: user_model.UserRole.user);
 
         final widget = WidgetTestHelpers.createTestableWidget(
           child: const HomePage(),

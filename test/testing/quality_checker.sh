@@ -220,7 +220,42 @@ elif [ "$QUALITY_SCORE" -lt 85 ]; then
     create_alert "WARNING" "Code quality score needs improvement: ${QUALITY_SCORE}/100"
 fi
 
-# 12. Generate Quality Report
+# 12. Run Dart Automated Quality Checker
+log_message "Running Dart automated quality checker..."
+QUALITY_ASSURANCE_DIR="$PROJECT_DIR/test/quality_assurance"
+if [ -f "$QUALITY_ASSURANCE_DIR/comprehensive_test_quality_runner.dart" ]; then
+    cd "$QUALITY_ASSURANCE_DIR"
+    dart comprehensive_test_quality_runner.dart > "$LOG_DIR/dart_quality_checker_$TIMESTAMP.log" 2>&1
+    DART_QUALITY_EXIT_CODE=$?
+    
+    if [ $DART_QUALITY_EXIT_CODE -eq 0 ]; then
+        log_message "✅ Dart automated quality checker completed successfully"
+        DART_QUALITY_RESULT="PASS"
+    else
+        log_message "⚠️ Dart automated quality checker found issues (exit code: $DART_QUALITY_EXIT_CODE)"
+        DART_QUALITY_RESULT="WARN"
+        # Don't fail the entire script for quality checker warnings
+    fi
+    
+    # Extract quality score from the log if available
+    DART_QUALITY_SCORE=$(grep -oP "Overall Quality Score: \K[0-9.]+" "$LOG_DIR/dart_quality_checker_$TIMESTAMP.log" 2>/dev/null || echo "N/A")
+    if [ "$DART_QUALITY_SCORE" != "N/A" ]; then
+        log_message "📊 Dart Quality Score: $DART_QUALITY_SCORE/10.0"
+        
+        # Alert if quality score is low
+        DART_SCORE_NUM=$(echo "$DART_QUALITY_SCORE" | cut -d. -f1)
+        if [ "$DART_SCORE_NUM" -lt 8 ]; then
+            create_alert "WARNING" "Dart quality checker score below threshold: $DART_QUALITY_SCORE/10.0"
+        fi
+    fi
+else
+    log_message "⚠️ Dart quality checker script not found at $QUALITY_ASSURANCE_DIR/comprehensive_test_quality_runner.dart"
+    DART_QUALITY_RESULT="SKIP"
+fi
+
+cd "$PROJECT_DIR"
+
+# 13. Generate Quality Report
 log_message "Generating quality report..."
 cat > "$REPORT_FILE" << EOF
 # SPOTS Code Quality Report
@@ -232,6 +267,7 @@ cat > "$REPORT_FILE" << EOF
 ### Overall Status
 - **Dart Analyzer:** $ANALYZER_RESULT
 - **Code Formatting:** $FORMAT_RESULT
+- **Dart Quality Checker:** ${DART_QUALITY_RESULT:-SKIP}
 - **Total Issues:** $TOTAL_ISSUES
 
 ### Issue Breakdown
@@ -301,7 +337,7 @@ EOF
 
 log_message "✅ Quality report generated: $REPORT_FILE"
 
-# 13. Auto-fix Simple Issues (if enabled)
+# 14. Auto-fix Simple Issues (if enabled)
 if [ "${AUTO_FIX:-false}" = "true" ]; then
     log_message "Attempting auto-fixes..."
     
@@ -319,7 +355,7 @@ if [ "${AUTO_FIX:-false}" = "true" ]; then
     fi
 fi
 
-# 14. Final Summary
+# 15. Final Summary
 log_message "=== Quality Checker Summary ==="
 log_message "Quality Score: ${QUALITY_SCORE}/100"
 log_message "Total Issues: $TOTAL_ISSUES"

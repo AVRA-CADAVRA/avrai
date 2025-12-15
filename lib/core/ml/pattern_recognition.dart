@@ -90,13 +90,18 @@ class PatternRecognitionSystem {
       final geographicTrends = _analyzeGeographicTrends(lists);
       final socialTrends = _analyzeSocialTrends(lists);
       
+      // Calculate overall strength based on trend analysis
+      final categoryStrength = categoryTrends.stable.length / max(1, lists.length);
+      final overallStrength = (categoryStrength + (temporalTrends.isNotEmpty ? 0.2 : 0.0) + 
+          (geographicTrends.isNotEmpty ? 0.2 : 0.0) + (socialTrends.isNotEmpty ? 0.2 : 0.0)).clamp(0.0, 1.0);
+      
       final trend = CommunityTrend(
         trendType: 'community_analysis',
-        strength: 0.8,
+        strength: overallStrength,
         timestamp: DateTime.now(),
       );
       
-      developer.log('Community trend analysis completed', name: _logName);
+      developer.log('Community trend analysis completed: ${categoryTrends.stable.length} stable categories', name: _logName);
       return trend;
     } catch (e) {
       developer.log('Error analyzing community trends: $e', name: _logName);
@@ -120,7 +125,7 @@ class PatternRecognitionSystem {
         privacy: PrivacyLevel.maximum,
       );
       
-      developer.log('Anonymized insights generated successfully', name: _logName);
+      developer.log('Anonymized insights generated successfully (fingerprint: ${behaviorFingerprint.substring(0, 8)}..., signature: ${preferenceSignature.substring(0, 8)}..., contribution: ${(communityContribution * 100).toStringAsFixed(1)}%)', name: _logName);
       return insights;
     } catch (e) {
       developer.log('Error generating anonymized insights: $e', name: _logName);
@@ -269,6 +274,7 @@ class PatternRecognitionSystem {
   
   // Removed unused _anonymizeUnifiedLocation; using _anonymizeLocation(Location)
   
+  // ignore: unused_element
   String _generateEncryptionKey() {
     final random = Random.secure();
     final bytes = List<int>.generate(32, (i) => random.nextInt(256));
@@ -313,7 +319,7 @@ class PatternRecognitionSystem {
     final categoryCount = <String, int>{};
     
     for (final list in lists) {
-      for (final spotId in list.spotIds) {
+      for (final _ in list.spotIds) {
         // Analyze without accessing individual user data
         final category = 'general'; // Would be derived from spot data
         categoryCount[category] = (categoryCount[category] ?? 0) + 1;
@@ -339,11 +345,13 @@ class PatternRecognitionSystem {
     return {};
   }
   
+  // ignore: unused_element
   double _calculateCommunityAuthenticity(List<SpotList> lists) {
     // Measure authenticity of community interactions
     return 0.9; // High authenticity by default
   }
   
+  // ignore: unused_element
   double _calculateCommunityBelonging(List<SpotList> lists) {
     // Measure sense of belonging in community
     return 0.85; // Strong belonging by default

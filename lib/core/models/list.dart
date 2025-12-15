@@ -1,5 +1,9 @@
 import 'package:spots/core/models/spot.dart';
 
+class _Sentinel {
+  const _Sentinel();
+}
+
 class SpotList {
   final String id;
   final String title;
@@ -48,11 +52,11 @@ class SpotList {
     List<Spot>? spots,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? category,
+    Object? category = const _Sentinel(),
     bool? isPublic,
     List<String>? spotIds,
     int? respectCount,
-    String? curatorId,
+    Object? curatorId = const _Sentinel(),
     List<String>? tags,
     bool? ageRestricted,
     bool? moderationEnabled,
@@ -65,11 +69,11 @@ class SpotList {
       spots: spots ?? this.spots,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      category: category ?? this.category,
+      category: category is _Sentinel ? this.category : category as String?,
       isPublic: isPublic ?? this.isPublic,
       spotIds: spotIds ?? this.spotIds,
       respectCount: respectCount ?? this.respectCount,
-      curatorId: curatorId ?? this.curatorId,
+      curatorId: curatorId is _Sentinel ? this.curatorId : curatorId as String?,
       tags: tags ?? this.tags,
       ageRestricted: ageRestricted ?? this.ageRestricted,
       moderationEnabled: moderationEnabled ?? this.moderationEnabled,

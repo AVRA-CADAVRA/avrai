@@ -199,7 +199,7 @@ void main() {
         
         expect(spots.length, 1);
         expect(spots.first.name, 'Nearby Cafe');
-        expect(spots.first.category, 'Other'); // cafe maps to Other category
+        expect(spots.first.category, 'Food'); // cafe maps to Food category
       });
 
       test('searches nearby places', () async {
@@ -313,7 +313,8 @@ void main() {
               .thenAnswer((_) async => http.Response(mockResponse, 200));
           when(mockCacheService.cachePlaces(any)).thenAnswer((_) async => {});
 
-          final spots = await googlePlaces.searchPlaces(query: 'test');
+          // Avoid in-memory cache collisions inside GooglePlacesDataSourceNewImpl for this mapping test.
+          final spots = await googlePlaces.searchPlaces(query: 'test_${expected}_${types.join("_")}');
           expect(spots.first.category, expected);
         }
       });

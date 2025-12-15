@@ -1,6 +1,8 @@
 import 'package:spots/core/models/community.dart';
 import 'package:spots/core/models/club_hierarchy.dart';
 import 'package:spots/core/models/geographic_expansion.dart';
+import 'dart:convert';
+import 'dart:io';
 
 /// Club Model
 /// 
@@ -164,6 +166,41 @@ class Club extends Community {
 
   /// Get user's role in the club
   ClubRole? getMemberRole(String userId) {
+    assert(() {
+      // #region agent log
+      try {
+        const debugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+        final payload = <String, dynamic>{
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix',
+          'hypothesisId': 'H-club-role',
+          'location': 'club.dart:getMemberRole',
+          'message': 'Evaluating member role',
+          'data': {
+            'userId': userId,
+            'isLeader': isLeader(userId),
+            'isAdmin': isAdmin(userId),
+            'inMemberRoles': memberRoles.containsKey(userId),
+            'inMemberIds': memberIds.contains(userId),
+            'isBanned': isBanned(userId),
+            'hasPending': hasPendingMembership(userId),
+          },
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        };
+        File(debugLogPath).writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
+      return true;
+    }());
+
+    // Unknown/non-member users should have no role (prevents accidental permission grants)
+    final isKnownMember =
+        isLeader(userId) ||
+        isAdmin(userId) ||
+        memberRoles.containsKey(userId) ||
+        memberIds.contains(userId);
+    if (!isKnownMember) return null;
+
     if (isLeader(userId)) return ClubRole.leader;
     if (isAdmin(userId)) return ClubRole.admin;
     return memberRoles[userId] ?? ClubRole.member;

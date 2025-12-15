@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 import 'dart:convert';
 import 'package:spots/core/models/connection_metrics.dart';
 
@@ -11,7 +11,7 @@ class ConnectionLogQueue {
   static const String _queueKey = 'connection_log_queue';
   static const int _maxQueueSize = 100;
   
-  final SharedPreferences _prefs;
+  final SharedPreferencesCompat _prefs;
   
   ConnectionLogQueue(this._prefs);
   

@@ -10,8 +10,12 @@ class FederatedLearningSystem {
   
   // Learning configuration
   static const int _minParticipants = 3;
+  // Reserved for future round limit enforcement
+  // ignore: unused_field
   static const int _maxRounds = 50;
   static const double _convergenceThreshold = 0.001;
+  // Reserved for future timeout handling
+  // ignore: unused_field
   static const Duration _roundTimeout = Duration(minutes: 10);
   
   // Storage keys
@@ -42,6 +46,12 @@ class FederatedLearningSystem {
       if (participantNodeIds.length < _minParticipants) {
         throw FederatedLearningException('Insufficient participants for federated learning');
       }
+      
+      // TODO: Validate max rounds limit using _maxRounds when round tracking is implemented
+      // TODO: Implement timeout handling using _roundTimeout for round completion
+      // #region agent log
+      developer.log('Round configuration: maxRounds=$_maxRounds, timeout=${_roundTimeout.inMinutes}min (reserved for future use)', name: _logName);
+      // #endregion
       
       // Create learning round
       final round = FederatedLearningRound(
@@ -579,8 +589,15 @@ class FederatedLearningSystem {
   }
   
   /// Move a round from active to completed
+  /// Reserved for future use when round completion tracking is implemented
+  /// This method will be called automatically when a round status changes to completed
+  // ignore: unused_element
   Future<void> _moveRoundToCompleted(FederatedLearningRound round) async {
     try {
+      // #region agent log
+      developer.log('Moving round ${round.roundId} from active to completed (reserved for future use)', name: _logName);
+      // #endregion
+      
       // Remove from active rounds
       final activeRounds = _storage.read<List>(_activeRoundsKey) ?? [];
       activeRounds.removeWhere((r) => 

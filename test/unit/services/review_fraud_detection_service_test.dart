@@ -8,6 +8,7 @@ import 'package:spots/core/models/review_fraud_score.dart';
 import 'package:spots/core/models/fraud_signal.dart';
 
 import 'review_fraud_detection_service_test.mocks.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 @GenerateMocks([PostEventFeedbackService])
 void main() {
@@ -37,6 +38,7 @@ void main() {
 
       test('should detect all 5-star reviews signal', () async {
         // Arrange
+        // Service logic requires at least 5 reviews before "all five-star" is considered suspicious.
         final feedbacks = [
           EventFeedback(
             id: 'feedback-1',
@@ -53,6 +55,39 @@ void main() {
             id: 'feedback-2',
             eventId: 'event-123',
             userId: 'user-2',
+            userRole: 'attendee',
+            overallRating: 5.0,
+            categoryRatings: {'quality': 5.0},
+            submittedAt: DateTime.now(),
+            wouldAttendAgain: true,
+            wouldRecommend: true,
+          ),
+          EventFeedback(
+            id: 'feedback-3',
+            eventId: 'event-123',
+            userId: 'user-3',
+            userRole: 'attendee',
+            overallRating: 5.0,
+            categoryRatings: {'quality': 5.0},
+            submittedAt: DateTime.now(),
+            wouldAttendAgain: true,
+            wouldRecommend: true,
+          ),
+          EventFeedback(
+            id: 'feedback-4',
+            eventId: 'event-123',
+            userId: 'user-4',
+            userRole: 'attendee',
+            overallRating: 5.0,
+            categoryRatings: {'quality': 5.0},
+            submittedAt: DateTime.now(),
+            wouldAttendAgain: true,
+            wouldRecommend: true,
+          ),
+          EventFeedback(
+            id: 'feedback-5',
+            eventId: 'event-123',
+            userId: 'user-5',
             userRole: 'attendee',
             overallRating: 5.0,
             categoryRatings: {'quality': 5.0},
@@ -121,6 +156,10 @@ void main() {
         expect(fraudScore.riskScore, greaterThan(0.0));
       });
     });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
   });
 }
 

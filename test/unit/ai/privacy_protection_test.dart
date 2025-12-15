@@ -93,8 +93,8 @@ void main() {
         );
 
         // Verify privacy preservation
-        expect(anonymized.fingerprint, isNotEmpty);
-        expect(anonymized.anonymizedDimensions, isNotEmpty);
+        expect(anonymized.vibeSignature, isNotEmpty);
+        expect(anonymized.noisyDimensions, isNotEmpty);
       });
     });
 

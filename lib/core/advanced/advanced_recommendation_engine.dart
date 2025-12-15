@@ -1,8 +1,8 @@
 import 'dart:developer' as developer;
 import 'dart:math' as math;
 // import 'package:spots/core/ml/real_time_recommendations.dart';
-import 'package:spots/core/ai2ai/anonymous_communication.dart';
-import 'package:spots/core/p2p/federated_learning.dart';
+import 'package:spots/core/ai2ai/anonymous_communication.dart' show AnonymousCommunicationProtocol, MessageType;
+import 'package:spots/core/p2p/federated_learning.dart' as federated;
 
 // Stub class for missing RealTimeRecommendationEngine
 class RealTimeRecommendationEngine {
@@ -18,12 +18,12 @@ class AdvancedRecommendationEngine {
   
   final RealTimeRecommendationEngine _realTimeEngine;
   final AnonymousCommunicationProtocol _ai2aiComm;
-  final FederatedLearningSystem _federatedLearning;
+  final federated.FederatedLearningSystem _federatedLearning;
   
   AdvancedRecommendationEngine({
     required RealTimeRecommendationEngine realTimeEngine,
     required AnonymousCommunicationProtocol ai2aiComm,
-    required FederatedLearningSystem federatedLearning,
+    required federated.FederatedLearningSystem federatedLearning,
   }) : _realTimeEngine = realTimeEngine,
        _ai2aiComm = ai2aiComm,
        _federatedLearning = federatedLearning;
@@ -133,17 +133,110 @@ class AdvancedRecommendationEngine {
   }
   
   Future<List<dynamic>> _getAI2AIRecommendations(RecommendationContext context) async {
-    // Get recommendations from AI2AI network
-    return [];
+    // #region agent log
+    developer.log('AI2AI recommendations requested for organization: ${context.organizationId}', name: _logName);
+    // #endregion
+    
+    try {
+      // Request recommendations from AI2AI network via anonymous communication
+      // Use recommendationShare message type to request spot recommendations
+      final requestPayload = {
+        'request_type': 'spot_recommendations',
+        'organization_id': context.organizationId,
+        'preferences': context.userPreferences,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      // #region agent log
+      developer.log('Sending AI2AI recommendation request (payload keys: ${requestPayload.keys.join(", ")})', name: _logName);
+      // #endregion
+      
+      // Send anonymous message requesting recommendations
+      // Note: In production, this would target a specific agent or broadcast to network
+      // For now, we'll attempt to send and handle gracefully if network is unavailable
+      final message = await _ai2aiComm.sendEncryptedMessage(
+        'network', // Broadcast to network
+        MessageType.recommendationShare,
+        requestPayload,
+      );
+      
+      // #region agent log
+      developer.log('AI2AI recommendation request sent successfully (messageId: ${message.messageId})', name: _logName);
+      // #endregion
+      
+      // In a full implementation, we would wait for responses and aggregate them
+      // For now, return empty list as responses are async and handled separately
+      // TODO: Implement response aggregation when AI2AI recommendation responses are available
+      return [];
+    } catch (e) {
+      // #region agent log
+      developer.log('Error getting AI2AI recommendations: $e (falling back to empty list)', name: _logName);
+      // #endregion
+      // Gracefully fall back to empty recommendations if AI2AI network is unavailable
+      return [];
+    }
   }
   
   Future<FederatedInsightsResult> _getFederatedLearningInsights(RecommendationContext context) async {
-    // Get insights from federated learning system
-    return FederatedInsightsResult(
-      recommendedSpots: [],
-      communityPreferences: {},
-      privacyLevel: PrivacyLevel.maximum,
-    );
+    // #region agent log
+    developer.log('Federated learning insights requested for organization: ${context.organizationId}', name: _logName);
+    // #endregion
+    
+    try {
+      // Get completed federated learning rounds for this organization
+      // In production, this would query actual completed rounds from storage
+      // For now, we'll attempt to generate insights with empty rounds (which will return default insights)
+      final completedRounds = <federated.FederatedLearningRound>[];
+      
+      // #region agent log
+      developer.log('Querying federated learning rounds (found ${completedRounds.length} completed rounds)', name: _logName);
+      // #endregion
+      
+      // Generate community insights from federated learning
+      final communityInsights = await _federatedLearning.generateCommunityInsights(
+        context.organizationId,
+        completedRounds,
+      );
+      
+      // #region agent log
+      developer.log('Federated learning insights generated: ${communityInsights.recommendations.length} recommendations, confidence: ${communityInsights.confidenceLevel.toStringAsFixed(2)}', name: _logName);
+      // #endregion
+      
+      // Convert CommunityInsights to FederatedInsightsResult
+      // Note: CommunityInsights.recommendations is List<String>, but we need List<dynamic>
+      // For now, we'll convert string recommendations to dynamic format
+      final recommendedSpots = communityInsights.recommendations.map((rec) => {
+        'recommendation': rec,
+        'source': 'federated_learning',
+        'confidence': communityInsights.confidenceLevel,
+      }).toList();
+      
+      // Extract community preferences from insights
+      final communityPreferences = <String, double>{};
+      for (final insight in communityInsights.insights) {
+        // Use insight confidence as preference weight
+        communityPreferences[insight.insight] = insight.confidence;
+      }
+      
+      // Convert federated PrivacyLevel to local PrivacyLevel
+      final localPrivacyLevel = _convertPrivacyLevel(communityInsights.privacyLevel);
+      
+      return FederatedInsightsResult(
+        recommendedSpots: recommendedSpots,
+        communityPreferences: communityPreferences,
+        privacyLevel: localPrivacyLevel,
+      );
+    } catch (e) {
+      // #region agent log
+      developer.log('Error getting federated learning insights: $e (falling back to default)', name: _logName);
+      // #endregion
+      // Gracefully fall back to default insights if federated learning is unavailable
+      return FederatedInsightsResult(
+        recommendedSpots: [],
+        communityPreferences: {},
+        privacyLevel: PrivacyLevel.maximum,
+      );
+    }
   }
   
   Future<List<dynamic>> _fuseRecommendations(List<RecommendationSource> sources) async {
@@ -229,6 +322,20 @@ class AdvancedRecommendationEngine {
   
   double _calculatePredictionConfidence(BehaviorPatterns patterns) {
     return 0.75 + math.Random().nextDouble() * 0.2;
+  }
+  
+  /// Convert federated learning PrivacyLevel to local PrivacyLevel enum
+  PrivacyLevel _convertPrivacyLevel(federated.PrivacyLevel federatedLevel) {
+    switch (federatedLevel) {
+      case federated.PrivacyLevel.low:
+        return PrivacyLevel.low;
+      case federated.PrivacyLevel.medium:
+        return PrivacyLevel.medium;
+      case federated.PrivacyLevel.high:
+        return PrivacyLevel.high;
+      case federated.PrivacyLevel.maximum:
+        return PrivacyLevel.maximum;
+    }
   }
 }
 

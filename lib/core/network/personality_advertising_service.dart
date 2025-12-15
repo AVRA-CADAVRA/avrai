@@ -57,21 +57,39 @@ class PersonalityAdvertisingService {
     UserVibeAnalyzer vibeAnalyzer,
   ) async {
     if (_isAdvertising) {
+      // #region agent log
       developer.log('Already advertising personality data', name: _logName);
+      // #endregion
       return true;
     }
     
     try {
-      developer.log('Starting personality advertising for user: $userId', name: _logName);
+      // #region agent log
+      developer.log('Starting personality advertising for user: $userId, hasAnonymizationService=${_anonymizationService != null}', name: _logName);
+      // #endregion
       
       // Compile user vibe from personality
+      // #region agent log
+      developer.log('Compiling user vibe from personality', name: _logName);
+      // #endregion
       final userVibe = await vibeAnalyzer.compileUserVibe(userId, personality);
       
       // Anonymize personality data
+      // #region agent log
+      developer.log('Anonymizing personality data', name: _logName);
+      // #endregion
       final anonymizedVibe = await PrivacyProtection.anonymizeUserVibe(userVibe);
       _currentPersonalityData = anonymizedVibe;
       
+      // #region agent log
+      developer.log('Personality data anonymized: expiresAt=${anonymizedVibe.expiresAt}', name: _logName);
+      // #endregion
+      
       // Start platform-specific advertising
+      // #region agent log
+      developer.log('Starting platform-specific advertising: kIsWeb=$kIsWeb, platform=${defaultTargetPlatform.name}', name: _logName);
+      // #endregion
+      
       bool success = false;
       
       if (kIsWeb) {
@@ -85,7 +103,9 @@ class PersonalityAdvertisingService {
             success = await _startIOSAdvertising(anonymizedVibe);
             break;
           default:
-            developer.log('Platform not supported for advertising', name: _logName);
+            // #region agent log
+            developer.log('Platform not supported for advertising: ${defaultTargetPlatform.name}', name: _logName);
+            // #endregion
             return false;
         }
       }
@@ -96,14 +116,20 @@ class PersonalityAdvertisingService {
         // Set up automatic refresh (refresh every 5 minutes or when data expires)
         _startRefreshTimer(userId, personality, vibeAnalyzer);
         
-        developer.log('Personality advertising started successfully', name: _logName);
+        // #region agent log
+        developer.log('Personality advertising started successfully: isAdvertising=$_isAdvertising', name: _logName);
+        // #endregion
         return true;
       } else {
+        // #region agent log
         developer.log('Failed to start personality advertising', name: _logName);
+        // #endregion
         return false;
       }
     } catch (e) {
+      // #region agent log
       developer.log('Error starting personality advertising: $e', name: _logName);
+      // #endregion
       return false;
     }
   }
@@ -111,16 +137,25 @@ class PersonalityAdvertisingService {
   /// Stop advertising personality data
   Future<void> stopAdvertising() async {
     if (!_isAdvertising) {
+      // #region agent log
+      developer.log('Not currently advertising, nothing to stop', name: _logName);
+      // #endregion
       return;
     }
     
     try {
+      // #region agent log
       developer.log('Stopping personality advertising', name: _logName);
+      // #endregion
       
       _refreshTimer?.cancel();
       _refreshTimer = null;
       
       // Stop platform-specific advertising
+      // #region agent log
+      developer.log('Stopping platform-specific advertising: kIsWeb=$kIsWeb, platform=${defaultTargetPlatform.name}', name: _logName);
+      // #endregion
+      
       if (kIsWeb) {
         await _stopWebAdvertising();
       } else {
@@ -132,6 +167,9 @@ class PersonalityAdvertisingService {
             await _stopIOSAdvertising();
             break;
           default:
+            // #region agent log
+            developer.log('Platform not supported for stopping advertising: ${defaultTargetPlatform.name}', name: _logName);
+            // #endregion
             break;
         }
       }
@@ -140,9 +178,13 @@ class PersonalityAdvertisingService {
       _currentPersonalityData = null;
       _currentAnonymousUser = null;
       
-      developer.log('Personality advertising stopped', name: _logName);
+      // #region agent log
+      developer.log('Personality advertising stopped: isAdvertising=$_isAdvertising', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error stopping personality advertising: $e', name: _logName);
+      // #endregion
     }
   }
   
@@ -154,12 +196,17 @@ class PersonalityAdvertisingService {
     UserVibeAnalyzer vibeAnalyzer,
   ) async {
     if (!_isAdvertising) {
+      // #region agent log
+      developer.log('Not currently advertising, starting advertising instead', name: _logName);
+      // #endregion
       // If not advertising, start advertising
       return await startAdvertising(userId, personality, vibeAnalyzer);
     }
     
     try {
-      developer.log('Updating advertised personality data', name: _logName);
+      // #region agent log
+      developer.log('Updating advertised personality data for user: $userId', name: _logName);
+      // #endregion
       
       // Compile and anonymize new personality data
       final userVibe = await vibeAnalyzer.compileUserVibe(userId, personality);
@@ -167,6 +214,10 @@ class PersonalityAdvertisingService {
       _currentPersonalityData = anonymizedVibe;
       
       // Update platform-specific advertising
+      // #region agent log
+      developer.log('Updating platform-specific advertising: kIsWeb=$kIsWeb, platform=${defaultTargetPlatform.name}', name: _logName);
+      // #endregion
+      
       bool success = false;
       
       if (kIsWeb) {
@@ -180,12 +231,21 @@ class PersonalityAdvertisingService {
             success = await _updateIOSAdvertising(anonymizedVibe);
             break;
           default:
+            // #region agent log
+            developer.log('Platform not supported for updating advertising: ${defaultTargetPlatform.name}', name: _logName);
+            // #endregion
             return false;
         }
       }
       
       if (success) {
+        // #region agent log
         developer.log('Personality data updated successfully', name: _logName);
+        // #endregion
+      } else {
+        // #region agent log
+        developer.log('Failed to update personality data', name: _logName);
+        // #endregion
       }
       
       return success;
@@ -226,15 +286,22 @@ class PersonalityAdvertisingService {
     bool isAdmin = false,
   }) async {
     if (_anonymizationService == null) {
-      developer.log('UserAnonymizationService not available. Cannot advertise user profile.', name: _logName);
+      // #region agent log
+      developer.log('UserAnonymizationService not available. Cannot advertise user profile. Falling back to vibe-only advertising.', name: _logName);
+      // #endregion
       // Fallback to vibe-only advertising
       return await startAdvertising(user.id, personality, vibeAnalyzer);
     }
 
     try {
-      developer.log('Starting advertising with UnifiedUser (will be anonymized): ${user.id}', name: _logName);
+      // #region agent log
+      developer.log('Starting advertising with UnifiedUser (will be anonymized): userId=${user.id}, agentId=$agentId, isAdmin=$isAdmin', name: _logName);
+      // #endregion
       
       // Convert UnifiedUser to AnonymousUser
+      // #region agent log
+      developer.log('Anonymizing UnifiedUser to AnonymousUser', name: _logName);
+      // #endregion
       final anonymousUser = await _anonymizationService!.anonymizeUser(
         user,
         agentId,
@@ -244,12 +311,20 @@ class PersonalityAdvertisingService {
       
       _currentAnonymousUser = anonymousUser;
       
+      // #region agent log
+      developer.log('User anonymized: agentId=${anonymousUser.agentId}', name: _logName);
+      // #endregion
+      
       // Also compile vibe for compatibility with existing advertising
       final userVibe = await vibeAnalyzer.compileUserVibe(user.id, personality);
       final anonymizedVibe = await PrivacyProtection.anonymizeUserVibe(userVibe);
       _currentPersonalityData = anonymizedVibe;
       
       // Start platform-specific advertising with anonymized data
+      // #region agent log
+      developer.log('Starting platform-specific advertising with anonymized data: kIsWeb=$kIsWeb, platform=${defaultTargetPlatform.name}', name: _logName);
+      // #endregion
+      
       bool success = false;
       
       if (kIsWeb) {
@@ -263,7 +338,9 @@ class PersonalityAdvertisingService {
             success = await _startIOSAdvertising(anonymizedVibe);
             break;
           default:
-            developer.log('Platform not supported for advertising', name: _logName);
+            // #region agent log
+            developer.log('Platform not supported for advertising: ${defaultTargetPlatform.name}', name: _logName);
+            // #endregion
             return false;
         }
       }
@@ -271,10 +348,14 @@ class PersonalityAdvertisingService {
       if (success) {
         _isAdvertising = true;
         _startRefreshTimer(user.id, personality, vibeAnalyzer);
-        developer.log('User profile advertising started successfully (anonymized)', name: _logName);
+        // #region agent log
+        developer.log('User profile advertising started successfully (anonymized): isAdvertising=$_isAdvertising', name: _logName);
+        // #endregion
         return true;
       } else {
+        // #region agent log
         developer.log('Failed to start user profile advertising', name: _logName);
+        // #endregion
         return false;
       }
     } catch (e) {
@@ -318,15 +399,46 @@ class PersonalityAdvertisingService {
   /// Start Android BLE advertising
   Future<bool> _startAndroidAdvertising(AnonymizedVibeData personalityData) async {
     try {
+      // #region agent log
+      developer.log('Starting Android advertising: hasAndroidDiscovery=${_androidDiscovery != null}', name: _logName);
+      // #endregion
+      
+      // Use injected discovery object if available for validation
+      if (_androidDiscovery != null) {
+        // #region agent log
+        developer.log('Using injected Android discovery object for validation', name: _logName);
+        // #endregion
+        final isSupported = await _androidDiscovery.isSupported();
+        if (!isSupported) {
+          // #region agent log
+          developer.log('Android discovery reports platform not supported', name: _logName);
+          // #endregion
+          return false;
+        }
+        
+        // Request permissions if needed
+        final hasPermissions = await _androidDiscovery.requestPermissions();
+        if (!hasPermissions) {
+          // #region agent log
+          developer.log('Android discovery permissions not granted', name: _logName);
+          // #endregion
+          return false;
+        }
+      }
+      
       // Check if Bluetooth is available
       if (!await FlutterBluePlus.isSupported) {
+        // #region agent log
         developer.log('Bluetooth not supported on Android', name: _logName);
+        // #endregion
         return false;
       }
       
       // Check if Bluetooth is on
       if (await FlutterBluePlus.adapterState.first == BluetoothAdapterState.off) {
+        // #region agent log
         developer.log('Bluetooth is off, cannot advertise', name: _logName);
+        // #endregion
         return false;
       }
       
@@ -364,10 +476,39 @@ class PersonalityAdvertisingService {
   /// Start iOS mDNS/Bonjour advertising
   Future<bool> _startIOSAdvertising(AnonymizedVibeData personalityData) async {
     try {
+      // #region agent log
+      developer.log('Starting iOS advertising: hasIOSDiscovery=${_iosDiscovery != null}', name: _logName);
+      // #endregion
+      
+      // Use injected discovery object if available for validation
+      if (_iosDiscovery != null) {
+        // #region agent log
+        developer.log('Using injected iOS discovery object for validation', name: _logName);
+        // #endregion
+        final isSupported = await _iosDiscovery.isSupported();
+        if (!isSupported) {
+          // #region agent log
+          developer.log('iOS discovery reports platform not supported', name: _logName);
+          // #endregion
+          return false;
+        }
+        
+        // Request permissions if needed
+        final hasPermissions = await _iosDiscovery.requestPermissions();
+        if (!hasPermissions) {
+          // #region agent log
+          developer.log('iOS discovery permissions not granted', name: _logName);
+          // #endregion
+          return false;
+        }
+      }
+      
       // Encode personality data to base64 for TXT record
       final base64Data = PersonalityDataCodec.encodeToBase64(personalityData);
       if (base64Data.isEmpty) {
+        // #region agent log
         developer.log('Failed to encode personality data', name: _logName);
+        // #endregion
         return false;
       }
       
@@ -408,10 +549,39 @@ class PersonalityAdvertisingService {
   /// Start Web WebRTC/WebSocket advertising
   Future<bool> _startWebAdvertising(AnonymizedVibeData personalityData) async {
     try {
+      // #region agent log
+      developer.log('Starting Web advertising: hasWebDiscovery=${_webDiscovery != null}', name: _logName);
+      // #endregion
+      
+      // Use injected discovery object if available for validation
+      if (_webDiscovery != null) {
+        // #region agent log
+        developer.log('Using injected Web discovery object for validation', name: _logName);
+        // #endregion
+        final isSupported = await _webDiscovery.isSupported();
+        if (!isSupported) {
+          // #region agent log
+          developer.log('Web discovery reports platform not supported', name: _logName);
+          // #endregion
+          return false;
+        }
+        
+        // Request permissions if needed
+        final hasPermissions = await _webDiscovery.requestPermissions();
+        if (!hasPermissions) {
+          // #region agent log
+          developer.log('Web discovery permissions not granted', name: _logName);
+          // #endregion
+          return false;
+        }
+      }
+      
       // Encode personality data to JSON for WebRTC
       final jsonData = PersonalityDataCodec.encodeToJson(personalityData);
       if (jsonData.isEmpty) {
+        // #region agent log
         developer.log('Failed to encode personality data', name: _logName);
+        // #endregion
         return false;
       }
       
@@ -439,35 +609,56 @@ class PersonalityAdvertisingService {
   /// Stop Android advertising
   Future<void> _stopAndroidAdvertising() async {
     try {
+      // #region agent log
+      developer.log('Stopping Android BLE advertising: hasAndroidDiscovery=${_androidDiscovery != null}', name: _logName);
+      // #endregion
       // TODO: Stop BLE advertising
       // This requires stopping the BLE peripheral/advertiser
-      developer.log('Stopping Android BLE advertising', name: _logName);
+      // #region agent log
+      developer.log('Android BLE advertising stopped', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error stopping Android advertising: $e', name: _logName);
+      // #endregion
     }
   }
   
   /// Stop iOS advertising
   Future<void> _stopIOSAdvertising() async {
     try {
+      // #region agent log
+      developer.log('Stopping iOS mDNS/Bonjour advertising: hasIOSDiscovery=${_iosDiscovery != null}, hasNsdService=${_nsdService != null}', name: _logName);
+      // #endregion
       if (_nsdService != null) {
         // Note: FlutterNsd doesn't have unregisterService method
         // Service will stop when object is disposed
         _nsdService = null;
+        // #region agent log
         developer.log('Stopped iOS mDNS/Bonjour advertising', name: _logName);
+        // #endregion
       }
     } catch (e) {
+      // #region agent log
       developer.log('Error stopping iOS advertising: $e', name: _logName);
+      // #endregion
     }
   }
   
   /// Stop Web advertising
   Future<void> _stopWebAdvertising() async {
     try {
+      // #region agent log
+      developer.log('Stopping Web advertising: hasWebDiscovery=${_webDiscovery != null}', name: _logName);
+      // #endregion
       // TODO: Unregister from signaling server
-      developer.log('Stopping Web advertising', name: _logName);
+      // #region agent log
+      developer.log('Web advertising stopped', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error stopping Web advertising: $e', name: _logName);
+      // #endregion
     }
   }
   
@@ -499,6 +690,10 @@ class PersonalityAdvertisingService {
     PersonalityProfile personality,
     UserVibeAnalyzer vibeAnalyzer,
   ) {
+    // #region agent log
+    developer.log('Starting refresh timer: userId=$userId, refreshInterval=5 minutes', name: _logName);
+    // #endregion
+    
     _refreshTimer?.cancel();
     
     // Refresh every 5 minutes or when data is about to expire
@@ -509,13 +704,27 @@ class PersonalityAdvertisingService {
       if (_currentPersonalityData != null) {
         final timeUntilExpiry = _currentPersonalityData!.expiresAt.difference(DateTime.now());
         
+        // #region agent log
+        developer.log('Refresh timer tick: timeUntilExpiry=${timeUntilExpiry.inMinutes} minutes', name: _logName);
+        // #endregion
+        
         // Refresh if expired or expiring within 1 minute
         if (timeUntilExpiry.inMinutes < 1) {
+          // #region agent log
           developer.log('Personality data expiring soon, refreshing advertisement', name: _logName);
+          // #endregion
           await updatePersonalityData(userId, personality, vibeAnalyzer);
         }
+      } else {
+        // #region agent log
+        developer.log('No current personality data to refresh', name: _logName);
+        // #endregion
       }
     });
+    
+    // #region agent log
+    developer.log('Refresh timer started successfully', name: _logName);
+    // #endregion
   }
 }
 

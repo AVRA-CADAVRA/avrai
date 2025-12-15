@@ -1,9 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/trending_analysis_service.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Trending Analysis Service Tests
 /// Tests trending analysis functionality
 void main() {
+
+  setUpAll(() async {
+    await setupTestStorage();
+  });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+
   group('TrendingAnalysisService Tests', () {
     group('analyzeTrends', () {
       test('should analyze trends and return analysis map', () {

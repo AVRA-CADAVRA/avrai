@@ -5,7 +5,7 @@ import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/connection_metrics.dart';
 import 'package:spots/core/models/collaborative_activity_metrics.dart';
 import 'package:spots/core/ai/personality_learning.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 
 class ExpectedOutcome {
   final String id;
@@ -25,11 +25,15 @@ class AI2AIChatAnalyzer {
   static const String _logName = 'AI2AIChatAnalyzer';
   
   // Storage keys for AI2AI learning data
+  // ignore: unused_field
   static const String _chatHistoryKey = 'ai2ai_chat_history';
+  // ignore: unused_field
   static const String _learningInsightsKey = 'ai2ai_learning_insights';
+  // ignore: unused_field
   static const String _collectiveKnowledgeKey = 'collective_knowledge';
   
-  final SharedPreferences _prefs;
+  // ignore: unused_field
+  final SharedPreferencesCompat _prefs;
   final PersonalityLearning _personalityLearning;
   
   // AI2AI learning state
@@ -38,7 +42,7 @@ class AI2AIChatAnalyzer {
   final Map<String, List<CrossPersonalityInsight>> _learningInsights = {};
   
   AI2AIChatAnalyzer({
-    required SharedPreferences prefs,
+    required SharedPreferencesCompat prefs,
     required PersonalityLearning personalityLearning,
   }) : _prefs = prefs,
        _personalityLearning = personalityLearning;
@@ -617,7 +621,7 @@ class AI2AIChatAnalyzer {
         final words = content.split(RegExp(r'\s+'));
         
         // Extract meaningful words (length > 3, not common stop words)
-        final stopWords = {'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'who', 'way', 'use', 'her', 'she', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use'};
+        final stopWords = {'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'who', 'way', 'use', 'she', 'man', 'boy', 'did', 'let', 'put', 'say', 'too'};
         
         for (final word in words) {
           final cleaned = word.replaceAll(RegExp(r'[^\w]'), '');
@@ -1577,6 +1581,7 @@ class AI2AIChatAnalyzer {
   /// Analyze collaborative activity patterns from AI2AI conversations
   /// Phase 7 Week 40: Track list creation during AI2AI conversations
   /// Privacy-safe: Returns aggregate metrics only, no user data
+  // ignore: unused_element
   Future<CollaborativeActivityMetrics> _analyzeCollaborativeActivity(
     String userId,
     List<AI2AIChatEvent> chats,

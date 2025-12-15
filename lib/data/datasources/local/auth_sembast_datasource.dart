@@ -85,9 +85,32 @@ class AuthSembastDataSource implements AuthLocalDataSource {
           isOnline: true,
         );
         
+        // Add expertiseMap to make demo user an expert in everything
+        final userJson = demoUser.toJson();
+        final allCategories = [
+          'Coffee', 'Restaurants', 'Bars', 'Pastry', 'Wine', 'Cocktails',
+          'Food', 'Dining', 'Retail', 'Shopping', 'Hospitality', 'Service',
+          'Art', 'Music', 'Outdoor', 'Fitness', 'Books', 'Tech', 'Wellness', 'Travel',
+          'Parks', 'Bookstores', 'Museums', 'Theaters', 'Live Music', 'Sports',
+          'Fashion', 'Vintage', 'Markets', 'Food Trucks', 'Bakeries',
+          'Ice Cream', 'Wine Bars', 'Craft Beer', 'Vegan/Vegetarian', 'Pizza',
+          'Sushi', 'BBQ', 'Mexican', 'Italian', 'Thai', 'Indian', 'Mediterranean',
+          'Korean', 'Hiking Trails', 'Beaches', 'Gardens', 'Botanical Gardens',
+          'Nature Reserves', 'Camping', 'Fishing', 'Kayaking', 'Biking Trails',
+          'Bird Watching', 'Stargazing', 'Picnic Spots', 'Waterfalls', 'Scenic Views',
+        ];
+        
+        final expertiseMap = <String, String>{};
+        for (final category in allCategories) {
+          expertiseMap[category] = 'universal'; // Highest expertise level
+        }
+        
+        userJson['expertiseMap'] = expertiseMap;
+        _logger.debug('🔐 AuthSembastDataSource: Added ${expertiseMap.length} expertise categories to demo user', tag: 'AuthSembastDataSource');
+        
         // Save demo user to database
-        await _usersStore.record(demoUser.id).put(db, demoUser.toJson());
-        _logger.debug('🔐 AuthSembastDataSource: Demo user saved to database', tag: 'AuthSembastDataSource');
+        await _usersStore.record(demoUser.id).put(db, userJson);
+        _logger.debug('🔐 AuthSembastDataSource: Demo user saved to database with universal expertise', tag: 'AuthSembastDataSource');
         
         // Save current user
         await _preferencesStore.record('currentUser').put(db, {'key': 'currentUser', 'value': demoUser.id});
@@ -122,6 +145,10 @@ class AuthSembastDataSource implements AuthLocalDataSource {
       final db = await SembastDatabase.database;
       final userData = user.toJson();
       await _usersStore.record(user.id).put(db, userData);
+      // Treat saved user as the current user for local auth context.
+      await _preferencesStore
+          .record('currentUser')
+          .put(db, {'key': 'currentUser', 'value': user.id});
     } catch (e) {
       _logger.error('Error saving user', error: e, tag: 'AuthSembastDataSource');
     }

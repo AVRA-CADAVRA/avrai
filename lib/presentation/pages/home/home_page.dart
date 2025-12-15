@@ -20,6 +20,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:spots/presentation/widgets/common/offline_indicator_widget.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:spots/presentation/pages/events/events_browse_page.dart';
+import 'package:go_router/go_router.dart';
 
 class HomePage extends StatefulWidget {
   final int initialTabIndex;
@@ -103,9 +104,7 @@ class _HomePageState extends State<HomePage> {
                   // Retry connectivity check
                   final connectivity = Connectivity();
                   final result = await connectivity.checkConnectivity();
-                  final isNowOnline = result is List
-                      ? !result.contains(ConnectivityResult.none)
-                      : result != ConnectivityResult.none;
+                  final isNowOnline = !result.contains(ConnectivityResult.none);
                   
                   if (isNowOnline && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -131,7 +130,14 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) {
+          if (index == 3) {
+            // Settings tab - navigate to profile/settings
+            context.go('/profile');
+          } else {
+            setState(() => _currentIndex = index);
+          }
+        },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppTheme.primaryColor,
         unselectedItemColor: AppColors.textSecondary,
@@ -139,6 +145,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
           BottomNavigationBarItem(icon: Icon(Icons.place), label: 'Spots'),
           BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
       // Remove the invasive offline FAB - offline status is now shown in profile page
@@ -169,12 +176,12 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/login'),
+              onPressed: () => context.go('/login'),
               child: const Text('Sign In'),
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () => Navigator.pushNamed(context, '/signup'),
+              onPressed: () => context.go('/signup'),
               child: const Text('Create Account'),
             ),
           ],
@@ -811,11 +818,7 @@ class _UsersSubTabState extends State<UsersSubTab> {
                 color: AppColors.textSecondary,
               ),
               onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/list-details',
-                  arguments: list,
-                );
+                context.go('/list/${list.id}');
               },
             ),
           );
@@ -935,7 +938,7 @@ class _AISubTabState extends State<AISubTab> {
                       subtitle: 'Community + External Data',
                       color: AppTheme.successColor,
                       onTap: () {
-                        Navigator.pushNamed(context, '/hybrid-search');
+                        context.go('/hybrid-search');
                       },
                     ),
                   ),

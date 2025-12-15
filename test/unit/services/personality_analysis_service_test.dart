@@ -1,9 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/personality_analysis_service.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Personality Analysis Service Tests
 /// Tests personality analysis functionality
 void main() {
+
+  setUpAll(() async {
+    await setupTestStorage();
+  });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+
   group('PersonalityAnalysisService Tests', () {
     group('analyzePersonality', () {
       test('should analyze personality and return analysis map', () {

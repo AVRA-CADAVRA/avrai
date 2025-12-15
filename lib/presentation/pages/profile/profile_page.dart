@@ -5,6 +5,7 @@ import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/presentation/pages/settings/notifications_settings_page.dart';
 import 'package:spots/presentation/pages/settings/privacy_settings_page.dart';
+import 'package:spots/presentation/pages/settings/social_media_settings_page.dart';
 import 'package:spots/presentation/pages/settings/help_support_page.dart';
 import 'package:spots/presentation/pages/settings/about_page.dart';
 import 'package:spots/presentation/pages/tax/tax_profile_page.dart';
@@ -17,6 +18,9 @@ import 'package:go_router/go_router.dart';
 // Phase 4.5: Partnership Profile Visibility
 import 'package:spots/presentation/widgets/profile/partnership_display_widget.dart';
 import 'package:spots/core/models/user_partnership.dart';
+// Admin: God Mode Access
+import 'package:spots/presentation/pages/admin/god_mode_login_page.dart';
+import 'package:spots/core/models/user.dart' show UserRole;
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -30,7 +34,7 @@ class ProfilePage extends StatelessWidget {
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is Authenticated) {
-            return Padding(
+            return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +78,7 @@ class ProfilePage extends StatelessWidget {
                                     ),
                                     Text(
                                       state.user.email,
-                                  style: Theme.of(context)
+                                      style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium
                                           ?.copyWith(
@@ -142,7 +146,8 @@ class ProfilePage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NotificationsSettingsPage(),
+                          builder: (context) =>
+                              const NotificationsSettingsPage(),
                         ),
                       );
                     },
@@ -157,6 +162,20 @@ class ProfilePage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const PrivacySettingsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.link,
+                    title: 'Social Media',
+                    subtitle: 'Connect and manage social accounts',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SocialMediaSettingsPage(),
                         ),
                       );
                     },
@@ -249,7 +268,8 @@ class ProfilePage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const IdentityVerificationPage(),
+                          builder: (context) =>
+                              const IdentityVerificationPage(),
                         ),
                       );
                     },
@@ -339,7 +359,35 @@ class ProfilePage extends StatelessWidget {
                     },
                   ),
 
-                  const Spacer(),
+                  // Admin Section (only visible to admins)
+                  if (state.user.role == UserRole.admin) ...[
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Admin',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSettingsItem(
+                      context,
+                      icon: Icons.admin_panel_settings,
+                      title: 'God Mode Admin',
+                      subtitle: 'Access admin dashboard',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const GodModeLoginPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
 
                   // Sign Out Button
                   SizedBox(
@@ -388,18 +436,20 @@ class ProfilePage extends StatelessWidget {
     // TODO: Replace with actual PartnershipProfileService once Agent 1 completes it
     // For now, using FutureBuilder with empty list
     // The service will be: sl<PartnershipProfileService>().getActivePartnerships(userId)
-    
+
     return FutureBuilder<List<UserPartnership>>(
       future: _loadPartnerships(userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink(); // Don't show loading, just skip if not ready
+          return const SizedBox
+              .shrink(); // Don't show loading, just skip if not ready
         }
 
         final partnerships = snapshot.data ?? [];
-        
+
         if (partnerships.isEmpty) {
-          return const SizedBox.shrink(); // Don't show empty state on profile page
+          return const SizedBox
+              .shrink(); // Don't show empty state on profile page
         }
 
         return Column(
@@ -428,7 +478,7 @@ class ProfilePage extends StatelessWidget {
     // Example:
     // final service = sl<PartnershipProfileService>();
     // return await service.getActivePartnerships(userId);
-    
+
     // For now, return empty list
     // This will be replaced when Agent 1 completes PartnershipProfileService
     return [];

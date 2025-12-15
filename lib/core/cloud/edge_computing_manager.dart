@@ -9,6 +9,7 @@ class EdgeComputingManager {
   // Edge configuration
   static const Duration _cacheExpiry = Duration(hours: 2);
   static const int _maxCacheSize = 10000;
+  // ignore: unused_field
   static const Duration _edgeHealthCheckInterval = Duration(minutes: 1);
   static const double _latencyThreshold = 100.0; // milliseconds
   

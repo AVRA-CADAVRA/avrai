@@ -6,6 +6,14 @@ import '../../helpers/widget_test_helpers.dart';
 /// Widget tests for CustomSearchBar
 /// Tests search bar UI, interactions, and callbacks
 void main() {
+  setUpAll(() async {
+    await WidgetTestHelpers.setupWidgetTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await WidgetTestHelpers.cleanupWidgetTestEnvironment();
+  });
+
   group('CustomSearchBar Widget Tests', () {
     testWidgets('displays search bar with default hint', (WidgetTester tester) async {
       // Arrange

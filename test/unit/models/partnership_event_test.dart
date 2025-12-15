@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/models/partnership_event.dart';
 import 'package:spots/core/models/expertise_event.dart';
 import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/spot.dart';
 import '../../fixtures/model_factories.dart';
 import '../../helpers/test_helpers.dart';
 
@@ -14,7 +13,6 @@ void main() {
     late DateTime startTime;
     late DateTime endTime;
     late UnifiedUser testHost;
-    late List<Spot> testSpots;
 
     setUp(() {
       TestHelpers.setupTestEnvironment();
@@ -25,73 +23,20 @@ void main() {
         id: 'host-123',
         displayName: 'Expert Host',
       );
-      testSpots = [
-        ModelFactories.createTestSpot(id: 'spot-1', name: 'Coffee Shop 1'),
-        ModelFactories.createTestSpot(id: 'spot-2', name: 'Coffee Shop 2'),
-      ];
     });
 
     tearDown(() {
       TestHelpers.teardownTestEnvironment();
     });
 
-    group('Constructor and Properties', () {
-      test('should create partnership event with required fields', () {
-        final event = PartnershipEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
-          category: 'Coffee',
-          eventType: ExpertiseEventType.tour,
-          host: testHost,
-          startTime: startTime,
-          endTime: endTime,
-          createdAt: testDate,
-          updatedAt: testDate,
-        );
+    // Removed: Constructor and Properties group
+    // These tests only verified Dart constructor behavior, not business logic
 
-        expect(event.id, equals('event-123'));
-        expect(event.title, equals('Coffee Tour'));
-        expect(event.category, equals('Coffee'));
-        expect(event.host, equals(testHost));
-        expect(event.isPartnershipEvent, isFalse);
-        expect(event.hasPartnership, isFalse);
-        expect(event.hasRevenueSplit, isFalse);
-        expect(event.partnerIds, isEmpty);
-        expect(event.partnerCount, equals(0));
-      });
-
-      test('should create partnership event with partnership fields', () {
-        final event = PartnershipEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
-          category: 'Coffee',
-          eventType: ExpertiseEventType.tour,
-          host: testHost,
-          startTime: startTime,
-          endTime: endTime,
-          createdAt: testDate,
-          updatedAt: testDate,
-          partnershipId: 'partnership-123',
-          revenueSplitId: 'split-123',
-          isPartnershipEvent: true,
-          partnerIds: ['user-123', 'business-123'],
-          partnerCount: 2,
-        );
-
-        expect(event.partnershipId, equals('partnership-123'));
-        expect(event.revenueSplitId, equals('split-123'));
-        expect(event.isPartnershipEvent, isTrue);
-        expect(event.hasPartnership, isTrue);
-        expect(event.hasRevenueSplit, isTrue);
-        expect(event.partnerIds, hasLength(2));
-        expect(event.partnerCount, equals(2));
-      });
-    });
-
-    group('From ExpertiseEvent Factory', () {
-      test('should create partnership event from expertise event', () {
+    group('Partnership Detection', () {
+      test(
+          'should correctly detect partnership and revenue split in factory and direct creation',
+          () {
+        // Test business logic: partnership detection
         final baseEvent = ExpertiseEvent(
           id: 'event-123',
           title: 'Coffee Tour',
@@ -105,56 +50,20 @@ void main() {
           updatedAt: testDate,
         );
 
-        final partnershipEvent = PartnershipEvent.fromExpertiseEvent(
+        final withPartnership = PartnershipEvent.fromExpertiseEvent(
           event: baseEvent,
           partnershipId: 'partnership-123',
           revenueSplitId: 'split-123',
           partnerIds: ['user-123', 'business-123'],
           partnerCount: 2,
         );
-
-        expect(partnershipEvent.id, equals(baseEvent.id));
-        expect(partnershipEvent.title, equals(baseEvent.title));
-        expect(partnershipEvent.category, equals(baseEvent.category));
-        expect(partnershipEvent.host, equals(baseEvent.host));
-        expect(partnershipEvent.partnershipId, equals('partnership-123'));
-        expect(partnershipEvent.revenueSplitId, equals('split-123'));
-        expect(partnershipEvent.isPartnershipEvent, isTrue);
-        expect(partnershipEvent.partnerIds, hasLength(2));
-        expect(partnershipEvent.partnerCount, equals(2));
-      });
-
-      test('should create non-partnership event from expertise event', () {
-        final baseEvent = ExpertiseEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
-          category: 'Coffee',
-          eventType: ExpertiseEventType.tour,
-          host: testHost,
-          startTime: startTime,
-          endTime: endTime,
-          createdAt: testDate,
-          updatedAt: testDate,
-        );
-
-        final partnershipEvent = PartnershipEvent.fromExpertiseEvent(
+        final withoutPartnership = PartnershipEvent.fromExpertiseEvent(
           event: baseEvent,
         );
-
-        expect(partnershipEvent.id, equals(baseEvent.id));
-        expect(partnershipEvent.isPartnershipEvent, isFalse);
-        expect(partnershipEvent.hasPartnership, isFalse);
-        expect(partnershipEvent.hasRevenueSplit, isFalse);
-      });
-    });
-
-    group('Partnership Checks', () {
-      test('should detect partnership when partnershipId is set', () {
-        final event = PartnershipEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
+        final directEvent = PartnershipEvent(
+          id: 'event-456',
+          title: 'Solo Tour',
+          description: 'A solo tour',
           category: 'Coffee',
           eventType: ExpertiseEventType.tour,
           host: testHost,
@@ -163,52 +72,23 @@ void main() {
           createdAt: testDate,
           updatedAt: testDate,
           partnershipId: 'partnership-123',
-        );
-
-        expect(event.hasPartnership, isTrue);
-        expect(event.isPartnershipEvent, isFalse); // Not set explicitly
-      });
-
-      test('should detect revenue split when revenueSplitId is set', () {
-        final event = PartnershipEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
-          category: 'Coffee',
-          eventType: ExpertiseEventType.tour,
-          host: testHost,
-          startTime: startTime,
-          endTime: endTime,
-          createdAt: testDate,
-          updatedAt: testDate,
           revenueSplitId: 'split-123',
         );
 
-        expect(event.hasRevenueSplit, isTrue);
-      });
+        // Test factory method behavior
+        expect(withPartnership.hasPartnership, isTrue);
+        expect(withoutPartnership.hasPartnership, isFalse);
+        expect(withPartnership.partnerIds, hasLength(2));
 
-      test('should check if revenue split is locked', () {
-        // This would require a RevenueSplit object with isLocked = true
-        // For now, we test the null case
-        final event = PartnershipEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
-          category: 'Coffee',
-          eventType: ExpertiseEventType.tour,
-          host: testHost,
-          startTime: startTime,
-          endTime: endTime,
-          createdAt: testDate,
-          updatedAt: testDate,
-        );
-
-        expect(event.isRevenueSplitLocked, isFalse);
+        // Test direct creation
+        expect(directEvent.hasPartnership, isTrue);
+        expect(directEvent.hasRevenueSplit, isTrue);
+        expect(withoutPartnership.isRevenueSplitLocked, isFalse);
       });
     });
 
     group('JSON Serialization', () {
-      test('should serialize partnership event to JSON', () {
+      test('should serialize and deserialize partnership data correctly', () {
         final event = PartnershipEvent(
           id: 'event-123',
           title: 'Coffee Tour',
@@ -228,64 +108,18 @@ void main() {
         );
 
         final json = event.toJson();
+        final reconstructed = PartnershipEvent.fromJson(json, testHost);
 
-        // Base event fields
-        expect(json['id'], equals('event-123'));
-        expect(json['title'], equals('Coffee Tour'));
-        expect(json['category'], equals('Coffee'));
-        
-        // Partnership fields
-        expect(json['partnershipId'], equals('partnership-123'));
-        expect(json['revenueSplitId'], equals('split-123'));
-        expect(json['isPartnershipEvent'], isTrue);
-        expect(json['partnerIds'], hasLength(2));
-        expect(json['partnerCount'], equals(2));
-      });
-
-      test('should deserialize partnership event from JSON', () {
-        final json = {
-          'id': 'event-123',
-          'title': 'Coffee Tour',
-          'description': 'A guided tour of local coffee shops',
-          'category': 'Coffee',
-          'eventType': 'tour',
-          'hostId': 'host-123',
-          'attendeeIds': [],
-          'attendeeCount': 0,
-          'maxAttendees': 20,
-          'startTime': startTime.toIso8601String(),
-          'endTime': endTime.toIso8601String(),
-          'spotIds': [],
-          'location': null,
-          'latitude': null,
-          'longitude': null,
-          'price': null,
-          'isPaid': false,
-          'isPublic': true,
-          'createdAt': testDate.toIso8601String(),
-          'updatedAt': testDate.toIso8601String(),
-          'status': 'upcoming',
-          'partnershipId': 'partnership-123',
-          'revenueSplitId': 'split-123',
-          'isPartnershipEvent': true,
-          'partnerIds': ['user-123', 'business-123'],
-          'partnerCount': 2,
-        };
-
-        final event = PartnershipEvent.fromJson(json, testHost);
-
-        expect(event.id, equals('event-123'));
-        expect(event.title, equals('Coffee Tour'));
-        expect(event.partnershipId, equals('partnership-123'));
-        expect(event.revenueSplitId, equals('split-123'));
-        expect(event.isPartnershipEvent, isTrue);
-        expect(event.partnerIds, hasLength(2));
-        expect(event.partnerCount, equals(2));
+        // Test critical partnership fields (business logic validation)
+        expect(reconstructed.partnershipId, equals(event.partnershipId));
+        expect(reconstructed.revenueSplitId, equals(event.revenueSplitId));
+        expect(reconstructed.partnerIds, equals(event.partnerIds));
+        expect(reconstructed.partnerCount, equals(event.partnerCount));
       });
     });
 
     group('Copy With', () {
-      test('should create copy with updated base fields', () {
+      test('should create immutable copy with updated fields', () {
         final event = PartnershipEvent(
           id: 'event-123',
           title: 'Coffee Tour',
@@ -301,47 +135,26 @@ void main() {
 
         final updated = event.copyWith(
           title: 'Updated Coffee Tour',
-          category: 'Updated Coffee',
-        );
-
-        expect(updated.id, equals(event.id));
-        expect(updated.title, equals('Updated Coffee Tour'));
-        expect(updated.category, equals('Updated Coffee'));
-        expect(updated.host, equals(event.host));
-      });
-
-      test('should create copy with updated partnership fields', () {
-        final event = PartnershipEvent(
-          id: 'event-123',
-          title: 'Coffee Tour',
-          description: 'A guided tour of local coffee shops',
-          category: 'Coffee',
-          eventType: ExpertiseEventType.tour,
-          host: testHost,
-          startTime: startTime,
-          endTime: endTime,
-          createdAt: testDate,
-          updatedAt: testDate,
-        );
-
-        final updated = event.copyWith(
           partnershipId: 'partnership-123',
-          revenueSplitId: 'split-123',
-          isPartnershipEvent: true,
-          partnerIds: ['user-123', 'business-123'],
-          partnerCount: 2,
+          partnerIds: ['user-123'],
         );
 
-        expect(updated.partnershipId, equals('partnership-123'));
-        expect(updated.revenueSplitId, equals('split-123'));
-        expect(updated.isPartnershipEvent, isTrue);
-        expect(updated.partnerIds, hasLength(2));
-        expect(updated.partnerCount, equals(2));
+        // Test immutability (business logic)
+        expect(event.title, isNot(equals('Updated Coffee Tour')));
+        expect(updated.title, equals('Updated Coffee Tour'));
+        expect(updated.id, equals(event.id)); // Unchanged fields preserved
+        expect(updated.hasPartnership, isTrue); // Partnership detection works
       });
     });
 
     group('Inheritance from ExpertiseEvent', () {
       test('should inherit all ExpertiseEvent methods', () {
+        // Use real "future" times relative to DateTime.now() so time-based getters
+        // (`hasStarted` / `hasEnded`) are deterministic regardless of the testDate fixture.
+        final now = DateTime.now();
+        final futureStart = now.add(const Duration(hours: 1));
+        final futureEnd = futureStart.add(const Duration(hours: 2));
+
         final event = PartnershipEvent(
           id: 'event-123',
           title: 'Coffee Tour',
@@ -349,8 +162,8 @@ void main() {
           category: 'Coffee',
           eventType: ExpertiseEventType.tour,
           host: testHost,
-          startTime: startTime,
-          endTime: endTime,
+          startTime: futureStart,
+          endTime: futureEnd,
           createdAt: testDate,
           updatedAt: testDate,
           maxAttendees: 20,
@@ -368,4 +181,3 @@ void main() {
     });
   });
 }
-

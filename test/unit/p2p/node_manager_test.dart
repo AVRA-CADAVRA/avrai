@@ -1,4 +1,3 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/p2p/node_manager.dart';
 
@@ -55,7 +54,7 @@ void main() {
         dataRetention: Duration(days: 30),
       );
       
-      final silo = await manager.createEncryptedSilo(encryptionLevel: EncryptionLevel.standard, accessPolicy: AccessPolicy.private, node, 'test-silo', policy);
+      final silo = await manager.createEncryptedSilo(node, 'test-silo', policy);
       
       expect(silo.name, equals('test-silo'));
       expect(silo.organizationId, equals(node.organizationId));

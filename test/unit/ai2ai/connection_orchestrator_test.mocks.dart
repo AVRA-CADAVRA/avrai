@@ -5,12 +5,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:connectivity_plus/connectivity_plus.dart' as _i6;
+import 'package:connectivity_plus/connectivity_plus.dart' as _i7;
 import 'package:connectivity_plus_platform_interface/connectivity_plus_platform_interface.dart'
-    as _i7;
+    as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:spots/core/ai/vibe_analysis_engine.dart' as _i3;
 import 'package:spots/core/models/personality_profile.dart' as _i5;
+import 'package:spots/core/models/unified_user.dart' as _i6;
 import 'package:spots/core/models/user_vibe.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -106,8 +107,11 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
   @override
   _i4.Future<_i3.VibeCompatibilityResult> analyzeVibeCompatibility(
     _i2.UserVibe? localVibe,
-    _i2.UserVibe? remoteVibe,
-  ) =>
+    _i2.UserVibe? remoteVibe, {
+    _i6.UnifiedUser? localUser,
+    _i6.UnifiedUser? remoteUser,
+    List<String>? recentActions,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #analyzeVibeCompatibility,
@@ -115,6 +119,11 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
             localVibe,
             remoteVibe,
           ],
+          {
+            #localUser: localUser,
+            #remoteUser: remoteUser,
+            #recentActions: recentActions,
+          },
         ),
         returnValue: _i4.Future<_i3.VibeCompatibilityResult>.value(
             _FakeVibeCompatibilityResult_1(
@@ -125,6 +134,11 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
               localVibe,
               remoteVibe,
             ],
+            {
+              #localUser: localUser,
+              #remoteUser: remoteUser,
+              #recentActions: recentActions,
+            },
           ),
         )),
       ) as _i4.Future<_i3.VibeCompatibilityResult>);
@@ -213,26 +227,26 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
 /// A class which mocks [Connectivity].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockConnectivity extends _i1.Mock implements _i6.Connectivity {
+class MockConnectivity extends _i1.Mock implements _i7.Connectivity {
   MockConnectivity() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Stream<List<_i7.ConnectivityResult>> get onConnectivityChanged =>
+  _i4.Stream<List<_i8.ConnectivityResult>> get onConnectivityChanged =>
       (super.noSuchMethod(
         Invocation.getter(#onConnectivityChanged),
-        returnValue: _i4.Stream<List<_i7.ConnectivityResult>>.empty(),
-      ) as _i4.Stream<List<_i7.ConnectivityResult>>);
+        returnValue: _i4.Stream<List<_i8.ConnectivityResult>>.empty(),
+      ) as _i4.Stream<List<_i8.ConnectivityResult>>);
 
   @override
-  _i4.Future<List<_i7.ConnectivityResult>> checkConnectivity() =>
+  _i4.Future<List<_i8.ConnectivityResult>> checkConnectivity() =>
       (super.noSuchMethod(
         Invocation.method(
           #checkConnectivity,
           [],
         ),
-        returnValue: _i4.Future<List<_i7.ConnectivityResult>>.value(
-            <_i7.ConnectivityResult>[]),
-      ) as _i4.Future<List<_i7.ConnectivityResult>>);
+        returnValue: _i4.Future<List<_i8.ConnectivityResult>>.value(
+            <_i8.ConnectivityResult>[]),
+      ) as _i4.Future<List<_i8.ConnectivityResult>>);
 }

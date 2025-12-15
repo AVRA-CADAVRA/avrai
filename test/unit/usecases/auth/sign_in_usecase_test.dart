@@ -459,12 +459,9 @@ void main() {
 
         // Assert
         expect(result, equals(testUser));
-        verify(mockRepository.signIn(email, password)).called(1);
-        // Verify exact parameters were passed
-        verify(mockRepository.signIn(
-          argThat(equals(email)),
-          argThat(equals(password)),
-        )).called(1);
+        final captured = verify(mockRepository.signIn(captureAny, captureAny)).captured;
+        expect(captured[0], equals(email));
+        expect(captured[1], equals(password));
       });
 
       test('should not modify or validate credentials before passing to repository', () async {

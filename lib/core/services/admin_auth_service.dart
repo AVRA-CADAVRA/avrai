@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:spots/core/services/supabase_service.dart';
+import 'package:spots/core/services/storage_service.dart';
 
 /// Admin Authentication Service
 /// Handles god-mode admin login and session management
@@ -12,7 +12,7 @@ class AdminAuthService {
   static const String _adminLoginAttemptsKey = 'admin_login_attempts';
   static const String _adminLockoutKey = 'admin_lockout_until';
   
-  final SharedPreferences _prefs;
+  final SharedPreferencesCompat _prefs;
   
   // Maximum login attempts before lockout
   static const int _maxLoginAttempts = 5;
@@ -35,23 +35,26 @@ class AdminAuthService {
         return AdminAuthResult.lockedOut(remaining);
       }
       
-      // Verify credentials (in production, this would check against secure backend)
-      final isValid = await _verifyCredentials(username, password, twoFactorCode);
+      // Verify credentials via Supabase Edge Function
+      final verifyResult = await _verifyCredentials(username, password, twoFactorCode);
       
-      if (!isValid) {
-        // Increment failed attempts
-        final attempts = _prefs.getInt(_adminLoginAttemptsKey) ?? 0;
-        final newAttempts = attempts + 1;
-        await _prefs.setInt(_adminLoginAttemptsKey, newAttempts);
-        
-        // Lockout if too many attempts
-        if (newAttempts >= _maxLoginAttempts) {
-          final lockoutUntil = DateTime.now().add(_lockoutDuration).millisecondsSinceEpoch;
+      if (!verifyResult.success) {
+        // Handle lockout from server
+        if (verifyResult.lockedOut && verifyResult.lockoutRemaining != null) {
+          final lockoutUntil = DateTime.now().add(verifyResult.lockoutRemaining!).millisecondsSinceEpoch;
           await _prefs.setInt(_adminLockoutKey, lockoutUntil);
-          return AdminAuthResult.lockedOut(_lockoutDuration);
+          return AdminAuthResult.lockedOut(verifyResult.lockoutRemaining!);
         }
         
-        return AdminAuthResult.failed(remainingAttempts: _maxLoginAttempts - newAttempts);
+        // Handle failed attempts
+        if (verifyResult.remainingAttempts != null) {
+          return AdminAuthResult.failed(
+            error: verifyResult.error,
+            remainingAttempts: verifyResult.remainingAttempts,
+          );
+        }
+        
+        return AdminAuthResult.failed(error: verifyResult.error);
       }
       
       // Reset failed attempts on success
@@ -77,49 +80,82 @@ class AdminAuthService {
     }
   }
   
-  /// Verify admin credentials
-  /// In production, this would call a secure backend API
-  Future<bool> _verifyCredentials(String username, String password, String? twoFactorCode) async {
-    // Hash password for comparison
-    final passwordHash = sha256.convert(utf8.encode(password)).toString();
-    
-    // In production, this would check against a secure database
-    // For now, using environment variables or secure config
-    // TODO: Implement secure credential verification via backend API
-    
-    // Placeholder: Check against expected hash
-    // In real implementation, this should be server-side only
-    final expectedHash = _getExpectedPasswordHash(username);
-    
-    if (expectedHash == null) {
-      return false; // User not found
+  /// Verify admin credentials via Supabase Edge Function
+  /// Returns a result object with success status and additional info
+  Future<_VerifyResult> _verifyCredentials(String username, String password, String? twoFactorCode) async {
+    try {
+      final supabaseService = SupabaseService();
+      
+      // Check if Supabase is available before trying to use it
+      if (!supabaseService.isAvailable) {
+        developer.log(
+          'Supabase not initialized - cannot verify admin credentials',
+          name: _logName,
+        );
+        return _VerifyResult(
+          success: false,
+          error: 'Backend service unavailable. Please configure Supabase credentials.',
+        );
+      }
+      
+      // Get client (we know it's available from the check above)
+      final client = supabaseService.client;
+      
+      // Call the admin-auth edge function
+      final response = await client.functions.invoke(
+        'admin-auth',
+        body: {
+          'username': username,
+          'password': password,
+          if (twoFactorCode != null) 'twoFactorCode': twoFactorCode,
+        },
+      );
+
+      // Parse response data - handle both Map and String responses
+      Map<String, dynamic>? data;
+      if (response.data is Map) {
+        data = response.data as Map<String, dynamic>;
+      } else if (response.data is String) {
+        try {
+          data = jsonDecode(response.data as String) as Map<String, dynamic>;
+        } catch (e) {
+          developer.log('Failed to parse edge function response: $e', name: _logName);
+          return _VerifyResult(
+            success: false,
+            error: 'Invalid response from server',
+          );
+        }
+      }
+      
+      if (response.status == 200 && data?['success'] == true) {
+        developer.log('Admin credentials verified successfully', name: _logName);
+        return _VerifyResult(success: true);
+      }
+
+      // Handle error responses
+      final error = data?['error'] as String? ?? 'Authentication failed';
+      final lockedOut = data?['lockedOut'] as bool? ?? false;
+      final lockoutRemaining = data?['lockoutRemaining'] as int?;
+      final remainingAttempts = data?['remainingAttempts'] as int?;
+
+      developer.log('Admin auth failed: $error (status: ${response.status})', name: _logName);
+
+      return _VerifyResult(
+        success: false,
+        error: error,
+        lockedOut: lockedOut,
+        lockoutRemaining: lockoutRemaining != null 
+            ? Duration(minutes: lockoutRemaining)
+            : null,
+        remainingAttempts: remainingAttempts,
+      );
+    } catch (e) {
+      developer.log('Error verifying admin credentials: $e', name: _logName);
+      return _VerifyResult(
+        success: false,
+        error: 'Connection error: $e',
+      );
     }
-    
-    if (passwordHash != expectedHash) {
-      return false; // Wrong password
-    }
-    
-    // If 2FA is required, verify code
-    if (twoFactorCode != null && !_verifyTwoFactorCode(username, twoFactorCode)) {
-      return false;
-    }
-    
-    return true;
-  }
-  
-  /// Get expected password hash for username
-  /// In production, this would be fetched from secure backend
-  String? _getExpectedPasswordHash(String username) {
-    // TODO: Fetch from secure backend or environment
-    // For now, return null (no default credentials)
-    return null;
-  }
-  
-  /// Verify 2FA code
-  bool _verifyTwoFactorCode(String username, String code) {
-    // TODO: Implement 2FA verification
-    // For now, return true if code is provided (placeholder)
-    return code.isNotEmpty;
   }
   
   /// Get current admin session
@@ -406,5 +442,22 @@ class AdminAuthResult {
   factory AdminAuthResult.error(String error) {
     return AdminAuthResult(success: false, error: error);
   }
+}
+
+/// Internal result class for credential verification
+class _VerifyResult {
+  final bool success;
+  final String? error;
+  final bool lockedOut;
+  final Duration? lockoutRemaining;
+  final int? remainingAttempts;
+
+  _VerifyResult({
+    required this.success,
+    this.error,
+    this.lockedOut = false,
+    this.lockoutRemaining,
+    this.remainingAttempts,
+  });
 }
 

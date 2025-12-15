@@ -58,6 +58,9 @@ void main() {
             description: 'Community favorite',
             latitude: 37.7749,
             longitude: -122.4194,
+            category: 'cafe',
+            rating: 0.0,
+            createdBy: 'test-user',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -85,6 +88,9 @@ void main() {
             description: 'From cache',
             latitude: 37.7749,
             longitude: -122.4194,
+            category: 'restaurant',
+            rating: 0.0,
+            createdBy: 'test-user',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -133,16 +139,16 @@ void main() {
             description: 'Close by',
             latitude: latitude,
             longitude: longitude,
+            category: 'restaurant',
+            rating: 0.0,
+            createdBy: 'test-user',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
         ];
 
-        when(mockLocalDataSource.getSpotsNearby(
-          latitude: latitude,
-          longitude: longitude,
-          radius: radius,
-        )).thenAnswer((_) async => nearbySpots);
+        when(mockLocalDataSource.searchSpots(any))
+            .thenAnswer((_) async => nearbySpots);
         when(mockConnectivity.checkConnectivity())
             .thenAnswer((_) async => [ConnectivityResult.wifi]);
 

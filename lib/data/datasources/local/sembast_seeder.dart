@@ -39,7 +39,29 @@ class SembastSeeder {
       isOnline: true,
     );
 
-    await store.record(demoUser.id).put(db, demoUser.toJson());
+    // Add expertiseMap to make demo user an expert in everything
+    final userJson = demoUser.toJson();
+    final allCategories = [
+      'Coffee', 'Restaurants', 'Bars', 'Pastry', 'Wine', 'Cocktails',
+      'Food', 'Dining', 'Retail', 'Shopping', 'Hospitality', 'Service',
+      'Art', 'Music', 'Outdoor', 'Fitness', 'Books', 'Tech', 'Wellness', 'Travel',
+      'Parks', 'Bookstores', 'Museums', 'Theaters', 'Live Music', 'Sports',
+      'Shopping', 'Fashion', 'Vintage', 'Markets', 'Food Trucks', 'Bakeries',
+      'Ice Cream', 'Wine Bars', 'Craft Beer', 'Vegan/Vegetarian', 'Pizza',
+      'Sushi', 'BBQ', 'Mexican', 'Italian', 'Thai', 'Indian', 'Mediterranean',
+      'Korean', 'Hiking Trails', 'Beaches', 'Gardens', 'Botanical Gardens',
+      'Nature Reserves', 'Camping', 'Fishing', 'Kayaking', 'Biking Trails',
+      'Bird Watching', 'Stargazing', 'Picnic Spots', 'Waterfalls', 'Scenic Views',
+    ];
+    
+    final expertiseMap = <String, String>{};
+    for (final category in allCategories) {
+      expertiseMap[category] = 'universal'; // Highest expertise level
+    }
+    
+    userJson['expertiseMap'] = expertiseMap;
+    
+    await store.record(demoUser.id).put(db, userJson);
   }
 
   static Future<void> _seedSpotsBatch(DatabaseClient db) async {

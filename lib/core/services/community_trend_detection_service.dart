@@ -1,6 +1,6 @@
 import 'dart:developer' as developer;
 import 'dart:math';
-import 'package:spots/core/ml/pattern_recognition.dart' show PatternRecognitionSystem, UserBehaviorPattern, CommunityTrend, PrivacyPreservingInsights, PrivacyLevel, AuthenticityScore, UserActionData, SocialContext, Location;
+import 'package:spots/core/ml/pattern_recognition.dart' show PatternRecognitionSystem, CommunityTrend, PrivacyPreservingInsights, PrivacyLevel, AuthenticityScore, UserActionData;
 import 'package:spots/core/ml/nlp_processor.dart';
 import 'package:spots/core/models/user.dart' as user_model;
 // Removed stale analysis_services import; not used in current implementation
@@ -12,6 +12,7 @@ class CommunityTrendDetectionService {
   
   // Service dependencies
   final PatternRecognitionSystem _patternRecognition;
+  // ignore: unused_field
   final NLPProcessor _nlpProcessor;
   
   // Cache for performance optimization
@@ -41,9 +42,17 @@ class CommunityTrendDetectionService {
       final geographicTrends = _analyzeGeographicTrends(lists);
       final socialTrends = _analyzeSocialTrends(lists);
       
+      // Calculate overall strength from trend analyses
+      final overallStrength = _calculateOverallStrength(
+        categoryTrends,
+        temporalTrends,
+        geographicTrends,
+        socialTrends,
+      );
+      
       final trend = CommunityTrend(
         trendType: 'community_analysis',
-        strength: 0.8,
+        strength: overallStrength,
         timestamp: DateTime.now(),
       );
       
@@ -71,7 +80,11 @@ class CommunityTrendDetectionService {
         privacy: PrivacyLevel.maximum,
       );
       
-      developer.log('Anonymized insights generated successfully', name: _logName);
+      developer.log(
+        'Anonymized insights generated: fingerprint=${behaviorFingerprint.substring(0, 8)}..., '
+        'signature=${preferenceSignature.substring(0, 8)}..., contribution=${communityContribution.toStringAsFixed(2)}',
+        name: _logName,
+      );
       return insights;
     } catch (e) {
       developer.log('Error generating anonymized insights: $e', name: _logName);
@@ -186,7 +199,7 @@ class CommunityTrendDetectionService {
     final categoryCount = <String, int>{};
     
     for (final list in lists) {
-      for (final spotId in list.spotIds) {
+      for (final _ in list.spotIds) {
         // Analyze without accessing individual user data
         final category = 'general'; // Would be derived from spot data
         categoryCount[category] = (categoryCount[category] ?? 0) + 1;
@@ -212,11 +225,48 @@ class CommunityTrendDetectionService {
     return {};
   }
   
+  double _calculateOverallStrength(
+    CategoryEvolution categoryTrends,
+    Map<String, List<double>> temporalTrends,
+    Map<String, double> geographicTrends,
+    Map<String, double> socialTrends,
+  ) {
+    // Calculate overall strength from all trend analyses
+    var strength = 0.8; // Base strength
+    
+    // Adjust based on category trends
+    if (categoryTrends.stable.isNotEmpty) {
+      strength += 0.05;
+    }
+    if (categoryTrends.emerging.isNotEmpty) {
+      strength += 0.1;
+    }
+    
+    // Adjust based on temporal trends
+    if (temporalTrends.isNotEmpty) {
+      strength += 0.05;
+    }
+    
+    // Adjust based on geographic trends
+    if (geographicTrends.isNotEmpty) {
+      strength += 0.05;
+    }
+    
+    // Adjust based on social trends
+    if (socialTrends.isNotEmpty) {
+      strength += 0.05;
+    }
+    
+    return strength.clamp(0.0, 1.0);
+  }
+  
+  // ignore: unused_element
   double _calculateCommunityAuthenticity(List<SpotList> lists) {
     // Measure authenticity of community interactions
     return 0.9; // High authenticity by default
   }
   
+  // ignore: unused_element
   double _calculateCommunityBelonging(List<SpotList> lists) {
     // Measure sense of belonging in community
     return 0.85; // Strong belonging by default
@@ -243,6 +293,7 @@ class CommunityTrendDetectionService {
   
   // Cache management methods
   
+  // ignore: unused_element
   Future<T> _getCachedOrCompute<T>(String key, Future<T> Function() compute) async {
     final now = DateTime.now();
     final cached = _cache[key];
@@ -259,6 +310,7 @@ class CommunityTrendDetectionService {
     return result;
   }
   
+  // ignore: unused_element
   void _cleanupCache() {
     final now = DateTime.now();
     final expiredKeys = _cacheTimestamps.entries

@@ -51,7 +51,12 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
       
       // Check authentication
       if (!_authService!.isAuthenticated()) {
-        _navigateToLogin();
+        // Defer navigation to after the frame completes to avoid Navigator lock errors
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _navigateToLogin();
+          }
+        });
         return;
       }
       
@@ -59,7 +64,12 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
       _godModeService = GetIt.instance<AdminGodModeService>();
     } catch (e) {
       debugPrint('Error initializing services: $e');
-      _navigateToLogin();
+      // Defer navigation to after the frame completes to avoid Navigator lock errors
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _navigateToLogin();
+        }
+      });
     }
   }
 
@@ -199,6 +209,25 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
           ],
         ),
         actions: [
+          // Dynamic warning icon that changes color based on system status
+          if (_dashboardData != null)
+            IconButton(
+              icon: Icon(
+                Icons.warning_amber_rounded,
+                color: _getWarningIconColor(),
+              ),
+              onPressed: () {
+                // Show tooltip with status information
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(_getWarningStatusMessage()),
+                    backgroundColor: _getWarningIconColor(),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              },
+              tooltip: _getWarningTooltip(),
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadDashboardData,
@@ -510,6 +539,78 @@ class _GodModeDashboardPageState extends State<GodModeDashboardPage> with Single
       return '${difference.inHours}h ago';
     } else {
       return '${difference.inDays}d ago';
+    }
+  }
+
+  /// Determines the warning icon color based on system health and privacy metrics
+  Color _getWarningIconColor() {
+    if (_dashboardData == null) {
+      return AppColors.warning; // Default to warning if no data
+    }
+
+    final systemHealth = _dashboardData!.systemHealth;
+    final privacyScore = _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore;
+
+    // Determine worst status
+    // System health priority: < 60% = error, 60-80% = warning, >= 80% = success
+    // Privacy priority: < 90% = warning, >= 90% = success
+    
+    if (systemHealth < 0.6) {
+      return AppColors.error; // Critical system health
+    } else if (systemHealth < 0.8 || privacyScore < 0.9) {
+      return AppColors.warning; // Warning level
+    } else {
+      return AppColors.success; // All good
+    }
+  }
+
+  /// Returns tooltip text for the warning icon
+  String _getWarningTooltip() {
+    if (_dashboardData == null) {
+      return 'System Status: Unknown';
+    }
+
+    final systemHealth = _dashboardData!.systemHealth;
+    final privacyScore = _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore;
+
+    if (systemHealth < 0.6) {
+      return 'System Health: Critical (${(systemHealth * 100).toStringAsFixed(0)}%)';
+    } else if (systemHealth < 0.8) {
+      return 'System Health: Warning (${(systemHealth * 100).toStringAsFixed(0)}%)';
+    } else if (privacyScore < 0.9) {
+      return 'Privacy Score: ${(privacyScore * 100).toStringAsFixed(0)}%';
+    } else {
+      return 'System Status: All Good';
+    }
+  }
+
+  /// Returns detailed status message for the warning icon
+  String _getWarningStatusMessage() {
+    if (_dashboardData == null) {
+      return 'System Status: Unknown - No data available';
+    }
+
+    final systemHealth = _dashboardData!.systemHealth;
+    final privacyScore = _dashboardData!.aggregatePrivacyMetrics.meanOverallPrivacyScore;
+    final healthPercent = (systemHealth * 100).toStringAsFixed(1);
+    final privacyPercent = (privacyScore * 100).toStringAsFixed(1);
+
+    final List<String> issues = [];
+
+    if (systemHealth < 0.6) {
+      issues.add('System Health: CRITICAL ($healthPercent%)');
+    } else if (systemHealth < 0.8) {
+      issues.add('System Health: Warning ($healthPercent%)');
+    }
+
+    if (privacyScore < 0.9) {
+      issues.add('Privacy Score: $privacyPercent% (below 90%)');
+    }
+
+    if (issues.isEmpty) {
+      return 'System Status: All Good\n• System Health: $healthPercent%\n• Privacy Score: $privacyPercent%';
+    } else {
+      return 'System Status: ${issues.length > 1 ? 'Multiple Issues' : 'Issue Detected'}\n${issues.join('\n')}';
     }
   }
 }

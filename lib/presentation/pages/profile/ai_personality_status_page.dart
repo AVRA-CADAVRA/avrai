@@ -11,8 +11,7 @@ import 'package:spots/presentation/widgets/ai2ai/learning_insights_widget.dart';
 import 'package:spots/presentation/widgets/ai2ai/evolution_timeline_widget.dart';
 import 'package:spots/presentation/widgets/ai2ai/privacy_controls_widget.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart' as real_prefs;
-import 'package:spots/core/services/storage_service.dart' show SharedPreferences;
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 import 'package:get_it/get_it.dart';
 import 'package:spots/core/ai/personality_learning.dart';
 
@@ -50,7 +49,7 @@ class _AIPersonalityStatusPageState extends State<AIPersonalityStatusPage> {
 
         // Get personality profile - try to load from PersonalityLearning, otherwise create initial
         // Note: PersonalityLearning expects SharedPreferencesCompat (via typedef), so we use GetIt
-        final sharedPrefsCompat = GetIt.instance<SharedPreferences>();
+        final sharedPrefsCompat = GetIt.instance<SharedPreferencesCompat>();
         final personalityLearning = PersonalityLearning.withPrefs(sharedPrefsCompat);
         
         // Try to get existing personality profile
@@ -58,14 +57,14 @@ class _AIPersonalityStatusPageState extends State<AIPersonalityStatusPage> {
         // In a real implementation, you'd load from storage or get from a service
         _personalityProfile = PersonalityProfile.initial(userId);
 
-        // Get connections overview - ConnectionMonitor expects real SharedPreferences
-        final realSharedPrefs = await real_prefs.SharedPreferences.getInstance();
-        final connectionMonitor = ConnectionMonitor(prefs: realSharedPrefs);
+        // Get connections overview - ConnectionMonitor expects SharedPreferencesCompat
+        final sharedPrefs = GetIt.instance<SharedPreferencesCompat>();
+        final connectionMonitor = ConnectionMonitor(prefs: sharedPrefs);
         _connectionsOverview = await connectionMonitor.getActiveConnectionsOverview();
 
-        // Get recent learning insights - AI2AIChatAnalyzer expects real SharedPreferences
+        // Get recent learning insights - AI2AIChatAnalyzer expects SharedPreferencesCompat
         final ai2aiLearning = AI2AIChatAnalyzer(
-          prefs: realSharedPrefs,
+          prefs: sharedPrefs,
           personalityLearning: personalityLearning,
         );
         // Note: Would need to get actual chat history to generate insights

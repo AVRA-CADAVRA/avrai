@@ -5,11 +5,25 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spots/core/services/storage_service.dart';
 import 'package:spots/presentation/pages/settings/discovery_settings_page.dart';
+import '../../helpers/widget_test_helpers.dart';
 
 void main() {
+  setUpAll(() async {
+    await WidgetTestHelpers.setupWidgetTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await WidgetTestHelpers.cleanupWidgetTestEnvironment();
+  });
 
   group('DiscoverySettingsPage', () {
+    setUp(() async {
+      // Ensure tests don't leak persisted state via StorageService
+      await StorageService.instance.setBool('discovery_enabled', false);
+    });
+
     testWidgets('page renders with all sections', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -40,8 +54,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enable discovery
-      await tester.tap(find.byType(SwitchListTile).first);
-      await tester.pumpAndSettle();
+      final mainToggleFinder = find.byType(SwitchListTile).first;
+      final mainToggle = tester.widget<SwitchListTile>(mainToggleFinder);
+      if (mainToggle.value == false) {
+        await tester.tap(mainToggleFinder);
+        await tester.pumpAndSettle();
+      }
 
       // Should show discovery methods
       expect(find.text('Discovery Methods'), findsOneWidget);
@@ -60,8 +78,18 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enable discovery
-      await tester.tap(find.byType(SwitchListTile).first);
-      await tester.pumpAndSettle();
+      final mainToggleFinder = find.byType(SwitchListTile).first;
+      final mainToggle = tester.widget<SwitchListTile>(mainToggleFinder);
+      if (mainToggle.value == false) {
+        await tester.tap(mainToggleFinder);
+        await tester.pumpAndSettle();
+      }
+
+      // Scroll to privacy section (ListView builds lazily)
+      for (var i = 0; i < 6 && find.text('Privacy Settings').evaluate().isEmpty; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -250));
+        await tester.pumpAndSettle();
+      }
 
       // Should show privacy settings
       expect(find.text('Privacy Settings'), findsOneWidget);
@@ -79,8 +107,18 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enable discovery
-      await tester.tap(find.byType(SwitchListTile).first);
-      await tester.pumpAndSettle();
+      final mainToggleFinder = find.byType(SwitchListTile).first;
+      final mainToggle = tester.widget<SwitchListTile>(mainToggleFinder);
+      if (mainToggle.value == false) {
+        await tester.tap(mainToggleFinder);
+        await tester.pumpAndSettle();
+      }
+
+      // Scroll to advanced section (ListView builds lazily)
+      for (var i = 0; i < 6 && find.text('Advanced').evaluate().isEmpty; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -250));
+        await tester.pumpAndSettle();
+      }
 
       // Should show advanced settings
       expect(find.text('Advanced'), findsOneWidget);
@@ -95,6 +133,12 @@ void main() {
       );
 
       await tester.pumpAndSettle();
+
+      // Scroll to info section at bottom (ListView builds lazily)
+      for (var i = 0; i < 10 && find.text('About Discovery').evaluate().isEmpty; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -300));
+        await tester.pumpAndSettle();
+      }
 
       // Should show info section
       expect(find.text('About Discovery'), findsOneWidget);
@@ -111,11 +155,24 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enable discovery to reveal privacy section
-      await tester.tap(find.byType(SwitchListTile).first);
+      final mainToggleFinder = find.byType(SwitchListTile).first;
+      final mainToggle = tester.widget<SwitchListTile>(mainToggleFinder);
+      if (mainToggle.value == false) {
+        await tester.tap(mainToggleFinder);
+        await tester.pumpAndSettle();
+      }
+
+      // Ensure Privacy Information ListTile is visible (ListView builds lazily)
+      final privacyInfoFinder = find.text('Privacy Information');
+      await tester.ensureVisible(privacyInfoFinder);
       await tester.pumpAndSettle();
 
-      // Tap on Privacy Information
-      await tester.tap(find.text('Privacy Information'));
+      // Tap on Privacy Information ListTile (not just the text)
+      final privacyInfoTile = find.ancestor(
+        of: privacyInfoFinder,
+        matching: find.byType(ListTile),
+      );
+      await tester.tap(privacyInfoTile, warnIfMissed: false);
       await tester.pumpAndSettle();
 
       // Should show dialog

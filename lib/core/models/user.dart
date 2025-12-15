@@ -5,6 +5,10 @@ enum UserRole {
   moderator,
 }
 
+class _Sentinel {
+  const _Sentinel();
+}
+
 class User {
   final String id;
   final String email;
@@ -34,21 +38,21 @@ class User {
     String? id,
     String? email,
     String? name,
-    String? displayName,
+    Object? displayName = const _Sentinel(),
     UserRole? role,
     DateTime? createdAt,
     DateTime? updatedAt,
-    bool? isOnline,
+    Object? isOnline = const _Sentinel(),
   }) {
     return User(
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
-      displayName: displayName ?? this.displayName,
+      displayName: displayName is _Sentinel ? this.displayName : displayName as String?,
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      isOnline: isOnline ?? this.isOnline,
+      isOnline: isOnline is _Sentinel ? this.isOnline : isOnline as bool?,
     );
   }
 

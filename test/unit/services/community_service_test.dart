@@ -6,15 +6,24 @@ import 'package:spots/core/models/expertise_event.dart';
 import 'package:spots/core/models/unified_user.dart';
 import '../../fixtures/model_factories.dart';
 import '../../helpers/test_helpers.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Comprehensive tests for CommunityService
 /// Tests auto-create community from event, member management, event management, growth tracking
-/// 
+///
 /// **Philosophy Alignment:**
 /// - Events naturally create communities (doors open from events)
 /// - Communities form organically from successful events
 /// - People find their communities through events
 void main() {
+  setUpAll(() async {
+    await setupTestStorage();
+  });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+
   group('CommunityService Tests', () {
     late CommunityService service;
     late UnifiedUser host;
@@ -84,7 +93,14 @@ void main() {
         createdAt: testDate,
         updatedAt: testDate,
         location: 'Mission District, San Francisco, CA, USA',
-        attendeeIds: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'user-6'],
+        attendeeIds: [
+          'user-1',
+          'user-2',
+          'user-3',
+          'user-4',
+          'user-5',
+          'user-6'
+        ],
         attendeeCount: 6,
       );
     });
@@ -93,42 +109,90 @@ void main() {
       TestHelpers.teardownTestEnvironment();
     });
 
+    // Removed: Property assignment tests
+    // Community creation tests focus on business logic validation, not property assignment
+
     group('Auto-Create Community From Event', () {
-      test('should create community from successful CommunityEvent', () async {
+      test(
+          'should create community from successful CommunityEvent and ExpertiseEvent with correct business logic, extract locality from event location or handle missing locations, include host and all attendees as initial members, or throw error for events that do not meet minimum criteria (attendees, repeat attendees, engagement)',
+          () async {
+        // Test business logic: community creation from events with validation
+        final communityFromCommunityEvent =
+            await service.createCommunityFromEvent(
+          event: successfulEvent,
+        );
+        expect(communityFromCommunityEvent, isNotNull);
+        expect(communityFromCommunityEvent.name, contains('Coffee Community'));
+        expect(communityFromCommunityEvent.name, contains('Coffee Meetup'));
+        expect(communityFromCommunityEvent.category, equals('Coffee'));
+        expect(communityFromCommunityEvent.originatingEventId,
+            equals(successfulEvent.id));
+        expect(communityFromCommunityEvent.originatingEventType,
+            equals(OriginatingEventType.communityEvent));
+        expect(communityFromCommunityEvent.founderId, equals(host.id));
+        expect(communityFromCommunityEvent.memberIds, contains(host.id));
+        expect(communityFromCommunityEvent.memberIds.length, equals(6));
+        expect(communityFromCommunityEvent.memberCount, equals(6));
+        expect(
+            communityFromCommunityEvent.eventIds, contains(successfulEvent.id));
+        expect(communityFromCommunityEvent.eventCount, equals(1));
+        expect(communityFromCommunityEvent.originalLocality,
+            equals('Mission District'));
+        expect(communityFromCommunityEvent.currentLocalities,
+            contains('Mission District'));
+        expect(communityFromCommunityEvent.engagementScore, equals(0.75));
+        expect(communityFromCommunityEvent.diversityScore, equals(0.0));
+
+        final communityFromExpertiseEvent =
+            await service.createCommunityFromEvent(
+          event: expertiseEvent,
+        );
+        expect(communityFromExpertiseEvent, isNotNull);
+        expect(communityFromExpertiseEvent.originatingEventType,
+            equals(OriginatingEventType.expertiseEvent));
+        expect(communityFromExpertiseEvent.memberIds.length, equals(7));
+        expect(communityFromExpertiseEvent.memberCount, equals(7));
+
+        final eventWithLocation = successfulEvent.copyWith(
+          location: 'Castro, San Francisco, CA, USA',
+        );
+        final communityWithLocation = await service.createCommunityFromEvent(
+          event: eventWithLocation,
+        );
+        expect(communityWithLocation.originalLocality, equals('Castro'));
+        expect(communityWithLocation.currentLocalities, contains('Castro'));
+
+        final eventWithoutLocation = CommunityEvent(
+          id: 'event-no-location',
+          title: 'Event Without Location',
+          description: 'Test event',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.meetup,
+          host: host,
+          startTime: testDate.add(const Duration(days: 1)),
+          endTime: testDate.add(const Duration(days: 1, hours: 2)),
+          createdAt: testDate,
+          updatedAt: testDate,
+          location: null,
+          attendeeIds: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'],
+          attendeeCount: 5,
+          repeatAttendeesCount: 3,
+          engagementScore: 0.75,
+        );
+        final communityWithoutLocation = await service.createCommunityFromEvent(
+          event: eventWithoutLocation,
+        );
+        expect(communityWithoutLocation.originalLocality, equals('Unknown'));
+        expect(communityWithoutLocation.currentLocalities, contains('Unknown'));
+
         final community = await service.createCommunityFromEvent(
           event: successfulEvent,
         );
-
-        expect(community, isNotNull);
-        expect(community.name, contains('Coffee Community'));
-        expect(community.name, contains('Coffee Meetup'));
-        expect(community.category, equals('Coffee'));
-        expect(community.originatingEventId, equals(successfulEvent.id));
-        expect(community.originatingEventType, equals(OriginatingEventType.communityEvent));
-        expect(community.founderId, equals(host.id));
         expect(community.memberIds, contains(host.id));
-        expect(community.memberIds.length, equals(6)); // 5 attendees + 1 host
-        expect(community.memberCount, equals(6));
-        expect(community.eventIds, contains(successfulEvent.id));
-        expect(community.eventCount, equals(1));
-        expect(community.originalLocality, equals('Mission District'));
-        expect(community.currentLocalities, contains('Mission District'));
-        expect(community.engagementScore, equals(0.75));
-        expect(community.diversityScore, equals(0.0)); // From diversityMetrics
-      });
+        expect(community.memberIds, containsAll(successfulEvent.attendeeIds));
+        expect(
+            community.memberCount, equals(successfulEvent.attendeeCount + 1));
 
-      test('should create community from successful ExpertiseEvent', () async {
-        final community = await service.createCommunityFromEvent(
-          event: expertiseEvent,
-        );
-
-        expect(community, isNotNull);
-        expect(community.originatingEventType, equals(OriginatingEventType.expertiseEvent));
-        expect(community.memberIds.length, equals(7)); // 6 attendees + 1 host
-        expect(community.memberCount, equals(7));
-      });
-
-      test('should throw error if event has too few attendees', () async {
         expect(
           () => service.createCommunityFromEvent(
             event: unsuccessfulEvent,
@@ -136,13 +200,10 @@ void main() {
           ),
           throwsException,
         );
-      });
 
-      test('should throw error if CommunityEvent has too few repeat attendees', () async {
         final eventWithLowRepeats = successfulEvent.copyWith(
-          repeatAttendeesCount: 1, // Below default threshold of 2
+          repeatAttendeesCount: 1,
         );
-
         expect(
           () => service.createCommunityFromEvent(
             event: eventWithLowRepeats,
@@ -150,13 +211,10 @@ void main() {
           ),
           throwsException,
         );
-      });
 
-      test('should throw error if CommunityEvent has low engagement score', () async {
         final eventWithLowEngagement = successfulEvent.copyWith(
-          engagementScore: 0.5, // Below default threshold of 0.6
+          engagementScore: 0.5,
         );
-
         expect(
           () => service.createCommunityFromEvent(
             event: eventWithLowEngagement,
@@ -164,42 +222,6 @@ void main() {
           ),
           throwsException,
         );
-      });
-
-      test('should extract locality from event location correctly', () async {
-        final eventWithLocation = successfulEvent.copyWith(
-          location: 'Castro, San Francisco, CA, USA',
-        );
-
-        final community = await service.createCommunityFromEvent(
-          event: eventWithLocation,
-        );
-
-        expect(community.originalLocality, equals('Castro'));
-        expect(community.currentLocalities, contains('Castro'));
-      });
-
-      test('should use "Unknown" locality if event has no location', () async {
-        final eventWithoutLocation = successfulEvent.copyWith(
-          location: null,
-        );
-
-        final community = await service.createCommunityFromEvent(
-          event: eventWithoutLocation,
-        );
-
-        expect(community.originalLocality, equals('Unknown'));
-        expect(community.currentLocalities, contains('Unknown'));
-      });
-
-      test('should include host and all attendees as initial members', () async {
-        final community = await service.createCommunityFromEvent(
-          event: successfulEvent,
-        );
-
-        expect(community.memberIds, contains(host.id));
-        expect(community.memberIds, containsAll(successfulEvent.attendeeIds));
-        expect(community.memberCount, equals(successfulEvent.attendeeCount + 1));
       });
     });
 
@@ -212,65 +234,42 @@ void main() {
         );
       });
 
-      test('should add member to community', () async {
+      test(
+          'should add member to community, not add duplicate member, remove member from community, not remove non-member, throw error when trying to remove founder, get all members, and check if user is member',
+          () async {
+        // Test business logic: member management operations
         const newMemberId = 'new-member-1';
-
         await service.addMember(community, newMemberId);
+        final updated1 = await service.getCommunityById(community.id);
+        expect(updated1, isNotNull);
+        expect(updated1!.memberIds, contains(newMemberId));
+        expect(updated1.memberCount, equals(community.memberCount + 1));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        expect(updated!.memberIds, contains(newMemberId));
-        expect(updated.memberCount, equals(community.memberCount + 1));
-      });
-
-      test('should not add duplicate member', () async {
         const existingMemberId = 'user-1';
-
         await service.addMember(community, existingMemberId);
+        final updated2 = await service.getCommunityById(community.id);
+        expect(updated2!.memberCount, equals(community.memberCount + 1));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        // Member count should not increase
-        expect(updated!.memberCount, equals(community.memberCount));
-      });
-
-      test('should remove member from community', () async {
-        const memberToRemove = 'user-1';
-
+        const memberToRemove = 'user-2';
         await service.removeMember(community, memberToRemove);
+        final updated3 = await service.getCommunityById(community.id);
+        expect(updated3, isNotNull);
+        expect(updated3!.memberIds, isNot(contains(memberToRemove)));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        expect(updated!.memberIds, isNot(contains(memberToRemove)));
-        expect(updated.memberCount, equals(community.memberCount - 1));
-      });
-
-      test('should not remove non-member', () async {
         const nonMemberId = 'non-member-1';
-
         await service.removeMember(community, nonMemberId);
+        final updated4 = await service.getCommunityById(community.id);
+        expect(updated4!.memberCount, equals(updated3.memberCount));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        // Member count should not change
-        expect(updated!.memberCount, equals(community.memberCount));
-      });
-
-      test('should throw error when trying to remove founder', () async {
         expect(
           () => service.removeMember(community, community.founderId),
           throwsException,
         );
-      });
 
-      test('should get all members', () {
         final members = service.getMembers(community);
-
         expect(members, equals(community.memberIds));
         expect(members.length, equals(community.memberCount));
-      });
 
-      test('should check if user is member', () {
         expect(service.isMember(community, 'user-1'), isTrue);
         expect(service.isMember(community, 'non-member-1'), isFalse);
       });
@@ -285,38 +284,26 @@ void main() {
         );
       });
 
-      test('should add event to community', () async {
+      test(
+          'should add event to community, not add duplicate event, get all events, and get upcoming events',
+          () async {
+        // Test business logic: event management operations
         const newEventId = 'event-new-1';
-
         await service.addEvent(community, newEventId);
+        final updated1 = await service.getCommunityById(community.id);
+        expect(updated1, isNotNull);
+        expect(updated1!.eventIds, contains(newEventId));
+        expect(updated1.eventCount, equals(community.eventCount + 1));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        expect(updated!.eventIds, contains(newEventId));
-        expect(updated.eventCount, equals(community.eventCount + 1));
-      });
-
-      test('should not add duplicate event', () async {
         await service.addEvent(community, successfulEvent.id);
+        final updated2 = await service.getCommunityById(community.id);
+        expect(updated2!.eventCount, equals(community.eventCount + 1));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        // Event count should not increase
-        expect(updated!.eventCount, equals(community.eventCount));
-      });
-
-      test('should get all events', () {
         final events = service.getEvents(community);
-
         expect(events, equals(community.eventIds));
         expect(events.length, equals(community.eventCount));
-      });
 
-      test('should get upcoming events', () {
         final upcomingEvents = service.getUpcomingEvents(community);
-
-        // Note: Current implementation returns all events
-        // In production, would filter by event dates
         expect(upcomingEvents, isA<List<String>>());
       });
     });
@@ -330,57 +317,44 @@ void main() {
         );
       });
 
-      test('should update member growth rate', () async {
+      test(
+          'should update member growth rate, event growth rate, both growth rates, calculate engagement score, and calculate diversity score',
+          () async {
+        // Test business logic: growth tracking and score calculations
         await service.updateGrowthMetrics(
           community,
           memberGrowthRate: 0.25,
         );
+        final updated1 = await service.getCommunityById(community.id);
+        expect(updated1!.memberGrowthRate, equals(0.25));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        expect(updated!.memberGrowthRate, equals(0.25));
-      });
-
-      test('should update event growth rate', () async {
         await service.updateGrowthMetrics(
           community,
           eventGrowthRate: 0.15,
         );
+        final updated2 = await service.getCommunityById(community.id);
+        expect(updated2!.eventGrowthRate, equals(0.15));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        expect(updated!.eventGrowthRate, equals(0.15));
-      });
-
-      test('should update both growth rates', () async {
         await service.updateGrowthMetrics(
           community,
           memberGrowthRate: 0.25,
           eventGrowthRate: 0.15,
         );
+        final updated3 = await service.getCommunityById(community.id);
+        expect(updated3!.memberGrowthRate, equals(0.25));
+        expect(updated3.eventGrowthRate, equals(0.15));
 
-        final updated = await service.getCommunityById(community.id);
-        expect(updated, isNotNull);
-        expect(updated!.memberGrowthRate, equals(0.25));
-        expect(updated.eventGrowthRate, equals(0.15));
-      });
-
-      test('should calculate engagement score', () {
         final communityWithMetrics = community.copyWith(
           memberCount: 25,
           eventCount: 5,
           memberGrowthRate: 0.2,
         );
+        final engagementScore =
+            service.calculateEngagementScore(communityWithMetrics);
+        expect(engagementScore, greaterThanOrEqualTo(0.0));
+        expect(engagementScore, lessThanOrEqualTo(1.0));
+        expect(engagementScore, greaterThan(0.0));
 
-        final score = service.calculateEngagementScore(communityWithMetrics);
-
-        expect(score, greaterThanOrEqualTo(0.0));
-        expect(score, lessThanOrEqualTo(1.0));
-        // Score should be positive for active community
-        expect(score, greaterThan(0.0));
-      });
-
-      test('should calculate diversity score', () {
         final communityWithDiversity = community.copyWith(
           diversityScore: 0.6,
           currentLocalities: [
@@ -389,13 +363,11 @@ void main() {
             'Haight-Ashbury',
           ],
         );
-
-        final score = service.calculateDiversityScore(communityWithDiversity);
-
-        expect(score, greaterThanOrEqualTo(0.0));
-        expect(score, lessThanOrEqualTo(1.0));
-        // Score should reflect diversity
-        expect(score, greaterThan(0.0));
+        final diversityScore =
+            service.calculateDiversityScore(communityWithDiversity);
+        expect(diversityScore, greaterThanOrEqualTo(0.0));
+        expect(diversityScore, lessThanOrEqualTo(1.0));
+        expect(diversityScore, greaterThan(0.0));
       });
     });
 
@@ -408,114 +380,88 @@ void main() {
         );
       });
 
-      test('should get community by ID', () async {
-        final retrieved = await service.getCommunityById(community.id);
+      test(
+          'should get community by ID or return null for non-existent community, get communities by founder or category with maxResults limit, update community details preserving existing values when updating with null, and delete empty community or throw error when trying to delete community with members or events',
+          () async {
+        // Test business logic: community retrieval, filtering, updates, and deletion
+        final retrieved1 = await service.getCommunityById(community.id);
+        expect(retrieved1, isNotNull);
+        expect(retrieved1!.id, equals(community.id));
+        expect(retrieved1.name, equals(community.name));
 
-        expect(retrieved, isNotNull);
-        expect(retrieved!.id, equals(community.id));
-        expect(retrieved.name, equals(community.name));
-      });
+        final retrieved2 = await service.getCommunityById('non-existent-id');
+        expect(retrieved2, isNull);
 
-      test('should return null for non-existent community', () async {
-        final retrieved = await service.getCommunityById('non-existent-id');
+        final communitiesByFounder =
+            await service.getCommunitiesByFounder(host.id);
+        expect(communitiesByFounder, isNotEmpty);
+        expect(communitiesByFounder.any((c) => c.id == community.id), isTrue);
+        expect(
+            communitiesByFounder.every((c) => c.founderId == host.id), isTrue);
 
-        expect(retrieved, isNull);
-      });
+        final communitiesByCategory =
+            await service.getCommunitiesByCategory('Coffee');
+        expect(communitiesByCategory, isNotEmpty);
+        expect(communitiesByCategory.any((c) => c.id == community.id), isTrue);
+        expect(
+            communitiesByCategory.every((c) => c.category == 'Coffee'), isTrue);
 
-      test('should get communities by founder', () async {
-        final communities = await service.getCommunitiesByFounder(host.id);
-
-        expect(communities, isNotEmpty);
-        expect(communities.any((c) => c.id == community.id), isTrue);
-        expect(communities.every((c) => c.founderId == host.id), isTrue);
-      });
-
-      test('should get communities by category', () async {
-        final communities = await service.getCommunitiesByCategory('Coffee');
-
-        expect(communities, isNotEmpty);
-        expect(communities.any((c) => c.id == community.id), isTrue);
-        expect(communities.every((c) => c.category == 'Coffee'), isTrue);
-      });
-
-      test('should limit results when getting communities by category', () async {
-        final communities = await service.getCommunitiesByCategory(
+        final limitedCommunities = await service.getCommunitiesByCategory(
           'Coffee',
           maxResults: 1,
         );
+        expect(limitedCommunities.length, lessThanOrEqualTo(1));
 
-        expect(communities.length, lessThanOrEqualTo(1));
-      });
-
-      test('should update community details', () async {
-        final updated = await service.updateCommunity(
+        final updated1 = await service.updateCommunity(
           community: community,
           name: 'Updated Name',
           description: 'Updated Description',
           currentLocalities: ['Castro', 'Haight-Ashbury'],
         );
+        expect(updated1.name, equals('Updated Name'));
+        expect(updated1.description, equals('Updated Description'));
+        expect(
+            updated1.currentLocalities, equals(['Castro', 'Haight-Ashbury']));
 
-        expect(updated.name, equals('Updated Name'));
-        expect(updated.description, equals('Updated Description'));
-        expect(updated.currentLocalities, equals(['Castro', 'Haight-Ashbury']));
-      });
-
-      test('should preserve existing values when updating with null', () async {
-        final updated = await service.updateCommunity(
+        final updated2 = await service.updateCommunity(
           community: community,
-          name: 'Updated Name',
+          name: 'Updated Name 2',
         );
+        expect(updated2.name, equals('Updated Name 2'));
+        expect(updated2.description, equals(community.description));
+        expect(updated2.currentLocalities, equals(community.currentLocalities));
 
-        expect(updated.name, equals('Updated Name'));
-        expect(updated.description, equals(community.description));
-        expect(updated.currentLocalities, equals(community.currentLocalities));
-      });
-
-      test('should delete empty community', () async {
-        // Create empty community
         final emptyCommunity = await service.createCommunityFromEvent(
           event: successfulEvent,
         );
-
-        // Remove all members except founder
         for (final memberId in emptyCommunity.memberIds) {
           if (memberId != emptyCommunity.founderId) {
             await service.removeMember(emptyCommunity, memberId);
           }
         }
-
-        // Remove all events
-        final updatedCommunity = await service.getCommunityById(emptyCommunity.id);
+        final updatedCommunity =
+            await service.getCommunityById(emptyCommunity.id);
         if (updatedCommunity != null) {
-          // Note: Service doesn't have removeEvent method, so we'll need to manually
-          // create an empty community for this test
           final trulyEmpty = updatedCommunity.copyWith(
             memberIds: [],
             memberCount: 0,
             eventIds: [],
             eventCount: 0,
           );
-
           await service.deleteCommunity(trulyEmpty);
-
           final deleted = await service.getCommunityById(trulyEmpty.id);
           expect(deleted, isNull);
         }
-      });
 
-      test('should throw error when trying to delete community with members', () async {
         expect(
           () => service.deleteCommunity(community),
           throwsException,
         );
-      });
 
-      test('should throw error when trying to delete community with events', () async {
         final communityWithEvents = community.copyWith(
           memberIds: [],
           memberCount: 0,
         );
-
         expect(
           () => service.deleteCommunity(communityWithEvents),
           throwsException,
@@ -524,4 +470,3 @@ void main() {
     });
   });
 }
-

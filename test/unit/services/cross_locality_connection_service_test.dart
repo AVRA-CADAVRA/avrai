@@ -1,20 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:spots/core/services/cross_locality_connection_service.dart';
-import 'package:spots/core/models/unified_user.dart';
-import 'package:spots/core/models/cross_locality_connection.dart';
+import 'package:spots/core/models/cross_locality_connection.dart' as models;
 import 'package:spots/core/models/user_movement_pattern.dart';
-import '../../fixtures/model_factories.dart';
-import '../../helpers/integration_test_helpers.dart';
+import '../../helpers/platform_channel_helper.dart';
 
-import 'cross_locality_connection_service_test.mocks.dart';
+// import 'cross_locality_connection_service_test.mocks.dart'; // Not needed - placeholder tests
 
 // Note: This test file is prepared for when CrossLocalityConnectionService is created
 // The service interface is based on the task assignments in week_26_27_task_assignments.md
 
 @GenerateMocks([])
 void main() {
+  setUpAll(() async {
+    await setupTestStorage();
+  });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+
   group('CrossLocalityConnectionService Tests', () {
     // These tests will be implemented once CrossLocalityConnectionService is created
     // For now, we document the expected behavior
@@ -63,32 +67,12 @@ void main() {
   });
 
   group('UserMovementPattern Tests', () {
-    test('should create movement pattern with all fields', () {
-      final pattern = UserMovementPattern(
-        userId: 'user-1',
-        sourceLocalityId: 'locality-1',
-        sourceLocalityName: 'Mission District',
-        targetLocalityId: 'locality-2',
-        targetLocalityName: 'SOMA',
-        patternType: MovementPatternType.commute,
-        transportationMethod: TransportationMethod.transit,
-        frequency: 20.0, // 20 times per month
-        averageTimeOfDay: 8, // 8 AM
-        daysOfWeek: [1, 2, 3, 4, 5], // Weekdays
-        isRegular: true,
-        firstObserved: DateTime.now().subtract(const Duration(days: 90)),
-        lastObserved: DateTime.now(),
-        tripCount: 60,
-      );
+    // Removed: 'should create movement pattern with all fields' test
+    // This test only verified property assignment, not business logic
 
-      expect(pattern.userId, equals('user-1'));
-      expect(pattern.patternType, equals(MovementPatternType.commute));
-      expect(pattern.isRegular, isTrue);
-      expect(pattern.isActive(), isTrue);
-      expect(pattern.patternStrength, greaterThan(0.0));
-    });
-
-    test('should calculate pattern strength correctly', () {
+    test(
+        'should calculate pattern strength correctly and determine active status',
+        () {
       // High frequency, regular, recent
       final strongPattern = UserMovementPattern(
         userId: 'user-1',
@@ -96,8 +80,8 @@ void main() {
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-2',
         targetLocalityName: 'SOMA',
-        patternType: MovementPatternType.commute,
-        transportationMethod: TransportationMethod.transit,
+        patternType: models.MovementPatternType.commute,
+        transportationMethod: models.TransportationMethod.transit,
         frequency: 25.0,
         isRegular: true,
         firstObserved: DateTime.now().subtract(const Duration(days: 90)),
@@ -112,8 +96,8 @@ void main() {
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-3',
         targetLocalityName: 'Marina',
-        patternType: MovementPatternType.fun,
-        transportationMethod: TransportationMethod.car,
+        patternType: models.MovementPatternType.fun,
+        transportationMethod: models.TransportationMethod.car,
         frequency: 2.0,
         isRegular: false,
         firstObserved: DateTime.now().subtract(const Duration(days: 180)),
@@ -121,18 +105,18 @@ void main() {
         tripCount: 4,
       );
 
-      expect(strongPattern.patternStrength, greaterThan(weakPattern.patternStrength));
-    });
+      expect(strongPattern.patternStrength,
+          greaterThan(weakPattern.patternStrength));
 
-    test('should check if pattern is active', () {
+      // Test active status determination (business logic)
       final activePattern = UserMovementPattern(
         userId: 'user-1',
         sourceLocalityId: 'locality-1',
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-2',
         targetLocalityName: 'SOMA',
-        patternType: MovementPatternType.commute,
-        transportationMethod: TransportationMethod.transit,
+        patternType: models.MovementPatternType.commute,
+        transportationMethod: models.TransportationMethod.transit,
         frequency: 20.0,
         isRegular: true,
         firstObserved: DateTime.now().subtract(const Duration(days: 90)),
@@ -146,8 +130,8 @@ void main() {
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-3',
         targetLocalityName: 'Marina',
-        patternType: MovementPatternType.fun,
-        transportationMethod: TransportationMethod.car,
+        patternType: models.MovementPatternType.fun,
+        transportationMethod: models.TransportationMethod.car,
         frequency: 2.0,
         isRegular: false,
         firstObserved: DateTime.now().subtract(const Duration(days: 180)),
@@ -161,65 +145,48 @@ void main() {
   });
 
   group('CrossLocalityConnection Tests', () {
-    test('should create connection with all fields', () {
-      final connection = CrossLocalityConnection(
+    // Removed: 'should create connection with all fields' test
+    // This test only verified property assignment, not business logic
+
+    test(
+        'should classify connection strength correctly and generate display names',
+        () {
+      final strongConnection = models.CrossLocalityConnection(
         sourceLocalityId: 'locality-1',
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-2',
         targetLocalityName: 'SOMA',
         connectionStrength: 0.8,
-        patternType: MovementPatternType.commute,
-        transportationMethod: TransportationMethod.transit,
-        userCount: 50,
-        averageFrequency: 20.0,
-        isInSameMetroArea: true,
-        metroAreaName: 'San Francisco Bay Area',
-        calculatedAt: DateTime.now(),
-      );
-
-      expect(connection.connectionStrength, equals(0.8));
-      expect(connection.isStrongConnection, isTrue);
-      expect(connection.isInSameMetroArea, isTrue);
-      expect(connection.displayName, equals('Mission District → SOMA'));
-    });
-
-    test('should classify connection strength correctly', () {
-      final strongConnection = CrossLocalityConnection(
-        sourceLocalityId: 'locality-1',
-        sourceLocalityName: 'Mission District',
-        targetLocalityId: 'locality-2',
-        targetLocalityName: 'SOMA',
-        connectionStrength: 0.8,
-        patternType: MovementPatternType.commute,
-        transportationMethod: TransportationMethod.transit,
+        patternType: models.MovementPatternType.commute,
+        transportationMethod: models.TransportationMethod.transit,
         userCount: 50,
         averageFrequency: 20.0,
         isInSameMetroArea: true,
         calculatedAt: DateTime.now(),
       );
 
-      final moderateConnection = CrossLocalityConnection(
+      final moderateConnection = models.CrossLocalityConnection(
         sourceLocalityId: 'locality-1',
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-3',
         targetLocalityName: 'Marina',
         connectionStrength: 0.5,
-        patternType: MovementPatternType.travel,
-        transportationMethod: TransportationMethod.car,
+        patternType: models.MovementPatternType.travel,
+        transportationMethod: models.TransportationMethod.car,
         userCount: 20,
         averageFrequency: 5.0,
         isInSameMetroArea: true,
         calculatedAt: DateTime.now(),
       );
 
-      final weakConnection = CrossLocalityConnection(
+      final weakConnection = models.CrossLocalityConnection(
         sourceLocalityId: 'locality-1',
         sourceLocalityName: 'Mission District',
         targetLocalityId: 'locality-4',
         targetLocalityName: 'Oakland',
         connectionStrength: 0.3,
-        patternType: MovementPatternType.fun,
-        transportationMethod: TransportationMethod.transit,
+        patternType: models.MovementPatternType.fun,
+        transportationMethod: models.TransportationMethod.transit,
         userCount: 5,
         averageFrequency: 1.0,
         isInSameMetroArea: false,
@@ -229,7 +196,10 @@ void main() {
       expect(strongConnection.isStrongConnection, isTrue);
       expect(moderateConnection.isModerateConnection, isTrue);
       expect(weakConnection.isWeakConnection, isTrue);
+
+      // Test display name generation (business logic)
+      expect(strongConnection.displayName, equals('Mission District → SOMA'));
+      expect(strongConnection.isInSameMetroArea, isTrue);
     });
   });
 }
-

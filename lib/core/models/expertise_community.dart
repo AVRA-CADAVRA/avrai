@@ -1,6 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/expertise_level.dart';
+
+class _CopyWithSentinel {
+  const _CopyWithSentinel();
+}
 
 /// Expertise Community Model
 /// Represents a community of experts in a specific category/location
@@ -104,26 +111,48 @@ class ExpertiseCommunity extends Equatable {
   ExpertiseCommunity copyWith({
     String? id,
     String? category,
-    String? location,
+    Object? location = const _CopyWithSentinel(),
     String? name,
-    String? description,
+    Object? description = const _CopyWithSentinel(),
     List<String>? memberIds,
     int? memberCount,
-    ExpertiseLevel? minLevel,
+    Object? minLevel = const _CopyWithSentinel(),
     bool? isPublic,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? createdBy,
   }) {
+    assert(() {
+      // #region agent log
+      try {
+        const debugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+        final payload = <String, dynamic>{
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix',
+          'hypothesisId': 'H-copyWith-null',
+          'location': 'expertise_community.dart:copyWith',
+          'message': 'copyWith called',
+          'data': {
+            'location_isSentinel': location is _CopyWithSentinel,
+            'location_value': location is _CopyWithSentinel ? null : location,
+          },
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        };
+        File(debugLogPath).writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
+      return true;
+    }());
+
     return ExpertiseCommunity(
       id: id ?? this.id,
       category: category ?? this.category,
-      location: location ?? this.location,
+      location: location is _CopyWithSentinel ? this.location : location as String?,
       name: name ?? this.name,
-      description: description ?? this.description,
+      description: description is _CopyWithSentinel ? this.description : description as String?,
       memberIds: memberIds ?? this.memberIds,
       memberCount: memberCount ?? this.memberCount,
-      minLevel: minLevel ?? this.minLevel,
+      minLevel: minLevel is _CopyWithSentinel ? this.minLevel : minLevel as ExpertiseLevel?,
       isPublic: isPublic ?? this.isPublic,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

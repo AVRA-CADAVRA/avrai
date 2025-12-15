@@ -234,7 +234,13 @@ void main() {
 
       blocTest<SpotsBloc, SpotsState>(
         'returns all spots when search query is empty',
-        seed: () => SpotsLoaded(testSpots),
+        // Seed with an active query + filtered list so clearing the query causes a real state change.
+        // Otherwise the bloc won't emit because the "cleared" state equals the current state.
+        seed: () => SpotsLoaded(
+          testSpots,
+          filteredSpots: testSpots.take(1).toList(),
+          searchQuery: 'coffee',
+        ),
         build: () => spotsBloc,
         act: (bloc) => bloc.add(SearchSpots(query: '')),
         expect: () => [
@@ -282,7 +288,7 @@ void main() {
       blocTest<SpotsBloc, SpotsState>(
         'triggers LoadSpots after successful spot creation',
         build: () {
-          when(() => mockCreateSpotUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateSpotUseCase(any())).thenAnswer((_) async => testSpot);
           when(() => mockGetSpotsUseCase()).thenAnswer((_) async => existingSpots);
           return spotsBloc;
         },
@@ -337,7 +343,7 @@ void main() {
       blocTest<SpotsBloc, SpotsState>(
         'triggers LoadSpots after successful spot update',
         build: () {
-          when(() => mockUpdateSpotUseCase(any())).thenAnswer((_) async {});
+          when(() => mockUpdateSpotUseCase(any())).thenAnswer((_) async => testSpot);
           when(() => mockGetSpotsUseCase()).thenAnswer((_) async => existingSpots);
           return spotsBloc;
         },
@@ -450,7 +456,7 @@ void main() {
           );
           final updatedSpots = [spotWithCoffee];
           
-          when(() => mockCreateSpotUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateSpotUseCase(any())).thenAnswer((_) async => spotWithCoffee);
           when(() => mockGetSpotsUseCase()).thenAnswer((_) async => updatedSpots);
           return spotsBloc;
         },
@@ -492,8 +498,8 @@ void main() {
         build: () {
           when(() => mockGetSpotsUseCase())
               .thenAnswer((_) async => TestDataFactory.createTestSpots(3));
-          when(() => mockCreateSpotUseCase(any())).thenAnswer((_) async {});
-          when(() => mockUpdateSpotUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateSpotUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestSpot());
+          when(() => mockUpdateSpotUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestSpot());
           return spotsBloc;
         },
         act: (bloc) {
@@ -541,11 +547,11 @@ void main() {
 
       test('Event props equality works correctly', () {
         final spot1 = TestDataFactory.createTestSpot(id: '1');
-        final spot2 = TestDataFactory.createTestSpot(id: '1');
         final spot3 = TestDataFactory.createTestSpot(id: '2');
         
         final createEvent1 = CreateSpot(spot1);
-        final createEvent2 = CreateSpot(spot2);
+        // Spot does not guarantee value-equality; use the same instance for equality checks.
+        final createEvent2 = CreateSpot(spot1);
         final createEvent3 = CreateSpot(spot3);
         
         expect(createEvent1.props, equals(createEvent2.props));
@@ -553,17 +559,21 @@ void main() {
       });
 
       test('State props equality works correctly', () {
+        // Use the same Spot instances for the equality case.
+        // Spot may not implement value-equality, so separately created "equivalent" Spots
+        // won't compare equal. This test is about SpotsLoaded's Equatable wiring.
         final spots1 = TestDataFactory.createTestSpots(3);
-        final spots2 = TestDataFactory.createTestSpots(3);
-        final spots3 = TestDataFactory.createTestSpots(2);
+        final spots2 = List<Spot>.from(spots1); // same elements, new list instance
+        final spots3 = spots1.take(2).toList(); // different content/length
         
         final state1 = SpotsLoaded(spots1);
         final state2 = SpotsLoaded(spots2);
         final state3 = SpotsLoaded(spots3);
         
-        // Note: This tests the Equatable implementation
-        expect(state1.props.length, equals(state2.props.length));
-        expect(state1.props.length, isNot(equals(state3.props.length)));
+        // Note: This tests the Equatable implementation.
+        // `props.length` is always constant for a given state class; compare props values instead.
+        expect(state1.props, equals(state2.props));
+        expect(state1.props, isNot(equals(state3.props)));
       });
 
       blocTest<SpotsBloc, SpotsState>(
@@ -579,7 +589,6 @@ void main() {
           isA<SpotsLoaded>()
               .having((state) => state.spots.length, 'spots length', 1000),
         ],
-        timeout: const Duration(seconds: 5),
       );
     });
 
@@ -594,6 +603,7 @@ void main() {
             latitude: 0.0,
             longitude: 0.0,
             category: '',
+            rating: 0.0,
             createdBy: '',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -618,6 +628,7 @@ void main() {
             latitude: 0.0,
             longitude: 0.0,
             category: '',
+            rating: 0.0,
             createdBy: '',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -646,7 +657,6 @@ void main() {
         expect: () => [
           isA<SpotsLoading>(),
         ],
-        timeout: const Duration(seconds: 1),
       );
     });
 

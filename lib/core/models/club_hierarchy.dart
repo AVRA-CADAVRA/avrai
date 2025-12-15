@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 
 /// Club Hierarchy Model
@@ -246,18 +249,44 @@ class ClubHierarchy extends Equatable {
 
   /// Create from JSON
   factory ClubHierarchy.fromJson(Map<String, dynamic> json) {
-    final rolePermissionsMap = json['rolePermissions'] as Map<String, dynamic>?;
+    final rawRolePermissions = json['rolePermissions'];
+    final rolePermissionsMap = rawRolePermissions is Map
+        ? Map<String, dynamic>.from(rawRolePermissions)
+        : null;
     final rolePermissions = <ClubRole, ClubPermissions>{};
 
     if (rolePermissionsMap != null) {
       rolePermissionsMap.forEach((key, value) {
+        assert(() {
+          // #region agent log
+          try {
+            const debugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+            final payload = <String, dynamic>{
+              'sessionId': 'debug-session',
+              'runId': 'pre-fix',
+              'hypothesisId': 'H-club-json',
+              'location': 'club_hierarchy.dart:fromJson',
+              'message': 'Parsing rolePermissions entry',
+              'data': {
+                'keyType': key.runtimeType.toString(),
+                'valueType': value.runtimeType.toString(),
+              },
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            };
+            File(debugLogPath).writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+          } catch (_) {}
+          // #endregion
+          return true;
+        }());
+
         final role = ClubRole.values.firstWhere(
           (r) => r.name == key,
           orElse: () => ClubRole.member,
         );
-        rolePermissions[role] = ClubPermissions.fromJson(
-          value as Map<String, dynamic>,
-        );
+        final valueMap = value is Map<String, dynamic>
+            ? value
+            : (value is Map ? Map<String, dynamic>.from(value) : null);
+        rolePermissions[role] = ClubPermissions.fromJson(valueMap ?? const {});
       });
     }
 

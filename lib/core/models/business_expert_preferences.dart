@@ -1,4 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
+
+class _CopyWithSentinel {
+  const _CopyWithSentinel();
+}
 
 /// Business Expert Preferences Model
 /// Defines detailed preferences for the types of experts a business wants to connect with
@@ -196,68 +203,90 @@ class BusinessExpertPreferences extends Equatable {
   BusinessExpertPreferences copyWith({
     List<String>? requiredExpertiseCategories,
     List<String>? preferredExpertiseCategories,
-    int? minExpertLevel,
-    int? preferredExpertLevel,
-    String? preferredLocation,
-    List<String>? preferredLocations,
-    int? maxDistanceKm,
+    Object? minExpertLevel = const _CopyWithSentinel(),
+    Object? preferredExpertLevel = const _CopyWithSentinel(),
+    Object? preferredLocation = const _CopyWithSentinel(),
+    Object? preferredLocations = const _CopyWithSentinel(),
+    Object? maxDistanceKm = const _CopyWithSentinel(),
     bool? allowRemote,
-    AgeRange? preferredAgeRange,
-    List<String>? preferredLanguages,
-    int? minYearsExperience,
-    List<String>? preferredBackgrounds,
-    List<String>? preferredCertifications,
-    List<String>? preferredSkills,
-    List<String>? preferredPersonalityTraits,
-    List<String>? preferredWorkStyles,
-    List<String>? preferredCommunicationStyles,
-    List<String>? preferredAvailability,
+    Object? preferredAgeRange = const _CopyWithSentinel(),
+    Object? preferredLanguages = const _CopyWithSentinel(),
+    Object? minYearsExperience = const _CopyWithSentinel(),
+    Object? preferredBackgrounds = const _CopyWithSentinel(),
+    Object? preferredCertifications = const _CopyWithSentinel(),
+    Object? preferredSkills = const _CopyWithSentinel(),
+    Object? preferredPersonalityTraits = const _CopyWithSentinel(),
+    Object? preferredWorkStyles = const _CopyWithSentinel(),
+    Object? preferredCommunicationStyles = const _CopyWithSentinel(),
+    Object? preferredAvailability = const _CopyWithSentinel(),
     bool? requireFlexibleSchedule,
-    List<String>? preferredEngagementTypes,
-    int? preferredCommitmentLevel,
+    Object? preferredEngagementTypes = const _CopyWithSentinel(),
+    Object? preferredCommitmentLevel = const _CopyWithSentinel(),
     bool? preferLongTermRelationships,
-    List<String>? preferredCommunities,
+    Object? preferredCommunities = const _CopyWithSentinel(),
     bool? preferCommunityLeaders,
-    int? minCommunityConnections,
+    Object? minCommunityConnections = const _CopyWithSentinel(),
     Map<String, dynamic>? aiMatchingCriteria,
-    double? minMatchScore,
-    List<String>? aiKeywords,
-    String? aiMatchingPrompt,
-    List<String>? excludedExpertise,
-    List<String>? excludedLocations,
+    Object? minMatchScore = const _CopyWithSentinel(),
+    Object? aiKeywords = const _CopyWithSentinel(),
+    Object? aiMatchingPrompt = const _CopyWithSentinel(),
+    Object? excludedExpertise = const _CopyWithSentinel(),
+    Object? excludedLocations = const _CopyWithSentinel(),
   }) {
+    assert(() {
+      // #region agent log
+      try {
+        const debugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+        final payload = <String, dynamic>{
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix',
+          'hypothesisId': 'H-copyWith-null',
+          'location': 'business_expert_preferences.dart:copyWith',
+          'message': 'copyWith called',
+          'data': {
+            'preferredLocation_isSentinel': preferredLocation is _CopyWithSentinel,
+            'preferredLocation_value': preferredLocation is _CopyWithSentinel ? null : preferredLocation,
+          },
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        };
+        File(debugLogPath).writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
+      return true;
+    }());
+
     return BusinessExpertPreferences(
       requiredExpertiseCategories: requiredExpertiseCategories ?? this.requiredExpertiseCategories,
       preferredExpertiseCategories: preferredExpertiseCategories ?? this.preferredExpertiseCategories,
-      minExpertLevel: minExpertLevel ?? this.minExpertLevel,
-      preferredExpertLevel: preferredExpertLevel ?? this.preferredExpertLevel,
-      preferredLocation: preferredLocation ?? this.preferredLocation,
-      preferredLocations: preferredLocations ?? this.preferredLocations,
-      maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
+      minExpertLevel: minExpertLevel is _CopyWithSentinel ? this.minExpertLevel : minExpertLevel as int?,
+      preferredExpertLevel: preferredExpertLevel is _CopyWithSentinel ? this.preferredExpertLevel : preferredExpertLevel as int?,
+      preferredLocation: preferredLocation is _CopyWithSentinel ? this.preferredLocation : preferredLocation as String?,
+      preferredLocations: preferredLocations is _CopyWithSentinel ? this.preferredLocations : preferredLocations as List<String>?,
+      maxDistanceKm: maxDistanceKm is _CopyWithSentinel ? this.maxDistanceKm : maxDistanceKm as int?,
       allowRemote: allowRemote ?? this.allowRemote,
-      preferredAgeRange: preferredAgeRange ?? this.preferredAgeRange,
-      preferredLanguages: preferredLanguages ?? this.preferredLanguages,
-      minYearsExperience: minYearsExperience ?? this.minYearsExperience,
-      preferredBackgrounds: preferredBackgrounds ?? this.preferredBackgrounds,
-      preferredCertifications: preferredCertifications ?? this.preferredCertifications,
-      preferredSkills: preferredSkills ?? this.preferredSkills,
-      preferredPersonalityTraits: preferredPersonalityTraits ?? this.preferredPersonalityTraits,
-      preferredWorkStyles: preferredWorkStyles ?? this.preferredWorkStyles,
-      preferredCommunicationStyles: preferredCommunicationStyles ?? this.preferredCommunicationStyles,
-      preferredAvailability: preferredAvailability ?? this.preferredAvailability,
+      preferredAgeRange: preferredAgeRange is _CopyWithSentinel ? this.preferredAgeRange : preferredAgeRange as AgeRange?,
+      preferredLanguages: preferredLanguages is _CopyWithSentinel ? this.preferredLanguages : preferredLanguages as List<String>?,
+      minYearsExperience: minYearsExperience is _CopyWithSentinel ? this.minYearsExperience : minYearsExperience as int?,
+      preferredBackgrounds: preferredBackgrounds is _CopyWithSentinel ? this.preferredBackgrounds : preferredBackgrounds as List<String>?,
+      preferredCertifications: preferredCertifications is _CopyWithSentinel ? this.preferredCertifications : preferredCertifications as List<String>?,
+      preferredSkills: preferredSkills is _CopyWithSentinel ? this.preferredSkills : preferredSkills as List<String>?,
+      preferredPersonalityTraits: preferredPersonalityTraits is _CopyWithSentinel ? this.preferredPersonalityTraits : preferredPersonalityTraits as List<String>?,
+      preferredWorkStyles: preferredWorkStyles is _CopyWithSentinel ? this.preferredWorkStyles : preferredWorkStyles as List<String>?,
+      preferredCommunicationStyles: preferredCommunicationStyles is _CopyWithSentinel ? this.preferredCommunicationStyles : preferredCommunicationStyles as List<String>?,
+      preferredAvailability: preferredAvailability is _CopyWithSentinel ? this.preferredAvailability : preferredAvailability as List<String>?,
       requireFlexibleSchedule: requireFlexibleSchedule ?? this.requireFlexibleSchedule,
-      preferredEngagementTypes: preferredEngagementTypes ?? this.preferredEngagementTypes,
-      preferredCommitmentLevel: preferredCommitmentLevel ?? this.preferredCommitmentLevel,
+      preferredEngagementTypes: preferredEngagementTypes is _CopyWithSentinel ? this.preferredEngagementTypes : preferredEngagementTypes as List<String>?,
+      preferredCommitmentLevel: preferredCommitmentLevel is _CopyWithSentinel ? this.preferredCommitmentLevel : preferredCommitmentLevel as int?,
       preferLongTermRelationships: preferLongTermRelationships ?? this.preferLongTermRelationships,
-      preferredCommunities: preferredCommunities ?? this.preferredCommunities,
+      preferredCommunities: preferredCommunities is _CopyWithSentinel ? this.preferredCommunities : preferredCommunities as List<String>?,
       preferCommunityLeaders: preferCommunityLeaders ?? this.preferCommunityLeaders,
-      minCommunityConnections: minCommunityConnections ?? this.minCommunityConnections,
+      minCommunityConnections: minCommunityConnections is _CopyWithSentinel ? this.minCommunityConnections : minCommunityConnections as int?,
       aiMatchingCriteria: aiMatchingCriteria ?? this.aiMatchingCriteria,
-      minMatchScore: minMatchScore ?? this.minMatchScore,
-      aiKeywords: aiKeywords ?? this.aiKeywords,
-      aiMatchingPrompt: aiMatchingPrompt ?? this.aiMatchingPrompt,
-      excludedExpertise: excludedExpertise ?? this.excludedExpertise,
-      excludedLocations: excludedLocations ?? this.excludedLocations,
+      minMatchScore: minMatchScore is _CopyWithSentinel ? this.minMatchScore : minMatchScore as double?,
+      aiKeywords: aiKeywords is _CopyWithSentinel ? this.aiKeywords : aiKeywords as List<String>?,
+      aiMatchingPrompt: aiMatchingPrompt is _CopyWithSentinel ? this.aiMatchingPrompt : aiMatchingPrompt as String?,
+      excludedExpertise: excludedExpertise is _CopyWithSentinel ? this.excludedExpertise : excludedExpertise as List<String>?,
+      excludedLocations: excludedLocations is _CopyWithSentinel ? this.excludedLocations : excludedLocations as List<String>?,
     );
   }
 

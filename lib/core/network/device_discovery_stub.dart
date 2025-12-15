@@ -14,10 +14,10 @@ class StubDeviceDiscovery extends DeviceDiscoveryPlatform {
   @override
   Future<List<DiscoveredDevice>> scanForDevices() async => [];
 
-  @override
+  // Note: startAdvertising and stopAdvertising are not part of DeviceDiscoveryPlatform interface
+  // They are kept here for potential future use or compatibility, but don't override anything
   Future<void> startAdvertising(AnonymizedVibeData vibeData) async {}
 
-  @override
   Future<void> stopAdvertising() async {}
 
   @override

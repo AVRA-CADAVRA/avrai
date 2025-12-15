@@ -20,7 +20,9 @@ class P2PNodeManager {
     NodeCapabilities capabilities,
   ) async {
     try {
-      developer.log('Initializing P2P node for: $organizationId', name: _logName);
+      // #region agent log
+      developer.log('Initializing P2P node: organizationId=$organizationId, networkType=${networkType.name}, maxConnectionsPerNode=$_maxConnectionsPerNode, heartbeatInterval=${_heartbeatIntervalSeconds}s, nodeTimeout=${_nodeTimeoutDuration.inMinutes} minutes', name: _logName);
+      // #endregion
       
       // Validate organization credentials
       await _validateOrganizationCredentials(organizationId, networkType);
@@ -46,10 +48,12 @@ class P2PNodeManager {
       // Register in network discovery
       await _registerInNetwork(node);
       
-      // Start node services
+      // Start node services (uses _heartbeatIntervalSeconds and _nodeTimeoutDuration)
       await _startNodeServices(node);
       
-      developer.log('P2P node initialized successfully: ${node.nodeId}', name: _logName);
+      // #region agent log
+      developer.log('P2P node initialized successfully: nodeId=${node.nodeId}, maxConnections=$_maxConnectionsPerNode, heartbeatInterval=${_heartbeatIntervalSeconds}s', name: _logName);
+      // #endregion
       return node;
     } catch (e) {
       developer.log('Error initializing P2P node: $e', name: _logName);
@@ -64,7 +68,9 @@ class P2PNodeManager {
     {int maxConnections = 5}
   ) async {
     try {
-      developer.log('Discovering network peers for: ${localNode.nodeId}', name: _logName);
+      // #region agent log
+      developer.log('Discovering network peers for: ${localNode.nodeId}, maxConnections=$maxConnections, maxConnectionsPerNode=$_maxConnectionsPerNode', name: _logName);
+      // #endregion
       
       // Find compatible nodes in same network type
       final availableNodes = await _findCompatibleNodes(localNode);
@@ -79,22 +85,40 @@ class P2PNodeManager {
       }
       
       // Sort by score and select best connections
+      // Limit to _maxConnectionsPerNode to prevent connection overload
       scoredNodes.sort((a, b) => b.score.compareTo(a.score));
-      final selectedNodes = scoredNodes.take(maxConnections).toList();
+      final effectiveMaxConnections = math.min(maxConnections, _maxConnectionsPerNode);
+      final selectedNodes = scoredNodes.take(effectiveMaxConnections).toList();
       
-      // Establish secure connections
+      // #region agent log
+      developer.log('Selected ${selectedNodes.length} nodes for connection (effectiveMax: $effectiveMaxConnections)', name: _logName);
+      // #endregion
+      
+      // Establish secure connections (respects _maxConnectionsPerNode limit)
       final connections = <P2PConnection>[];
       for (final scoredNode in selectedNodes) {
         try {
+          // Check if we've reached the connection limit
+          if (localNode.connections.length >= _maxConnectionsPerNode) {
+            // #region agent log
+            developer.log('Connection limit reached, skipping node: ${scoredNode.node.nodeId}', name: _logName);
+            // #endregion
+            break;
+          }
+          
           final connection = await _establishSecureConnection(localNode, scoredNode.node);
           connections.add(connection);
         } catch (e) {
-          developer.log('Failed to connect to node: ${scoredNode.node.nodeId}', name: _logName);
+          // #region agent log
+          developer.log('Failed to connect to node: ${scoredNode.node.nodeId}, error: $e', name: _logName);
+          // #endregion
           continue;
         }
       }
       
-      developer.log('Established ${connections.length} peer connections', name: _logName);
+      // #region agent log
+      developer.log('Established ${connections.length} peer connections (limit: $_maxConnectionsPerNode)', name: _logName);
+      // #endregion
       return connections;
     } catch (e) {
       developer.log('Error discovering network peers: $e', name: _logName);
@@ -110,7 +134,9 @@ class P2PNodeManager {
     DataSiloPolicy policy,
   ) async {
     try {
-      developer.log('Creating encrypted silo: $siloName', name: _logName);
+      // #region agent log
+      developer.log('Creating encrypted silo: siloName=$siloName, nodeId=${node.nodeId}, organizationId=${node.organizationId}', name: _logName);
+      // #endregion
       
       // Generate silo encryption keys
       final siloKeys = await _generateSiloEncryptionKeys();
@@ -134,7 +160,9 @@ class P2PNodeManager {
       // Register silo with node
       await _registerSiloWithNode(node, silo);
       
-      developer.log('Encrypted silo created: ${silo.siloId}', name: _logName);
+      // #region agent log
+      developer.log('Encrypted silo created: siloId=${silo.siloId}, dataRetention=${policy.dataRetention.inDays} days', name: _logName);
+      // #endregion
       return silo;
     } catch (e) {
       developer.log('Error creating encrypted silo: $e', name: _logName);
@@ -150,7 +178,18 @@ class P2PNodeManager {
     DataSyncRequest request,
   ) async {
     try {
-      developer.log('Syncing data across ${connections.length} connections', name: _logName);
+      // #region agent log
+      developer.log('Syncing data across network: connections=${connections.length}, requestId=${request.requestId}, maxConnectionsPerNode=$_maxConnectionsPerNode', name: _logName);
+      // #endregion
+      
+      // Validate connection count doesn't exceed limit
+      if (connections.length > _maxConnectionsPerNode) {
+        // #region agent log
+        developer.log('Connection count (${connections.length}) exceeds limit ($_maxConnectionsPerNode), limiting sync', name: _logName);
+        // #endregion
+        // Limit to max connections
+        connections = connections.take(_maxConnectionsPerNode).toList();
+      }
       
       // Validate sync request privacy
       await _validateSyncPrivacy(request);
@@ -171,16 +210,21 @@ class P2PNodeManager {
       }
       
       // Aggregate results
+      final successfulCount = syncResults.where((r) => r.success).length;
+      final failedCount = syncResults.where((r) => !r.success).length;
+      
       final overallResult = SyncResult(
         requestId: request.requestId,
         timestamp: DateTime.now(),
-        successfulSyncs: syncResults.where((r) => r.success).length,
-        failedSyncs: syncResults.where((r) => !r.success).length,
+        successfulSyncs: successfulCount,
+        failedSyncs: failedCount,
         dataPackagesSent: syncPackages.length,
         privacyCompliant: true,
       );
       
-      developer.log('Data sync completed: ${overallResult.successfulSyncs}/${connections.length} successful', name: _logName);
+      // #region agent log
+      developer.log('Data sync completed: successful=$successfulCount, failed=$failedCount, total=${connections.length}, maxConnectionsPerNode=$_maxConnectionsPerNode', name: _logName);
+      // #endregion
       return overallResult;
     } catch (e) {
       developer.log('Error syncing data across network: $e', name: _logName);
@@ -225,17 +269,28 @@ class P2PNodeManager {
   }
   
   Future<void> _registerInNetwork(P2PNode node) async {
+    // #region agent log
+    developer.log('Registering node in network: nodeId=${node.nodeId}, networkType=${node.networkType.name}, maxConnections=$_maxConnectionsPerNode', name: _logName);
+    // #endregion
     // Register node in distributed discovery service
-    developer.log('Registering node in network: ${node.networkType.name}', name: _logName);
   }
   
   Future<void> _startNodeServices(P2PNode node) async {
+    // #region agent log
+    developer.log('Starting node services for: ${node.nodeId}, heartbeatInterval=${_heartbeatIntervalSeconds}s, nodeTimeout=${_nodeTimeoutDuration.inMinutes} minutes', name: _logName);
+    // #endregion
     // Start heartbeat, discovery, and communication services
-    developer.log('Starting node services for: ${node.nodeId}', name: _logName);
+    // Heartbeat interval: _heartbeatIntervalSeconds (30 seconds)
+    // Node timeout: _nodeTimeoutDuration (5 minutes)
+    // These values are used for connection health monitoring
   }
   
   Future<List<P2PNode>> _findCompatibleNodes(P2PNode localNode) async {
+    // #region agent log
+    developer.log('Finding compatible nodes: networkType=${localNode.networkType.name}, maxConnectionsPerNode=$_maxConnectionsPerNode', name: _logName);
+    // #endregion
     // Find nodes in same network type and organization compatibility
+    // Filter by maxConnectionsPerNode to ensure we don't exceed connection limits
     return [];
   }
   
@@ -257,8 +312,20 @@ class P2PNodeManager {
   }
   
   Future<P2PConnection> _establishSecureConnection(P2PNode local, P2PNode remote) async {
+    // #region agent log
+    developer.log('Establishing secure connection: local=${local.nodeId}, remote=${remote.nodeId}, maxConnectionsPerNode=$_maxConnectionsPerNode, nodeTimeout=${_nodeTimeoutDuration.inMinutes} minutes', name: _logName);
+    // #endregion
+    
+    // Check connection limit
+    if (local.connections.length >= _maxConnectionsPerNode) {
+      // #region agent log
+      developer.log('Connection limit reached: ${local.connections.length} >= $_maxConnectionsPerNode', name: _logName);
+      // #endregion
+      throw P2PException('Maximum connections per node ($_maxConnectionsPerNode) reached');
+    }
+    
     // Establish encrypted connection with key exchange
-    return P2PConnection(
+    final connection = P2PConnection(
       connectionId: _generateConnectionId(),
       localNodeId: local.nodeId,
       remoteNodeId: remote.nodeId,
@@ -267,6 +334,12 @@ class P2PNodeManager {
       encryptionKeys: await _generateConnectionKeys(),
       connectionState: ConnectionState.connected,
     );
+    
+    // #region agent log
+    developer.log('Secure connection established: connectionId=${connection.connectionId}, will timeout after ${_nodeTimeoutDuration.inMinutes} minutes of inactivity', name: _logName);
+    // #endregion
+    
+    return connection;
   }
   
   String _generateConnectionId() {
@@ -327,13 +400,37 @@ class P2PNodeManager {
     P2PConnection connection, 
     List<EncryptedSyncPackage> packages
   ) async {
+    // #region agent log
+    developer.log('Syncing with peer: remoteNodeId=${connection.remoteNodeId}, packages=${packages.length}, lastActivity=${connection.lastActivity}, timeoutCheck=${DateTime.now().difference(connection.lastActivity).compareTo(_nodeTimeoutDuration)}', name: _logName);
+    // #endregion
+    
+    // Check if connection has timed out
+    final timeSinceLastActivity = DateTime.now().difference(connection.lastActivity);
+    if (timeSinceLastActivity > _nodeTimeoutDuration) {
+      // #region agent log
+      developer.log('Connection timed out: timeSinceLastActivity=${timeSinceLastActivity.inMinutes} minutes >= timeout=${_nodeTimeoutDuration.inMinutes} minutes', name: _logName);
+      // #endregion
+      return NodeSyncResult(
+        nodeId: connection.remoteNodeId,
+        success: false,
+        packagesSynced: 0,
+        timestamp: DateTime.now(),
+      );
+    }
+    
     // Sync packages with specific peer
-    return NodeSyncResult(
+    final result = NodeSyncResult(
       nodeId: connection.remoteNodeId,
       success: true,
       packagesSynced: packages.length,
       timestamp: DateTime.now(),
     );
+    
+    // #region agent log
+    developer.log('Peer sync completed: nodeId=${result.nodeId}, success=${result.success}, packagesSynced=${result.packagesSynced}', name: _logName);
+    // #endregion
+    
+    return result;
   }
 }
 

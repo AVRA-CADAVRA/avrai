@@ -483,11 +483,9 @@ void main() {
 
         // Assert
         expect(result, equals(testList));
-        verify(mockRepository.createList(testList)).called(1);
-        // Verify exact object was passed
-        verify(mockRepository.createList(
-          argThat(equals(testList)),
-        )).called(1);
+        // Capture the argument and assert identity (not just equality).
+        final captured = verify(mockRepository.createList(captureAny)).captured.single as SpotList;
+        expect(identical(captured, testList), isTrue);
       });
 
       test('should not modify or validate list before passing to repository', () async {

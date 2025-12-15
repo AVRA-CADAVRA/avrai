@@ -65,12 +65,13 @@ void main() {
 
     group('SearchHybridSpots Event', () {
       const testQuery = 'coffee shop';
-      final testResults = TestDataFactory.createTestSpots(10);
 
       blocTest<HybridSearchBloc, HybridSearchState>(
         'emits [HybridSearchLoading, HybridSearchLoaded] when search succeeds',
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery)),
+        // The bloc performs async work (location attempt + search + cache write). Give it a beat to emit + verify.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
@@ -127,6 +128,8 @@ void main() {
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery, useCache: true)),
+        // The bloc performs async work (location attempt + cache read). Give it a beat to emit.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
@@ -157,6 +160,8 @@ void main() {
         'bypasses cache when useCache is false',
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery, useCache: false)),
+        // Async: location attempt + search + cache write.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
@@ -188,6 +193,8 @@ void main() {
           query: testQuery,
           maxResults: 25,
         )),
+        // Async: location attempt + search call.
+        wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
             query: testQuery,
@@ -206,6 +213,8 @@ void main() {
           query: testQuery,
           includeExternal: false,
         )),
+        // Async: location attempt + search call.
+        wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
             query: testQuery,
@@ -230,6 +239,8 @@ void main() {
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery)),
+        // Async: location attempt + failing search path.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchError>()
@@ -250,6 +261,8 @@ void main() {
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery)),
+        // Async: location attempt + search path.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
@@ -507,6 +520,8 @@ void main() {
         ),
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(ToggleExternalDataSources(false)),
+        // Async: toggling can trigger a refreshed search.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>(),
@@ -686,6 +701,8 @@ void main() {
         'tracks search performance metrics',
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(SearchHybridSpots(query: 'performance test')),
+        // Async: search handler performs async work before emitting Loaded.
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
@@ -704,6 +721,8 @@ void main() {
           bloc.add(SearchHybridSpots(query: 'restaurant'));
           bloc.add(SearchHybridSpots(query: 'bar'));
         },
+        // Async: multiple queued events; allow processing before verify.
+        wait: const Duration(milliseconds: 50),
         // Should handle rapid events without crashing
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
@@ -756,6 +775,8 @@ void main() {
           
           bloc.add(SearchHybridSpots(query: 'test2'));
         },
+        // Async: multiple events; allow last event to complete before verify.
+        wait: const Duration(milliseconds: 50),
         verify: (_) {
           verify(() => mockSearchCacheService.getCacheStatistics()).called(greaterThan(0));
         },
@@ -765,6 +786,7 @@ void main() {
         'handles empty query gracefully',
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(SearchHybridSpots(query: '')),
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>(),
@@ -777,11 +799,11 @@ void main() {
         act: (bloc) => bloc.add(SearchHybridSpots(
           query: 'a' * 1000, // Very long query
         )),
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>(),
         ],
-        timeout: const Duration(seconds: 5),
       );
     });
 
@@ -790,6 +812,7 @@ void main() {
         'integrates with AI suggestions service for learning',
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(SearchHybridSpots(query: 'machine learning test')),
+        wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockAISearchSuggestionsService.learnFromSearch(
             query: 'machine learning test',
@@ -802,6 +825,7 @@ void main() {
         'uses community trends for better suggestions',
         build: () => hybridSearchBloc,
         act: (bloc) => bloc.add(GetSearchSuggestions(query: 'trending')),
+        wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockSearchCacheService.getCacheStatistics()).called(1);
           verify(() => mockAISearchSuggestionsService.getSearchPatterns()).called(1);
@@ -830,6 +854,7 @@ void main() {
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: 'cached query')),
+        wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()

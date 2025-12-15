@@ -5,6 +5,14 @@ import '../../helpers/widget_test_helpers.dart';
 /// Widget tests for NotificationsSettingsPage
 /// Tests notification settings UI and preferences
 void main() {
+  setUpAll(() async {
+    await WidgetTestHelpers.setupWidgetTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await WidgetTestHelpers.cleanupWidgetTestEnvironment();
+  });
+
   group('NotificationsSettingsPage Widget Tests', () {
     testWidgets('displays all required UI elements', (WidgetTester tester) async {
       // Arrange

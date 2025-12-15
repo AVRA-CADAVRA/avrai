@@ -16,6 +16,7 @@ import 'package:spots/domain/usecases/auth/sign_in_usecase.dart';
 import 'package:spots/domain/usecases/auth/sign_up_usecase.dart';
 import 'package:spots/domain/usecases/auth/sign_out_usecase.dart';
 import 'package:spots/domain/usecases/auth/get_current_user_usecase.dart';
+import 'package:spots/domain/usecases/auth/update_password_usecase.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 
 // Spots
@@ -64,15 +65,16 @@ import 'package:spots/core/services/community_validation_service.dart';
 import 'package:spots/core/services/performance_monitor.dart';
 import 'package:spots/core/services/security_validator.dart';
 import 'package:spots/core/services/deployment_validator.dart';
-import 'package:shared_preferences/shared_preferences.dart' as sp
-    show SharedPreferences;
 
 // Supabase Backend Integration
 import 'package:spots/core/services/supabase_service.dart';
 import 'package:spots/core/services/ai2ai_realtime_service.dart';
 import 'package:spots/core/ai/vibe_analysis_engine.dart';
 import 'package:spots/core/ai/personality_learning.dart';
+import 'package:spots/core/ai/feedback_learning.dart';
+import 'package:spots/core/ml/nlp_processor.dart';
 import 'package:spots/core/services/usage_pattern_tracker.dart';
+import 'package:spots/core/services/ai2ai_learning_service.dart';
 import 'package:spots/core/ai2ai/connection_log_queue.dart';
 import 'package:spots/core/ai2ai/cloud_intelligence_sync.dart';
 import 'package:spots/core/network/ai2ai_protocol.dart';
@@ -80,9 +82,19 @@ import 'package:spots/core/ai2ai/connection_orchestrator.dart';
 import 'package:spots/core/services/storage_service.dart';
 import 'package:spots/core/services/ai_improvement_tracking_service.dart';
 import 'package:spots/core/services/action_history_service.dart';
+import 'package:spots/core/services/contextual_personality_service.dart';
+import 'package:spots/core/services/enhanced_connectivity_service.dart';
 import 'package:spots/core/p2p/federated_learning.dart';
+import 'package:spots/core/p2p/node_manager.dart';
 import 'package:spots/core/services/large_city_detection_service.dart';
 import 'package:spots/core/services/neighborhood_boundary_service.dart';
+// Business Chat Services (AI2AI routing)
+import 'package:spots/core/services/agent_id_service.dart';
+import 'package:spots/core/services/message_encryption_service.dart';
+import 'package:spots/core/services/business_expert_chat_service_ai2ai.dart';
+import 'package:spots/core/services/business_business_chat_service_ai2ai.dart';
+import 'package:spots/core/services/business_expert_outreach_service.dart';
+import 'package:spots/core/services/business_business_outreach_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:spots/core/services/logger.dart';
 import 'package:spots/core/services/config_service.dart';
@@ -106,6 +118,7 @@ import 'package:spots/google_places_config.dart';
 
 // Admin Services (God-Mode Admin System)
 import 'package:spots/core/services/admin_auth_service.dart';
+import 'package:spots/core/services/business_auth_service.dart';
 import 'package:spots/core/services/admin_god_mode_service.dart';
 import 'package:spots/core/services/admin_communication_service.dart';
 import 'package:spots/core/services/business_account_service.dart';
@@ -120,25 +133,43 @@ import 'package:spots/core/services/payment_event_service.dart';
 import 'package:spots/core/services/payout_service.dart';
 import 'package:spots/core/services/revenue_split_service.dart';
 import 'package:spots/core/services/partnership_service.dart';
+import 'package:spots/core/services/sponsorship_service.dart';
+import 'package:spots/core/services/product_tracking_service.dart';
+import 'package:spots/core/services/product_sales_service.dart';
+import 'package:spots/core/services/brand_analytics_service.dart';
+import 'package:spots/core/services/brand_discovery_service.dart';
 import 'package:spots/core/config/stripe_config.dart';
 import 'package:spots/core/services/location_obfuscation_service.dart';
 import 'package:spots/core/services/user_anonymization_service.dart';
 import 'package:spots/core/services/field_encryption_service.dart';
 import 'package:spots/core/services/audit_log_service.dart';
 import 'package:spots/core/services/expertise_event_service.dart';
+import 'package:spots/core/services/legal_document_service.dart';
+import 'package:spots/core/services/permissions_persistence_service.dart';
+import 'package:spots/core/services/personality_sync_service.dart';
 
 final sl = GetIt.instance;
 
 @InjectableInit()
 Future<void> init() async {
+  const logger = AppLogger(defaultTag: 'DI', minimumLevel: LogLevel.debug);
+  logger.info('🔧 [DI] Starting dependency injection initialization...');
+
   // External
+  logger.debug('📡 [DI] Registering Connectivity...');
   sl.registerLazySingleton(() => Connectivity());
+
+  // Permissions Persistence Service
+  sl.registerLazySingleton(() => PermissionsPersistenceService());
 
   // Initialize Sembast Database (works on both web and mobile now)
   try {
+    logger.debug('💾 [DI] Initializing Sembast database...');
     final sembastDb = await SembastDatabase.database;
     sl.registerLazySingleton(() => sembastDb);
+    logger.debug('✅ [DI] Sembast database registered');
   } catch (e) {
+    logger.warn('⚠️ [DI] Sembast database initialization failed: $e');
     // Continue even if database initialization fails
   }
 
@@ -236,6 +267,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SignUpUseCase(sl()));
   sl.registerLazySingleton(() => SignOutUseCase(sl()));
   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
+  sl.registerLazySingleton(() => UpdatePasswordUseCase(sl()));
 
   // Spots Use cases (Register after repositories)
   sl.registerLazySingleton(() => GetSpotsUseCase(sl()));
@@ -264,9 +296,11 @@ Future<void> init() async {
   // Register both types for compatibility
   // Note: SharedPreferencesCompat implements the same interface, but some services need the original type
   // We'll register both and services can use whichever they need
-  // Cast to sp.SharedPreferences for services that require the original type
-  sl.registerLazySingleton<sp.SharedPreferences>(
-      () => sharedPrefs as sp.SharedPreferences);
+  // For services that require the original SharedPreferences type, we need to use SharedPreferencesCompat
+  // since we're using get_storage instead of shared_preferences
+  // Note: The cast below will fail at runtime - services should be updated to use SharedPreferencesCompat
+  // sl.registerLazySingleton<sp.SharedPreferences>(
+  //     () => sharedPrefs as sp.SharedPreferences); // REMOVED: Invalid cast causes runtime errors
   sl.registerLazySingleton(() => UserVibeAnalyzer(prefs: sharedPrefs));
 
   // Storage Service (needed by Phase 2 services)
@@ -289,17 +323,17 @@ Future<void> init() async {
   sl.registerLazySingleton<RoleManagementService>(
       () => RoleManagementServiceImpl(
             storageService: sl<StorageService>(),
-            prefs: sl<sp.SharedPreferences>(),
+            prefs: sl<SharedPreferencesCompat>(),
           ));
 
   sl.registerLazySingleton(() => CommunityValidationService(
         storageService: sl<StorageService>(),
-        prefs: sl<sp.SharedPreferences>(),
+        prefs: sl<SharedPreferencesCompat>(),
       ));
 
   sl.registerLazySingleton(() => PerformanceMonitor(
         storageService: sl<StorageService>(),
-        prefs: sl<sp.SharedPreferences>(),
+        prefs: sl<SharedPreferencesCompat>(),
       ));
 
   sl.registerLazySingleton(() => SecurityValidator());
@@ -314,10 +348,49 @@ Future<void> init() async {
 
   // Admin Services (God-Mode Admin System)
   sl.registerLazySingleton(
-      () => ConnectionMonitor(prefs: sl<sp.SharedPreferences>()));
+      () => ConnectionMonitor(prefs: sl<SharedPreferencesCompat>()));
   sl.registerLazySingleton(() => PredictiveAnalytics());
   sl.registerLazySingleton(() => BusinessAccountService());
-  sl.registerLazySingleton(() => AdminAuthService(sl<sp.SharedPreferences>()));
+  sl.registerLazySingleton(
+      () => AdminAuthService(sl<SharedPreferencesCompat>()));
+  sl.registerLazySingleton(
+      () => BusinessAuthService(sl<SharedPreferencesCompat>()));
+
+  // Agent ID Service (for ai2ai network routing)
+  sl.registerLazySingleton(() => AgentIdService(
+        businessService: sl<BusinessAccountService>(),
+      ));
+
+  // Message Encryption Service (Signal Protocol ready)
+  sl.registerLazySingleton<MessageEncryptionService>(
+      () => AES256GCMEncryptionService());
+
+  // Business-Expert Chat Service (AI2AI routing)
+  sl.registerLazySingleton(() => BusinessExpertChatServiceAI2AI(
+        encryptionService: sl<MessageEncryptionService>(),
+        businessService: sl<BusinessAccountService>(),
+        agentIdService: sl<AgentIdService>(),
+      ));
+
+  // Business-Business Chat Service (AI2AI routing)
+  sl.registerLazySingleton(() => BusinessBusinessChatServiceAI2AI(
+        encryptionService: sl<MessageEncryptionService>(),
+        businessService: sl<BusinessAccountService>(),
+        agentIdService: sl<AgentIdService>(),
+      ));
+
+  // Business-Expert Outreach Service (vibe-based matching)
+  sl.registerLazySingleton(() => BusinessExpertOutreachService(
+        partnershipService: sl<PartnershipService>(),
+        chatService: sl<BusinessExpertChatServiceAI2AI>(),
+      ));
+
+  // Business-Business Outreach Service (partnership discovery)
+  sl.registerLazySingleton(() => BusinessBusinessOutreachService(
+        partnershipService: sl<PartnershipService>(),
+        businessService: sl<BusinessAccountService>(),
+        chatService: sl<BusinessBusinessChatServiceAI2AI>(),
+      ));
   sl.registerLazySingleton(() => AdminCommunicationService(
         connectionMonitor: sl<ConnectionMonitor>(),
         chatAnalyzer: null, // Optional - can be registered later if needed
@@ -372,14 +445,48 @@ Future<void> init() async {
         businessService: sl<BusinessService>(),
       ));
 
+  // Register SponsorshipService (required by ProductTrackingService and BrandAnalyticsService)
+  sl.registerLazySingleton(() => SponsorshipService(
+        eventService: sl<ExpertiseEventService>(),
+        partnershipService: sl<PartnershipService>(),
+        businessService: sl<BusinessService>(),
+      ));
+
   // Register RevenueSplitService (required by PayoutService)
   sl.registerLazySingleton<RevenueSplitService>(() => RevenueSplitService(
         partnershipService: sl<PartnershipService>(),
+        sponsorshipService: sl<SponsorshipService>(),
       ));
 
   // Register PayoutService
   sl.registerLazySingleton<PayoutService>(() => PayoutService(
         revenueSplitService: sl<RevenueSplitService>(),
+      ));
+
+  // Product Tracking & Sales Services (required by BrandAnalyticsService)
+  sl.registerLazySingleton(() => ProductTrackingService(
+        sponsorshipService: sl<SponsorshipService>(),
+        revenueSplitService: sl<RevenueSplitService>(),
+      ));
+
+  sl.registerLazySingleton(() => ProductSalesService(
+        productTrackingService: sl<ProductTrackingService>(),
+        revenueSplitService: sl<RevenueSplitService>(),
+        paymentService: sl<PaymentService>(),
+      ));
+
+  // Brand Analytics Service
+  sl.registerLazySingleton(() => BrandAnalyticsService(
+        sponsorshipService: sl<SponsorshipService>(),
+        productTrackingService: sl<ProductTrackingService>(),
+        productSalesService: sl<ProductSalesService>(),
+        revenueSplitService: sl<RevenueSplitService>(),
+      ));
+
+  // Brand Discovery Service
+  sl.registerLazySingleton(() => BrandDiscoveryService(
+        eventService: sl<ExpertiseEventService>(),
+        sponsorshipService: sl<SponsorshipService>(),
       ));
 
   // Security & Anonymization Services (Phase 7.3.5-6)
@@ -393,6 +500,11 @@ Future<void> init() async {
       () => FieldEncryptionService());
   sl.registerLazySingleton<AuditLogService>(() => AuditLogService());
 
+  // Legal Document Service (for Terms of Service and Privacy Policy acceptance)
+  sl.registerLazySingleton<LegalDocumentService>(() => LegalDocumentService(
+        eventService: sl<ExpertiseEventService>(),
+      ));
+
   sl.registerLazySingleton<DeviceDiscoveryService>(() {
     final platform = DeviceDiscoveryFactory.createPlatformDiscovery();
     return DeviceDiscoveryService(platform: platform);
@@ -402,7 +514,11 @@ Future<void> init() async {
   sl.registerLazySingleton<PersonalityAdvertisingService>(() {
     // PersonalityAdvertisingService handles platform-specific discovery internally
     // No need to pass platform discovery objects - service will use factory when needed
-    return PersonalityAdvertisingService();
+    // Pass UserAnonymizationService for UnifiedUser to AnonymousUser conversion
+    final anonymizationService = sl<UserAnonymizationService>();
+    return PersonalityAdvertisingService(
+      anonymizationService: anonymizationService,
+    );
   });
 
   // PersonalityLearning (Philosophy: "Always Learning With You")
@@ -413,10 +529,44 @@ Future<void> init() async {
     return PersonalityLearning.withPrefs(prefs);
   });
 
+  // AI2AI Learning Service (Phase 7, Week 38)
+  // Wrapper service for AI2AI learning methods UI
+  sl.registerLazySingleton(() {
+    final prefs = sl<SharedPreferencesCompat>();
+    final personalityLearning = sl<PersonalityLearning>();
+    return AI2AILearning.create(
+      prefs: prefs,
+      personalityLearning: personalityLearning,
+    );
+  });
+
+  // UserFeedbackAnalyzer (Philosophy: "Dynamic dimension discovery through user feedback analysis")
+  // Advanced feedback learning system that extracts implicit personality dimensions
+  sl.registerLazySingleton(() {
+    final prefs = sl<SharedPreferencesCompat>();
+    final personalityLearning = sl<PersonalityLearning>();
+    // SharedPreferencesCompat implements SharedPreferences interface
+    return UserFeedbackAnalyzer(
+      prefs: prefs,
+      personalityLearning: personalityLearning,
+    );
+  });
+
+  // NLPProcessor (Natural Language Processing for text analysis)
+  // Provides sentiment analysis, search intent detection, content moderation, and privacy preservation
+  sl.registerLazySingleton(() => NLPProcessor());
+
+  // PersonalitySyncService (Philosophy: "Cloud sync is optional and encrypted")
+  // Secure cross-device personality profile sync with password-derived encryption
+  sl.registerLazySingleton(() {
+    final supabaseService = sl<SupabaseService>();
+    return PersonalitySyncService(supabaseService: supabaseService);
+  });
+
   // UsagePatternTracker (Philosophy: "The key adapts to YOUR usage")
   // Tracks how users engage with SPOTS (community vs recommendations)
   sl.registerLazySingleton(() {
-    final prefs = sl<sp.SharedPreferences>();
+    final prefs = sl<SharedPreferencesCompat>();
     return UsagePatternTracker(prefs);
   });
 
@@ -427,7 +577,7 @@ Future<void> init() async {
   // Connection Log Queue (Philosophy: "Cloud is optional enhancement")
   // Queues AI2AI logs for cloud sync when online
   sl.registerLazySingleton(
-      () => ConnectionLogQueue(sl<sp.SharedPreferences>()));
+      () => ConnectionLogQueue(sl<SharedPreferencesCompat>()));
 
   // Cloud Intelligence Sync (Philosophy: "Cloud adds network wisdom")
   // Syncs offline connections to cloud for collective learning
@@ -484,11 +634,27 @@ Future<void> init() async {
     return ActionHistoryService(storage: storageService.defaultStorage);
   });
 
+  // Contextual Personality Service
+  // Philosophy: "Your doors stay yours" - resist homogenization while allowing authentic transformation
+  sl.registerLazySingleton(() => ContextualPersonalityService());
+
+  // Enhanced Connectivity Service
+  // Optional Enhancement: Goes beyond basic WiFi/mobile connectivity to verify actual internet access
+  sl.registerLazySingleton(() {
+    final httpClient = sl<http.Client>();
+    return EnhancedConnectivityService(httpClient: httpClient);
+  });
+
   // Federated Learning System
   sl.registerLazySingleton<FederatedLearningSystem>(() {
     final storageService = sl<StorageService>();
     return FederatedLearningSystem(storage: storageService.defaultStorage);
   });
+
+  // P2P Node Manager
+  // OUR_GUTS.md: "Decentralized community networks with privacy protection"
+  // Manages P2P nodes for university/company private networks
+  sl.registerLazySingleton(() => P2PNodeManager());
 
   // Config
   sl.registerLazySingleton<ConfigService>(() => ConfigService(
@@ -504,37 +670,67 @@ Future<void> init() async {
 
   // Backend (Single Integration Boundary): initialize and expose spots_network
   try {
+    logger.info('🔌 [DI] Initializing Supabase backend...');
+
+    if (!SupabaseConfig.isValid) {
+      logger
+          .warn('⚠️ [DI] SupabaseConfig is invalid. URL or anonKey is empty.');
+      logger.warn(
+          '⚠️ [DI] Make sure to run with --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...');
+      throw Exception('Supabase configuration is invalid');
+    }
+
     final backend = await BackendFactory.create(
       BackendConfig.supabase(
         url: SupabaseConfig.url,
         anonKey: SupabaseConfig.anonKey,
-        serviceRoleKey: SupabaseConfig.serviceRoleKey,
+        serviceRoleKey: SupabaseConfig.serviceRoleKey.isNotEmpty
+            ? SupabaseConfig.serviceRoleKey
+            : null,
         name: 'Supabase',
         isDefault: true,
       ),
     );
+    logger.info('✅ [DI] Supabase backend created successfully');
+
     // Expose the unified backend and its components
+    logger.debug('📝 [DI] Registering backend components...');
     sl.registerSingleton<BackendInterface>(backend);
     sl.registerLazySingleton<AuthBackend>(() => backend.auth);
     sl.registerLazySingleton<DataBackend>(() => backend.data);
     sl.registerLazySingleton<RealtimeBackend>(() => backend.realtime);
+    logger.debug('✅ [DI] Backend components registered');
 
     // Register Supabase Client for LLM service
     try {
-      final supabaseClient = Supabase.instance.client;
-      sl.registerLazySingleton<SupabaseClient>(() => supabaseClient);
+      logger.debug('🤖 [DI] Registering LLM service...');
+      // Only register if Supabase is initialized
+      try {
+        final supabaseClient = Supabase.instance.client;
+        sl.registerLazySingleton<SupabaseClient>(() => supabaseClient);
 
-      // Register LLM Service (Google Gemini) with connectivity check
-      sl.registerLazySingleton<LLMService>(() => LLMService(
-            supabaseClient,
-            connectivity: sl<Connectivity>(),
-          ));
-    } catch (e) {
+        // Register LLM Service (Google Gemini) with connectivity check
+        sl.registerLazySingleton<LLMService>(() => LLMService(
+              supabaseClient,
+              connectivity: sl<Connectivity>(),
+            ));
+        logger.debug('✅ [DI] LLM service registered');
+      } catch (e) {
+        logger.warn(
+            '⚠️ [DI] Supabase not initialized, skipping LLM service registration');
+      }
+    } catch (e, stackTrace) {
+      logger.warn('⚠️ [DI] LLM service registration failed (optional): $e');
+      logger.debug('Stack trace: $stackTrace');
       // LLM service optional - app can work without it
     }
-  } catch (e) {
+  } catch (e, stackTrace) {
+    logger.error('❌ [DI] Backend initialization failed', error: e);
+    logger.debug('Stack trace: $stackTrace');
     // Continue without backend on web if initialization fails
   }
+
+  logger.info('✅ [DI] Dependency injection initialization complete');
 
   // ===========================
   // Cloud Embeddings (Simplified - No ONNX)
@@ -542,9 +738,15 @@ Future<void> init() async {
   // Note: Embeddings are now cloud-only via Supabase Edge Function
   // ONNX infrastructure removed - use Gemini/cloud embeddings instead
   try {
-    final supabaseClient = Supabase.instance.client;
-    sl.registerLazySingleton<EmbeddingCloudClient>(
-        () => EmbeddingCloudClient(client: supabaseClient));
+    // Only register if Supabase is initialized
+    try {
+      final supabaseClient = Supabase.instance.client;
+      sl.registerLazySingleton<EmbeddingCloudClient>(
+          () => EmbeddingCloudClient(client: supabaseClient));
+    } catch (_) {
+      logger.warn(
+          '⚠️ [DI] Supabase not initialized, skipping EmbeddingCloudClient registration');
+    }
   } catch (_) {
     // Embeddings optional - app works without them
   }
@@ -555,6 +757,7 @@ Future<void> init() async {
         signUpUseCase: sl(),
         signOutUseCase: sl(),
         getCurrentUserUseCase: sl(),
+        updatePasswordUseCase: sl(),
       ));
 
   sl.registerFactory(() => SpotsBloc(

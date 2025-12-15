@@ -17,7 +17,8 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/monitoring/network_analytics.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
+import 'package:get_it/get_it.dart';
 
 /// Widget displaying user-specific privacy metrics
 class PrivacyMetricsWidget extends StatefulWidget {
@@ -46,8 +47,8 @@ class _PrivacyMetricsWidgetState extends State<PrivacyMetricsWidget> {
     });
 
     try {
-      // Get SharedPreferences for NetworkAnalytics
-      final prefs = await SharedPreferences.getInstance();
+      // Get SharedPreferencesCompat for NetworkAnalytics from DI
+      final prefs = GetIt.instance<SharedPreferencesCompat>();
       _networkAnalytics = NetworkAnalytics(prefs: prefs);
 
       // Get privacy metrics from network health report

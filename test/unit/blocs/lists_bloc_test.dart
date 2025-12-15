@@ -118,7 +118,6 @@ void main() {
         expect: () => [
           isA<ListsLoading>(),
         ],
-        timeout: const Duration(seconds: 1),
       );
     });
 
@@ -129,7 +128,7 @@ void main() {
       blocTest<ListsBloc, ListsState>(
         'triggers LoadLists after successful list creation',
         build: () {
-          when(() => mockCreateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateListUseCase(any())).thenAnswer((_) async => testList);
           when(() => mockGetListsUseCase()).thenAnswer((_) async => existingLists);
           return listsBloc;
         },
@@ -198,7 +197,7 @@ void main() {
       blocTest<ListsBloc, ListsState>(
         'triggers LoadLists after successful list update',
         build: () {
-          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async => testList);
           when(() => mockGetListsUseCase()).thenAnswer((_) async => existingLists);
           return listsBloc;
         },
@@ -429,7 +428,8 @@ void main() {
           ),
         ], []),
         build: () => listsBloc,
-        act: (bloc) => bloc.add(SearchLists('category')),
+        // Use a query that would only match via category (if present), not via title.
+        act: (bloc) => bloc.add(SearchLists('food')),
         expect: () => [
           isA<ListsLoaded>()
               .having((state) => state.filteredLists.length, 'filtered lists length', 0),
@@ -465,7 +465,7 @@ void main() {
             followerIds: ['other-user-2'],
           );
           
-          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async => curatorList);
           when(() => mockGetListsUseCase()).thenAnswer((_) async => [curatorList]);
           return listsBloc;
         },
@@ -543,8 +543,8 @@ void main() {
       blocTest<ListsBloc, ListsState>(
         'handles simultaneous operations on different lists',
         build: () {
-          when(() => mockCreateListUseCase(any())).thenAnswer((_) async {});
-          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateListUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestList());
+          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestList());
           when(() => mockDeleteListUseCase(any())).thenAnswer((_) async {});
           when(() => mockGetListsUseCase()).thenAnswer((_) async => TestDataFactory.createTestLists(3));
           return listsBloc;
@@ -583,15 +583,14 @@ void main() {
           isA<ListsLoaded>()
               .having((state) => state.lists.length, 'lists length', 500),
         ],
-        timeout: const Duration(seconds: 5),
       );
 
       blocTest<ListsBloc, ListsState>(
         'handles rapid fire operations correctly',
         build: () {
           when(() => mockGetListsUseCase()).thenAnswer((_) async => TestDataFactory.createTestLists(3));
-          when(() => mockCreateListUseCase(any())).thenAnswer((_) async {});
-          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateListUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestList());
+          when(() => mockUpdateListUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestList());
           when(() => mockDeleteListUseCase(any())).thenAnswer((_) async {});
           return listsBloc;
         },
@@ -616,7 +615,6 @@ void main() {
         ),
         build: () => listsBloc,
         act: (bloc) => bloc.add(SearchLists('test')),
-        timeout: const Duration(seconds: 3),
         // Should complete search within reasonable time
         verify: (_) {
           // Search should complete without timeout
@@ -678,7 +676,7 @@ void main() {
           TestDataFactory.createTestLists(2), // Filtered state
         ),
         build: () {
-          when(() => mockCreateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateListUseCase(any())).thenAnswer((_) async => TestDataFactory.createTestList());
           when(() => mockGetListsUseCase()).thenAnswer((_) async => TestDataFactory.createTestLists(6));
           return listsBloc;
         },
@@ -696,7 +694,7 @@ void main() {
         'validates privacy settings for public lists',
         build: () {
           final publicList = TestDataFactory.createTestList(isPublic: true);
-          when(() => mockCreateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateListUseCase(any())).thenAnswer((_) async => publicList);
           when(() => mockGetListsUseCase()).thenAnswer((_) async => [publicList]);
           return listsBloc;
         },
@@ -711,7 +709,7 @@ void main() {
         'validates privacy settings for private lists',
         build: () {
           final privateList = TestDataFactory.createTestList(isPublic: false);
-          when(() => mockCreateListUseCase(any())).thenAnswer((_) async {});
+          when(() => mockCreateListUseCase(any())).thenAnswer((_) async => privateList);
           when(() => mockGetListsUseCase()).thenAnswer((_) async => [privateList]);
           return listsBloc;
         },

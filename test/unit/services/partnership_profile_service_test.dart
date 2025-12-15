@@ -7,16 +7,14 @@ import 'package:spots/core/services/sponsorship_service.dart';
 import 'package:spots/core/services/business_service.dart';
 import 'package:spots/core/services/expertise_event_service.dart';
 import 'package:spots/core/models/user_partnership.dart';
-import 'package:spots/core/models/partnership_expertise_boost.dart';
 import 'package:spots/core/models/event_partnership.dart';
-import 'package:spots/core/models/sponsorship.dart';
 import 'package:spots/core/models/business_account.dart';
-import 'package:spots/core/models/brand_account.dart';
 import 'package:spots/core/models/expertise_event.dart';
 import 'package:spots/core/models/unified_user.dart';
 import '../../fixtures/model_factories.dart';
 
 import 'partnership_profile_service_test.mocks.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 @GenerateMocks([
   PartnershipService,
@@ -33,8 +31,15 @@ void main() {
     late MockExpertiseEventService mockEventService;
     late UnifiedUser testUser;
     late BusinessAccount testBusiness;
-    late BrandAccount testBrand;
     late ExpertiseEvent testEvent;
+
+    setUpAll(() async {
+      await setupTestStorage();
+    });
+
+    tearDownAll(() async {
+      await cleanupTestStorage();
+    });
 
     setUp(() {
       mockPartnershipService = MockPartnershipService();
@@ -69,16 +74,6 @@ void main() {
         logoUrl: 'https://example.com/logo.png',
       );
 
-      testBrand = BrandAccount(
-        id: 'brand-123',
-        name: 'Test Brand',
-        email: 'test@brand.com',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        isVerified: true,
-        logoUrl: 'https://example.com/brand-logo.png',
-      );
-
       testEvent = ExpertiseEvent(
         id: 'event-123',
         title: 'Test Event',
@@ -93,21 +88,18 @@ void main() {
       );
     });
 
+    // Removed: Property assignment tests
+    // Partnership profile tests focus on business logic (partnership retrieval, filtering, expertise boost), not property assignment
+
     group('getUserPartnerships', () {
-      test('should return empty list when user has no partnerships', () async {
-        // Arrange
-        when(mockEventService.getEventsByHost(any))
-            .thenAnswer((_) async => []);
+      test(
+          'should return empty list when user has no partnerships or return business partnerships',
+          () async {
+        // Test business logic: user partnership retrieval
+        when(mockEventService.getEventsByHost(any)).thenAnswer((_) async => []);
+        final partnerships1 = await service.getUserPartnerships('user-123');
+        expect(partnerships1, isEmpty);
 
-        // Act
-        final partnerships = await service.getUserPartnerships('user-123');
-
-        // Assert
-        expect(partnerships, isEmpty);
-      });
-
-      test('should return business partnerships', () async {
-        // Arrange
         final eventPartnership = EventPartnership(
           id: 'partnership-1',
           eventId: 'event-123',
@@ -119,7 +111,6 @@ void main() {
           startDate: DateTime.now().subtract(const Duration(days: 30)),
           vibeCompatibilityScore: 0.85,
         );
-
         when(mockEventService.getEventsByHost(any))
             .thenAnswer((_) async => [testEvent]);
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
@@ -128,15 +119,12 @@ void main() {
             .thenAnswer((_) async => testBusiness);
         when(mockEventService.getEventById('event-123'))
             .thenAnswer((_) async => testEvent);
-
-        // Act
-        final partnerships = await service.getUserPartnerships('user-123');
-
-        // Assert
-        expect(partnerships.length, equals(1));
-        expect(partnerships.first.type, equals(ProfilePartnershipType.business));
-        expect(partnerships.first.partnerId, equals('business-123'));
-        expect(partnerships.first.partnerName, equals('Test Business'));
+        final partnerships2 = await service.getUserPartnerships('user-123');
+        expect(partnerships2.length, equals(1));
+        expect(
+            partnerships2.first.type, equals(ProfilePartnershipType.business));
+        expect(partnerships2.first.partnerId, equals('business-123'));
+        expect(partnerships2.first.partnerName, equals('Test Business'));
       });
     });
 
@@ -273,24 +261,16 @@ void main() {
     });
 
     group('getPartnershipExpertiseBoost', () {
-      test('should return zero boost when user has no partnerships', () async {
-        // Arrange
-        when(mockEventService.getEventsByHost(any))
-            .thenAnswer((_) async => []);
+      test(
+          'should return zero boost when user has no partnerships, calculate boost for active partnership, apply count multiplier for multiple partnerships, or cap boost at 0.50 (50%)',
+          () async {
+        // Test business logic: partnership expertise boost calculation
+        when(mockEventService.getEventsByHost(any)).thenAnswer((_) async => []);
+        final boost1 =
+            await service.getPartnershipExpertiseBoost('user-123', 'Coffee');
+        expect(boost1.totalBoost, equals(0.0));
+        expect(boost1.partnershipCount, equals(0));
 
-        // Act
-        final boost = await service.getPartnershipExpertiseBoost(
-          'user-123',
-          'Coffee',
-        );
-
-        // Assert
-        expect(boost.totalBoost, equals(0.0));
-        expect(boost.partnershipCount, equals(0));
-      });
-
-      test('should calculate boost for active partnership', () async {
-        // Arrange
         final activePartnership = EventPartnership(
           id: 'partnership-1',
           eventId: 'event-123',
@@ -302,7 +282,6 @@ void main() {
           startDate: DateTime.now().subtract(const Duration(days: 30)),
           vibeCompatibilityScore: 0.85,
         );
-
         when(mockEventService.getEventsByHost(any))
             .thenAnswer((_) async => [testEvent]);
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
@@ -311,21 +290,12 @@ void main() {
             .thenAnswer((_) async => testBusiness);
         when(mockEventService.getEventById('event-123'))
             .thenAnswer((_) async => testEvent);
+        final boost2 =
+            await service.getPartnershipExpertiseBoost('user-123', 'Coffee');
+        expect(boost2.totalBoost, greaterThan(0.0));
+        expect(boost2.activeBoost, greaterThan(0.0));
+        expect(boost2.partnershipCount, equals(1));
 
-        // Act
-        final boost = await service.getPartnershipExpertiseBoost(
-          'user-123',
-          'Coffee',
-        );
-
-        // Assert
-        expect(boost.totalBoost, greaterThan(0.0));
-        expect(boost.activeBoost, greaterThan(0.0));
-        expect(boost.partnershipCount, equals(1));
-      });
-
-      test('should apply count multiplier for multiple partnerships', () async {
-        // Arrange
         final partnership1 = EventPartnership(
           id: 'partnership-1',
           eventId: 'event-123',
@@ -335,7 +305,6 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-
         final partnership2 = EventPartnership(
           id: 'partnership-2',
           eventId: 'event-456',
@@ -345,7 +314,6 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-
         final partnership3 = EventPartnership(
           id: 'partnership-3',
           eventId: 'event-789',
@@ -355,10 +323,8 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-
         final testEvent2 = testEvent.copyWith(id: 'event-456');
         final testEvent3 = testEvent.copyWith(id: 'event-789');
-
         when(mockEventService.getEventsByHost(any))
             .thenAnswer((_) async => [testEvent, testEvent2, testEvent3]);
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
@@ -375,21 +341,11 @@ void main() {
             .thenAnswer((_) async => testEvent2);
         when(mockEventService.getEventById('event-789'))
             .thenAnswer((_) async => testEvent3);
+        final boost3 =
+            await service.getPartnershipExpertiseBoost('user-123', 'Coffee');
+        expect(boost3.partnershipCount, equals(3));
+        expect(boost3.countMultiplier, equals(1.2));
 
-        // Act
-        final boost = await service.getPartnershipExpertiseBoost(
-          'user-123',
-          'Coffee',
-        );
-
-        // Assert
-        expect(boost.partnershipCount, equals(3));
-        expect(boost.countMultiplier, equals(1.2)); // 3-5 partnerships: 1.2x
-      });
-
-      test('should cap boost at 0.50 (50%)', () async {
-        // Arrange
-        // Create many partnerships to exceed the cap
         final partnerships = List.generate(10, (index) {
           return EventPartnership(
             id: 'partnership-$index',
@@ -403,15 +359,13 @@ void main() {
             vibeCompatibilityScore: 0.90,
           );
         });
-
-        final events = partnerships
-            .map((p) => testEvent.copyWith(id: p.eventId))
-            .toList();
-
+        final events =
+            partnerships.map((p) => testEvent.copyWith(id: p.eventId)).toList();
         when(mockEventService.getEventsByHost(any))
             .thenAnswer((_) async => events);
         for (final partnership in partnerships) {
-          when(mockPartnershipService.getPartnershipsForEvent(partnership.eventId))
+          when(mockPartnershipService
+                  .getPartnershipsForEvent(partnership.eventId))
               .thenAnswer((_) async => [partnership]);
         }
         when(mockBusinessService.getBusinessById('business-123'))
@@ -420,17 +374,10 @@ void main() {
           when(mockEventService.getEventById(event.id))
               .thenAnswer((_) async => event);
         }
-
-        // Act
-        final boost = await service.getPartnershipExpertiseBoost(
-          'user-123',
-          'Coffee',
-        );
-
-        // Assert
-        expect(boost.totalBoost, lessThanOrEqualTo(0.50));
+        final boost4 =
+            await service.getPartnershipExpertiseBoost('user-123', 'Coffee');
+        expect(boost4.totalBoost, lessThanOrEqualTo(0.50));
       });
     });
   });
 }
-

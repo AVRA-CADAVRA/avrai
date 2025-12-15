@@ -31,7 +31,9 @@ class AIImprovementTrackingService {
   /// Initialize improvement tracking
   Future<void> initialize() async {
     try {
+      // #region agent log
       developer.log('Initializing AI improvement tracking', name: _logName);
+      // #endregion
 
       // Load stored history
       await _loadStoredHistory();
@@ -42,22 +44,64 @@ class AIImprovementTrackingService {
         (_) => _captureImprovementSnapshot(),
       );
 
+      // #region agent log
+      developer.log('Started periodic tracking timer (5 minute intervals)', name: _logName);
+      // #endregion
+
       // Capture initial snapshot
       await _captureImprovementSnapshot();
 
-      developer.log('AI improvement tracking initialized', name: _logName);
+      // #region agent log
+      developer.log('AI improvement tracking initialized: ${_historySnapshots.length} history snapshots loaded', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error initializing tracking: $e', name: _logName);
+      // #endregion
     }
   }
 
   /// Get current improvement metrics
   Future<AIImprovementMetrics> getCurrentMetrics(String userId) async {
+    // Check in-memory cache first
     if (_currentMetrics != null && _currentMetrics!.userId == userId) {
+      // #region agent log
+      developer.log('Returning cached metrics for user: $userId', name: _logName);
+      // #endregion
       return _currentMetrics!;
     }
 
-    return await _calculateMetrics(userId);
+    // Try to load from storage
+    try {
+      final stored = _storage.read<Map<String, dynamic>>(_storageKey);
+      if (stored != null && stored['userId'] == userId) {
+        // #region agent log
+        developer.log('Loaded metrics from storage for user: $userId', name: _logName);
+        // #endregion
+        _currentMetrics = AIImprovementMetrics(
+          userId: stored['userId'] as String,
+          dimensionScores: Map<String, double>.from(stored['dimensionScores'] as Map),
+          performanceScores: Map<String, double>.from(stored['performanceScores'] as Map),
+          overallScore: (stored['overallScore'] as num).toDouble(),
+          improvementRate: (stored['improvementRate'] as num).toDouble(),
+          totalImprovements: stored['totalImprovements'] as int,
+          lastUpdated: DateTime.parse(stored['lastUpdated'] as String),
+        );
+        return _currentMetrics!;
+      }
+    } catch (e) {
+      // #region agent log
+      developer.log('Error loading metrics from storage: $e, calculating new metrics', name: _logName);
+      // #endregion
+    }
+
+    // Calculate new metrics if not found
+    final metrics = await _calculateMetrics(userId);
+    
+    // Save to storage for future access
+    await _saveCurrentMetrics(metrics);
+    
+    return metrics;
   }
 
   /// Get improvement history for a time period
@@ -77,10 +121,19 @@ class AIImprovementTrackingService {
 
   /// Get improvement milestones
   List<ImprovementMilestone> getMilestones(String userId) {
+    // #region agent log
+    developer.log('Getting milestones for user: $userId', name: _logName);
+    // #endregion
+    
     final milestones = <ImprovementMilestone>[];
     final history = getHistory(userId: userId);
 
-    if (history.isEmpty) return milestones;
+    if (history.isEmpty) {
+      // #region agent log
+      developer.log('No history found for user: $userId, returning empty milestones', name: _logName);
+      // #endregion
+      return milestones;
+    }
 
     // Detect significant improvements
     for (int i = 1; i < history.length; i++) {
@@ -104,6 +157,10 @@ class AIImprovementTrackingService {
         }
       });
     }
+
+    // #region agent log
+    developer.log('Found ${milestones.length} milestones for user: $userId', name: _logName);
+    // #endregion
 
     return milestones..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
@@ -129,6 +186,10 @@ class AIImprovementTrackingService {
       // For now, using a default user ID
       final userId = 'current_user';
 
+      // #region agent log
+      developer.log('Capturing improvement snapshot for user: $userId', name: _logName);
+      // #endregion
+
       final metrics = await _calculateMetrics(userId);
 
       final snapshot = AIImprovementSnapshot(
@@ -141,17 +202,28 @@ class AIImprovementTrackingService {
       _historySnapshots.add(snapshot);
 
       // Keep only last 1000 snapshots
+      final beforeTrim = _historySnapshots.length;
       if (_historySnapshots.length > 1000) {
         _historySnapshots.removeAt(0);
       }
+
+      // #region agent log
+      developer.log('Snapshot captured: overallScore=${snapshot.overallScore.toStringAsFixed(2)}, dimensions=${snapshot.dimensions.length}, historySize: $beforeTrim -> ${_historySnapshots.length}', name: _logName);
+      // #endregion
 
       // Save to storage
       await _saveHistory();
 
       // Notify listeners
       _metricsController.add(metrics);
+      
+      // #region agent log
+      developer.log('Snapshot saved and metrics broadcast to ${_metricsController.hasListener ? "listeners" : "no listeners"}', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error capturing snapshot: $e', name: _logName);
+      // #endregion
     }
   }
 
@@ -197,16 +269,52 @@ class AIImprovementTrackingService {
       );
 
       _currentMetrics = metrics;
+      
+      // Save to storage
+      await _saveCurrentMetrics(metrics);
+      
+      // #region agent log
+      developer.log('Calculated metrics for user: $userId, overallScore: ${metrics.overallScore.toStringAsFixed(2)}, dimensions: ${metrics.dimensionScores.length}', name: _logName);
+      // #endregion
+      
       return metrics;
     } catch (e) {
+      // #region agent log
       developer.log('Error calculating metrics: $e', name: _logName);
+      // #endregion
       return AIImprovementMetrics.empty(userId);
+    }
+  }
+  
+  /// Save current metrics to storage
+  Future<void> _saveCurrentMetrics(AIImprovementMetrics metrics) async {
+    try {
+      await _storage.write(_storageKey, {
+        'userId': metrics.userId,
+        'dimensionScores': metrics.dimensionScores,
+        'performanceScores': metrics.performanceScores,
+        'overallScore': metrics.overallScore,
+        'improvementRate': metrics.improvementRate,
+        'totalImprovements': metrics.totalImprovements,
+        'lastUpdated': metrics.lastUpdated.toIso8601String(),
+      });
+      // #region agent log
+      developer.log('Saved current metrics to storage for user: ${metrics.userId}', name: _logName);
+      // #endregion
+    } catch (e) {
+      // #region agent log
+      developer.log('Error saving current metrics: $e', name: _logName);
+      // #endregion
     }
   }
 
   /// Load stored history from storage
   Future<void> _loadStoredHistory() async {
     try {
+      // #region agent log
+      developer.log('Loading stored history from storage key: $_historyKey', name: _logName);
+      // #endregion
+      
       final stored = _storage.read<List>(_historyKey);
       if (stored != null) {
         _historySnapshots.clear();
@@ -215,11 +323,18 @@ class AIImprovementTrackingService {
             _historySnapshots.add(AIImprovementSnapshot.fromJson(item));
           }
         }
-        developer.log('Loaded ${_historySnapshots.length} history snapshots',
-            name: _logName);
+        // #region agent log
+        developer.log('Loaded ${_historySnapshots.length} history snapshots from storage', name: _logName);
+        // #endregion
+      } else {
+        // #region agent log
+        developer.log('No stored history found, starting with empty history', name: _logName);
+        // #endregion
       }
     } catch (e) {
+      // #region agent log
       developer.log('Error loading history: $e', name: _logName);
+      // #endregion
     }
   }
 
@@ -228,8 +343,13 @@ class AIImprovementTrackingService {
     try {
       final data = _historySnapshots.map((s) => s.toJson()).toList();
       await _storage.write(_historyKey, data);
+      // #region agent log
+      developer.log('Saved ${data.length} history snapshots to storage key: $_historyKey', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error saving history: $e', name: _logName);
+      // #endregion
     }
   }
 

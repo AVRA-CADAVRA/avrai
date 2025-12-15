@@ -784,6 +784,180 @@ class IntegrationTestHelpers {
       updatedAt: now,
     );
   }
+
+  // ======= Geographic / Qualification convenience wrappers =======
+  //
+  // Some fixtures/tests expect these helpers on IntegrationTestHelpers.
+  // The underlying implementations live on IntegrationTestConstants; these
+  // wrappers preserve backward compatibility and keep fixture code simple.
+
+  static GeographicScope createLocalExpertScope({
+    required String userId,
+    required String locality,
+    String? city,
+    String? state,
+    String? country,
+  }) {
+    return IntegrationTestConstants.createLocalExpertScope(
+      userId: userId,
+      locality: locality,
+      city: city,
+      state: state,
+      country: country,
+    );
+  }
+
+  static GeographicScope createCityExpertScope({
+    required String userId,
+    required String city,
+    required List<String> localities,
+    String? state,
+    String? country,
+  }) {
+    return IntegrationTestConstants.createCityExpertScope(
+      userId: userId,
+      city: city,
+      localities: localities,
+      state: state,
+      country: country,
+    );
+  }
+
+  static GeographicScope createRegionalExpertScope({
+    required String userId,
+    required ExpertiseLevel level,
+    String? state,
+    String? country,
+  }) {
+    return IntegrationTestConstants.createRegionalExpertScope(
+      userId: userId,
+      level: level,
+      state: state,
+      country: country,
+    );
+  }
+
+  static Locality createTestLocality({
+    String? id,
+    String? name,
+    String? city,
+    String? state,
+    String? country,
+    double? latitude,
+    double? longitude,
+    bool isNeighborhood = false,
+    String? parentCity,
+  }) {
+    return IntegrationTestConstants.createTestLocality(
+      id: id,
+      name: name,
+      city: city,
+      state: state,
+      country: country,
+      latitude: latitude,
+      longitude: longitude,
+      isNeighborhood: isNeighborhood,
+      parentCity: parentCity,
+    );
+  }
+
+  static LargeCity createTestLargeCity({
+    String? id,
+    String? name,
+    String? state,
+    String? country,
+    double? latitude,
+    double? longitude,
+    int? population,
+    double? geographicSizeKm2,
+    List<String>? neighborhoods,
+    bool isDetected = false,
+  }) {
+    return IntegrationTestConstants.createTestLargeCity(
+      id: id,
+      name: name,
+      state: state,
+      country: country,
+      latitude: latitude,
+      longitude: longitude,
+      population: population,
+      geographicSizeKm2: geographicSizeKm2,
+      neighborhoods: neighborhoods,
+      isDetected: isDetected,
+    );
+  }
+
+  static LocalityValue createCoffeeFocusedLocalityValue({
+    String? locality,
+  }) {
+    return IntegrationTestConstants.createCoffeeFocusedLocalityValue(
+      locality: locality,
+    );
+  }
+
+  static LocalExpertQualification createTestQualification({
+    String? id,
+    String? userId,
+    String? category,
+    String? locality,
+    ExpertiseLevel? currentLevel,
+    ThresholdValues? baseThresholds,
+    ThresholdValues? localityThresholds,
+    QualificationProgress? progress,
+    QualificationFactors? factors,
+    bool isQualified = false,
+  }) {
+    return IntegrationTestConstants.createTestQualification(
+      id: id,
+      userId: userId,
+      category: category,
+      locality: locality,
+      currentLevel: currentLevel,
+      baseThresholds: baseThresholds,
+      localityThresholds: localityThresholds,
+      progress: progress,
+      factors: factors,
+      isQualified: isQualified,
+    );
+  }
+
+  static QualificationProgress createTestProgress({
+    int visits = 0,
+    int ratings = 0,
+    double avgRating = 0.0,
+    int communityEngagement = 0,
+    int listCuration = 0,
+    int eventHosting = 0,
+    int eventAttendance = 0,
+  }) {
+    return IntegrationTestConstants.createTestProgress(
+      visits: visits,
+      ratings: ratings,
+      avgRating: avgRating,
+      communityEngagement: communityEngagement,
+      listCuration: listCuration,
+      eventHosting: eventHosting,
+      eventAttendance: eventAttendance,
+    );
+  }
+
+  static QualificationFactors createTestFactors({
+    int listsWithFollowers = 0,
+    int peerReviewedReviews = 0,
+    bool hasProfessionalBackground = false,
+    bool hasPositiveTrends = false,
+    double listRespectRate = 0.0,
+    double eventGrowthRate = 0.0,
+  }) {
+    return IntegrationTestConstants.createTestFactors(
+      listsWithFollowers: listsWithFollowers,
+      peerReviewedReviews: peerReviewedReviews,
+      hasProfessionalBackground: hasProfessionalBackground,
+      hasPositiveTrends: hasPositiveTrends,
+      listRespectRate: listRespectRate,
+      eventGrowthRate: eventGrowthRate,
+    );
+  }
 }
 
 /// Integration Test Constants

@@ -11,7 +11,7 @@ import 'package:spots/presentation/widgets/ai2ai/privacy_compliance_card.dart';
 import 'package:spots/presentation/widgets/ai2ai/performance_issues_list.dart';
 import 'package:spots/presentation/widgets/admin/admin_collaborative_activity_widget.dart';
 import 'package:spots/core/services/admin_god_mode_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 import 'package:get_it/get_it.dart';
 
 /// Admin Dashboard for AI2AI Network Monitoring
@@ -47,7 +47,7 @@ class _AI2AIAdminDashboardState extends State<AI2AIAdminDashboard> {
 
   Future<void> _initializeServices() async {
     try {
-      final prefs = GetIt.instance<SharedPreferences>();
+      final prefs = GetIt.instance<SharedPreferencesCompat>();
       _networkAnalytics = NetworkAnalytics(prefs: prefs);
       _connectionMonitor = ConnectionMonitor(prefs: prefs);
       _setupStreams();

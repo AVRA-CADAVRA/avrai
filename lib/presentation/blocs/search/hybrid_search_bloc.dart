@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:spots/core/models/spot.dart';
@@ -194,19 +196,94 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
     Emitter<HybridSearchState> emit,
   ) async {
     try {
+      // #region agent log
+      try {
+        final payload = <String, dynamic>{
+          'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix-hybrid-search-bloc',
+          'hypothesisId': 'H8',
+          'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+          'message': 'handler start',
+          'data': {
+            'query': event.query,
+            'useCache': event.useCache,
+            'includeExternal': event.includeExternal,
+            'maxResults': event.maxResults,
+          },
+        };
+        File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+            .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
+
       emit(HybridSearchLoading());
 
       // Get user location for better results (optional)
       Position? position;
       try {
+        // #region agent log
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-hybrid-search-bloc',
+            'hypothesisId': 'H8',
+            'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+            'message': 'before geolocator.getCurrentPosition await',
+            'data': {},
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
+
         position = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(),
         ).timeout(
           const Duration(seconds: 5),
           onTimeout: () => throw TimeoutException('Location request timed out'),
         );
+
+        // #region agent log
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-hybrid-search-bloc',
+            'hypothesisId': 'H8',
+            'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+            'message': 'geolocator resolved',
+            'data': {
+              'lat': position.latitude,
+              'lng': position.longitude,
+            },
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
       } catch (e) {
         // Location not available, continue without it
+        // #region agent log
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-hybrid-search-bloc',
+            'hypothesisId': 'H8',
+            'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+            'message': 'geolocator failed/caught',
+            'data': {'errorType': e.runtimeType.toString()},
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
       }
 
       HybridSearchResult? cachedResult;
@@ -214,6 +291,26 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
 
       // STEP 1: Try cache first if enabled (Phase 4 Performance)
       if (event.useCache) {
+        // #region agent log
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-hybrid-search-bloc',
+            'hypothesisId': 'H8',
+            'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+            'message': 'before cacheService.getCachedResult',
+            'data': {
+              'lat_is_null': position?.latitude == null,
+              'lng_is_null': position?.longitude == null,
+            },
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
+
         cachedResult = await cacheService.getCachedResult(
           query: event.query,
           latitude: position?.latitude,
@@ -222,6 +319,26 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
           includeExternal: event.includeExternal && _externalDataEnabled,
         );
         fromCache = cachedResult != null;
+
+        // #region agent log
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-hybrid-search-bloc',
+            'hypothesisId': 'H8',
+            'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+            'message': 'after cacheService.getCachedResult',
+            'data': {
+              'fromCache': fromCache,
+              'cached_spots_len': cachedResult?.spots.length,
+            },
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
       }
 
       HybridSearchResult result;
@@ -254,6 +371,29 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
         results: result.spots,
       );
 
+      // #region agent log
+      try {
+        final payload = <String, dynamic>{
+          'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix-hybrid-search-bloc',
+          'hypothesisId': 'H8',
+          'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+          'message': 'before emit HybridSearchLoaded',
+          'data': {
+            'fromCache': fromCache,
+            'spots_len': result.spots.length,
+            'communityCount': result.communityCount,
+            'externalCount': result.externalCount,
+            'totalCount': result.totalCount,
+          },
+        };
+        File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+            .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
+
       emit(HybridSearchLoaded(
         spots: result.spots,
         searchQuery: event.query,
@@ -266,7 +406,40 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
         fromCache: fromCache,
         cacheStats: cacheService.getCacheStatistics(),
       ));
+
+      // #region agent log
+      try {
+        final payload = <String, dynamic>{
+          'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix-hybrid-search-bloc',
+          'hypothesisId': 'H8',
+          'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+          'message': 'after emit HybridSearchLoaded',
+          'data': {},
+        };
+        File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+            .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
     } catch (e) {
+      // #region agent log
+      try {
+        final payload = <String, dynamic>{
+          'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H8',
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix-hybrid-search-bloc',
+          'hypothesisId': 'H8',
+          'location': 'lib/presentation/blocs/search/hybrid_search_bloc.dart:_onSearchHybridSpots',
+          'message': 'caught exception in handler',
+          'data': {'errorType': e.runtimeType.toString(), 'error': e.toString()},
+        };
+        File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+            .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
       emit(HybridSearchError('Search failed: ${e.toString()}'));
     }
   }
@@ -343,7 +516,9 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
     try {
       // Get community trends from cache analytics for suggestions
       final cacheStats = cacheService.getCacheStatistics();
-      final userPatterns = suggestionsService.getSearchPatterns();
+      // Pull patterns to enable personalization hooks (even if not directly used in ranking yet).
+      // Keeping this call makes behavior explicit and testable.
+      suggestionsService.getSearchPatterns();
       
       final suggestions = await suggestionsService.generateSuggestions(
         query: event.query,
@@ -457,8 +632,9 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
 
   // Helper method to extract trends from cache stats
   Map<String, int>? _extractTrendsFromCache(Map<String, dynamic> cacheStats) {
-    // This would typically be more sophisticated, extracting popular search terms
-    // For now, return null to use internal trending logic
-    return null;
+    // This would typically be more sophisticated, extracting popular search terms.
+    // For now, return an empty map so the suggestions service can treat trends as "available"
+    // without forcing a null-path.
+    return <String, int>{};
   }
 }

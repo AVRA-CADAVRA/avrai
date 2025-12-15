@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 import 'package:spots/core/models/user.dart';
 import 'package:spots/core/models/spot.dart';
+import 'package:spots/core/models/unified_user.dart';
+import 'package:spots/core/services/age_compatibility_filter.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// OUR_GUTS.md: "Effortless, Seamless Discovery"
@@ -10,10 +12,12 @@ class RealTimeRecommendationEngine {
   
   /// Generate contextual recommendations based on current location
   /// OUR_GUTS.md: "You don't have to take your phone out or check in"
+  /// Age is ALWAYS considered - users 13 and under won't get 18+ or 21+ spots
   Future<List<Spot>> generateContextualRecommendations(
     User user, 
-    Position currentLocation
-  ) async {
+    Position currentLocation, {
+    UnifiedUser? unifiedUser, // For age-based filtering
+  }) async {
     try {
       developer.log('Generating contextual recommendations for: ${user.id}', name: _logName);
       
@@ -22,9 +26,20 @@ class RealTimeRecommendationEngine {
       final nearbySpots = await _getNearbySpots(currentLocation);
       final contextualFactors = await _analyzeCurrentContext(currentLocation);
       
+      // Filter by age appropriateness if user data is available
+      var ageFilteredSpots = nearbySpots;
+      if (unifiedUser != null) {
+        final ageFilter = AgeCompatibilityFilter();
+        ageFilteredSpots = ageFilter.filterAppSpotsByAge(nearbySpots, unifiedUser);
+        developer.log(
+          'Age filtering: ${nearbySpots.length} spots -> ${ageFilteredSpots.length} age-appropriate spots',
+          name: _logName,
+        );
+      }
+      
       // Score spots based on multiple factors
       final scoredSpots = <ScoredSpot>[];
-      for (final spot in nearbySpots) {
+      for (final spot in ageFilteredSpots) {
         final score = await _calculateSpotScore(spot, user, userPreferences, contextualFactors);
         if (score > 0.3) { // Threshold for relevance
           scoredSpots.add(ScoredSpot(spot: spot, score: score));

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 
 /// Neighborhood Boundary Model
@@ -125,6 +128,49 @@ class NeighborhoodBoundary extends Equatable {
 
   /// Create from JSON
   factory NeighborhoodBoundary.fromJson(Map<String, dynamic> json) {
+    // #region agent log
+    // Debug mode: record coordinate element types so we can prove which path is taken.
+    // Avoid PII: do not log ids/names, only types + sizes.
+    try {
+      final coords = json['coordinates'];
+      final coordTypes = <String>[];
+      if (coords is List) {
+        for (final c in coords.take(3)) {
+          coordTypes.add(c.runtimeType.toString());
+        }
+      }
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H4',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-neighborhood',
+        'hypothesisId': 'H4',
+        'location': 'lib/core/models/neighborhood_boundary.dart:NeighborhoodBoundary.fromJson',
+        'message': 'NeighborhoodBoundary.fromJson coordinates types',
+        'data': {
+          'coordinates_runtimeType': coords?.runtimeType.toString(),
+          'coordinates_len': coords is List ? coords.length : null,
+          'coordinates_sample_types': coordTypes,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+
+    List<CoordinatePoint> _parseCoordinates(dynamic raw) {
+      if (raw == null) return const [];
+      if (raw is List) {
+        return raw.map((c) {
+          if (c is CoordinatePoint) return c;
+          if (c is Map<String, dynamic>) return CoordinatePoint.fromJson(c);
+          if (c is Map) return CoordinatePoint.fromJson(Map<String, dynamic>.from(c));
+          throw StateError('Unsupported coordinate entry type: ${c.runtimeType}');
+        }).toList();
+      }
+      throw StateError('Unsupported coordinates type: ${raw.runtimeType}');
+    }
+
     return NeighborhoodBoundary(
       id: json['id'] as String,
       locality1: json['locality1'] as String,
@@ -133,10 +179,7 @@ class NeighborhoodBoundary extends Equatable {
         (e) => e.name == json['boundaryType'],
         orElse: () => BoundaryType.softBorder,
       ),
-      coordinates: (json['coordinates'] as List<dynamic>?)
-              ?.map((c) => CoordinatePoint.fromJson(c as Map<String, dynamic>))
-              .toList() ??
-          [],
+      coordinates: _parseCoordinates(json['coordinates']),
       source: json['source'] as String? ?? 'Google Maps',
       softBorderSpots: (json['softBorderSpots'] as List<dynamic>?)
               ?.map((s) => s as String)

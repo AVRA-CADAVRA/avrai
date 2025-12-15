@@ -1,10 +1,10 @@
 import 'dart:developer' as developer;
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/connection_metrics.dart';
-import 'package:shared_preferences/shared_preferences.dart'
-    show SharedPreferences;
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 
 /// OUR_GUTS.md: "Connection monitoring that tracks AI2AI personality interactions while preserving privacy"
 /// Comprehensive connection monitoring system for individual AI2AI personality learning interactions
@@ -16,7 +16,7 @@ class ConnectionMonitor {
   static const String _connectionHistoryKey = 'connection_history';
   static const String _monitoringAlertsKey = 'monitoring_alerts';
 
-  final SharedPreferences _prefs;
+  final SharedPreferencesCompat _prefs;
 
   // Monitoring state
   final Map<String, ActiveConnection> _activeConnections = {};
@@ -31,7 +31,47 @@ class ConnectionMonitor {
   // Stream controllers for active connections
   StreamController<ActiveConnectionsOverview>? _connectionsStreamController;
 
-  ConnectionMonitor({required SharedPreferences prefs}) : _prefs = prefs;
+  ConnectionMonitor({required SharedPreferencesCompat prefs}) : _prefs = prefs {
+    // Load persisted data on initialization (fire and forget - runs in background)
+    _loadPersistedData().catchError((e) {
+      developer.log('Error loading persisted data in constructor: $e', name: _logName);
+    });
+  }
+  
+  /// Load persisted data from SharedPreferences
+  Future<void> _loadPersistedData() async {
+    try {
+      // #region agent log
+      developer.log('Loading persisted connection monitoring data', name: _logName);
+      // #endregion
+      
+      // Load active connections (note: in production, would need to restore full sessions)
+      final activeConnectionsJson = _prefs.getStringList(_activeConnectionsKey) ?? [];
+      // #region agent log
+      developer.log('Found ${activeConnectionsJson.length} persisted active connections', name: _logName);
+      // #endregion
+      
+      // Load connection history
+      final historyJson = _prefs.getStringList(_connectionHistoryKey) ?? [];
+      // #region agent log
+      developer.log('Found ${historyJson.length} persisted connection history entries', name: _logName);
+      // #endregion
+      
+      // Load alerts
+      final alertsJson = _prefs.getStringList(_monitoringAlertsKey) ?? [];
+      // #region agent log
+      developer.log('Found ${alertsJson.length} persisted alerts', name: _logName);
+      // #endregion
+      
+      // Note: Full session restoration would require deserializing ConnectionMonitoringSession
+      // For now, we track active connections in memory and persist on changes
+      // Active connections are restored from memory on app restart via _activeConnections map
+    } catch (e) {
+      // #region agent log
+      developer.log('Error loading persisted data: $e', name: _logName);
+      // #endregion
+    }
+  }
 
   /// Start monitoring a new AI2AI connection
   Future<ConnectionMonitoringSession> startMonitoring(
@@ -68,11 +108,15 @@ class ConnectionMonitor {
       _updateAISignatureIndex(session.remoteAISignature, connectionId,
           add: true);
 
+      // Persist active connections
+      await _saveActiveConnections();
+
       // Start periodic monitoring if not already running
       _ensureMonitoringTimerRunning();
 
-      developer.log('Connection monitoring started: $connectionId',
-          name: _logName);
+      // #region agent log
+      developer.log('Connection monitoring started: $connectionId (persisted to $_activeConnectionsKey)', name: _logName);
+      // #endregion
       return session;
     } catch (e) {
       developer.log('Error starting connection monitoring: $e', name: _logName);
@@ -125,6 +169,9 @@ class ConnectionMonitor {
       _activeConnections[connectionId] =
           ActiveConnection.fromSession(updatedSession);
 
+      // Persist updated active connections
+      await _saveActiveConnections();
+
       // Process any new alerts
       if (newAlerts.isNotEmpty) {
         await _processConnectionAlerts(connectionId, newAlerts);
@@ -169,6 +216,9 @@ class ConnectionMonitor {
         _updateAISignatureIndex(removedSession.remoteAISignature, connectionId,
             add: false);
       }
+
+      // Persist updated active connections (removed this one)
+      await _saveActiveConnections();
 
       // Stop monitoring timer if no active connections
       if (_activeConnections.isEmpty) {
@@ -562,6 +612,9 @@ class ConnectionMonitor {
           'CONNECTION ALERT [${alert.severity.name.toUpperCase()}]: ${alert.message}',
           name: _logName);
 
+      // Persist alerts
+      await _saveAlerts();
+
       // In a real implementation, this might trigger notifications or automatic responses
       if (alert.severity == AlertSeverity.critical) {
         await _handleCriticalAlert(connectionId, alert);
@@ -609,9 +662,129 @@ class ConnectionMonitor {
 
   Future<void> _archiveMonitoringSession(
       ConnectionMonitoringSession session) async {
-    developer.log('Archiving monitoring session: ${session.connectionId}',
-        name: _logName);
-    // In a real implementation, this would serialize and store the session data
+    // #region agent log
+    developer.log('Archiving monitoring session: ${session.connectionId}', name: _logName);
+    // #endregion
+    
+    try {
+      // Serialize session to JSON
+      final sessionJson = _sessionToJson(session);
+      
+      // Load existing history
+      final historyJson = _prefs.getStringList(_connectionHistoryKey) ?? [];
+      
+      // Add this session to history
+      historyJson.add(jsonEncode(sessionJson));
+      
+      // Limit history size to prevent unbounded growth (keep last 1000 sessions)
+      if (historyJson.length > 1000) {
+        historyJson.removeRange(0, historyJson.length - 1000);
+      }
+      
+      // Save updated history
+      await _prefs.setStringList(_connectionHistoryKey, historyJson);
+      
+      // #region agent log
+      developer.log('Session archived: ${session.connectionId} (history now contains ${historyJson.length} entries)', name: _logName);
+      // #endregion
+    } catch (e) {
+      // #region agent log
+      developer.log('Error archiving session: $e', name: _logName);
+      // #endregion
+    }
+  }
+  
+  /// Save active connections to persistent storage
+  Future<void> _saveActiveConnections() async {
+    try {
+      // #region agent log
+      developer.log('Saving ${_activeConnections.length} active connections to storage', name: _logName);
+      // #endregion
+      
+      final connectionsJson = _activeConnections.values
+          .map((conn) => jsonEncode(_activeConnectionToJson(conn)))
+          .toList();
+      
+      await _prefs.setStringList(_activeConnectionsKey, connectionsJson);
+      
+      // #region agent log
+      developer.log('Active connections saved successfully', name: _logName);
+      // #endregion
+    } catch (e) {
+      // #region agent log
+      developer.log('Error saving active connections: $e', name: _logName);
+      // #endregion
+    }
+  }
+  
+  /// Save alerts to persistent storage
+  Future<void> _saveAlerts() async {
+    try {
+      // #region agent log
+      developer.log('Saving ${_alerts.length} alerts to storage', name: _logName);
+      // #endregion
+      
+      final alertsJson = _alerts
+          .map((alert) => jsonEncode(_alertToJson(alert)))
+          .toList();
+      
+      // Limit alerts size to prevent unbounded growth (keep last 500 alerts)
+      if (alertsJson.length > 500) {
+        alertsJson.removeRange(0, alertsJson.length - 500);
+      }
+      
+      await _prefs.setStringList(_monitoringAlertsKey, alertsJson);
+      
+      // #region agent log
+      developer.log('Alerts saved successfully', name: _logName);
+      // #endregion
+    } catch (e) {
+      // #region agent log
+      developer.log('Error saving alerts: $e', name: _logName);
+      // #endregion
+    }
+  }
+  
+  /// Serialize ConnectionMonitoringSession to JSON
+  Map<String, dynamic> _sessionToJson(ConnectionMonitoringSession session) {
+    return {
+      'connectionId': session.connectionId,
+      'localAISignature': session.localAISignature,
+      'remoteAISignature': session.remoteAISignature,
+      'startTime': session.startTime.toIso8601String(),
+      'lastUpdated': session.lastUpdated?.toIso8601String(),
+      'monitoringStatus': session.monitoringStatus.name,
+      'initialMetrics': session.initialMetrics.toJson(),
+      'currentMetrics': session.currentMetrics.toJson(),
+      'qualityHistoryCount': session.qualityHistory.length,
+      'learningProgressHistoryCount': session.learningProgressHistory.length,
+      'alertsGeneratedCount': session.alertsGenerated.length,
+    };
+  }
+  
+  /// Serialize ActiveConnection to JSON
+  Map<String, dynamic> _activeConnectionToJson(ActiveConnection connection) {
+    return {
+      'connectionId': connection.connectionId,
+      'localAISignature': connection.localAISignature,
+      'remoteAISignature': connection.remoteAISignature,
+      'startTime': connection.startTime.toIso8601String(),
+      'currentCompatibility': connection.currentCompatibility,
+      'learningEffectiveness': connection.learningEffectiveness,
+      'status': connection.status.name,
+    };
+  }
+  
+  /// Serialize ConnectionAlert to JSON
+  Map<String, dynamic> _alertToJson(ConnectionAlert alert) {
+    return {
+      'connectionId': alert.connectionId,
+      'type': alert.type.name,
+      'severity': alert.severity.name,
+      'message': alert.message,
+      'timestamp': alert.timestamp.toIso8601String(),
+      'metadata': alert.metadata,
+    };
   }
 
   // Additional helper methods with placeholder implementations

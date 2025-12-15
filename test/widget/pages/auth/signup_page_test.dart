@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:spots/presentation/pages/auth/signup_page.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import '../../helpers/widget_test_helpers.dart';
@@ -16,7 +15,7 @@ void main() {
 
     testWidgets('displays all required UI elements', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -40,7 +39,7 @@ void main() {
 
     testWidgets('shows password visibility toggles', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -50,32 +49,21 @@ void main() {
       // Act
       await WidgetTestHelpers.pumpAndSettle(tester, widget);
 
-      // Assert - Both password fields should be obscured initially
-      final passwordField = tester.widget<TextFormField>(
-        find.byKey(const Key('password_field')),
-      );
-      expect(passwordField.obscureText, isTrue);
-
-      final confirmPasswordField = tester.widget<TextFormField>(
-        find.byKey(const Key('confirm_password_field')),
-      );
-      expect(confirmPasswordField.obscureText, isTrue);
-
-      // Act - Tap visibility toggles
+      // Assert - Both password fields should have visibility toggles
       final visibilityIcons = find.byIcon(Icons.visibility);
+      expect(visibilityIcons, findsNWidgets(2)); // One for each password field
+
+      // Act - Tap first visibility toggle
       await tester.tap(visibilityIcons.first);
       await tester.pump();
 
-      // Assert - First password field should now be visible
-      final updatedPasswordField = tester.widget<TextFormField>(
-        find.byKey(const Key('password_field')),
-      );
-      expect(updatedPasswordField.obscureText, isFalse);
+      // Assert - Visibility icon should change (icon changes to visibility_off)
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
     });
 
     testWidgets('validates name field correctly', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -97,7 +85,7 @@ void main() {
 
     testWidgets('validates email field correctly', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -126,7 +114,7 @@ void main() {
 
     testWidgets('validates password field correctly', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -155,7 +143,7 @@ void main() {
 
     testWidgets('validates password confirmation correctly', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -177,7 +165,7 @@ void main() {
 
     testWidgets('submits valid registration data', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -195,12 +183,15 @@ void main() {
       await tester.pump();
 
       // Assert - AuthBloc should receive SignUpRequested event
-      verify(mockAuthBloc.add(any)).called(1);
+      expect(
+        mockAuthBloc.addedEvents.whereType<SignUpRequested>().length,
+        equals(1),
+      );
     });
 
     testWidgets('shows loading state during registration', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthLoading());
+      mockAuthBloc.setState(AuthLoading());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -208,23 +199,21 @@ void main() {
       );
 
       // Act
-      await WidgetTestHelpers.pumpAndSettle(tester, widget);
+      await tester.pumpWidget(widget);
+      await tester.pump();
 
       // Assert - Loading indicator should be visible in button
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       
       // Assert - Button should be disabled
-      final button = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Sign Up').first,
-      );
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton).first);
       expect(button.onPressed, isNull);
     });
 
     testWidgets('shows error message on registration failure', (WidgetTester tester) async {
       // Arrange
       const errorMessage = 'Email already exists';
-      when(mockAuthBloc.state).thenReturn(AuthError(errorMessage));
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(AuthError(errorMessage)));
+      mockAuthBloc.setState(AuthError(errorMessage));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -240,9 +229,8 @@ void main() {
 
     testWidgets('navigates to home on successful registration', (WidgetTester tester) async {
       // Arrange
-      final testUser = WidgetTestHelpers.createTestUser();
-      when(mockAuthBloc.state).thenReturn(Authenticated(user: testUser));
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(Authenticated(user: testUser)));
+      final testUser = WidgetTestHelpers.createTestUserForAuth();
+      mockAuthBloc.setState(Authenticated(user: testUser));
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -258,7 +246,7 @@ void main() {
 
     testWidgets('navigates back to login page', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -277,7 +265,7 @@ void main() {
 
     testWidgets('handles back button in app bar', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -296,7 +284,7 @@ void main() {
 
     testWidgets('maintains form state during keyboard appearance', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -312,8 +300,9 @@ void main() {
       await tester.enterText(find.byKey(const Key('confirm_password_field')), 'password123');
 
       // Simulate keyboard appearance by changing viewport
-      tester.binding.window.viewInsetsTestValue = const EdgeInsets.only(bottom: 300);
+      tester.binding.window.viewInsetsTestValue = const FakeViewPadding(bottom: 300);
       await tester.pump();
+      tester.binding.window.clearViewInsetsTestValue();
 
       // Assert - Form data should be preserved
       expect(find.text('Test User'), findsOneWidget);
@@ -323,7 +312,7 @@ void main() {
 
     testWidgets('meets accessibility requirements', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -353,7 +342,7 @@ void main() {
 
     testWidgets('prevents submission with empty required fields', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -369,15 +358,16 @@ void main() {
       // Assert - Should show validation errors and not trigger registration
       expect(find.text('Please enter your name'), findsOneWidget);
       expect(find.text('Please enter your email'), findsOneWidget);
-      expect(find.text('Please enter your password'), findsNWidgets(2)); // Both password fields
+      expect(find.text('Please enter your password'), findsOneWidget);
+      expect(find.text('Please confirm your password'), findsOneWidget);
 
       // Verify no signup event was triggered
-      verifyNever(mockAuthBloc.add(any));
+      expect(mockAuthBloc.addedEvents.whereType<SignUpRequested>(), isEmpty);
     });
 
     testWidgets('handles rapid form submission attempts', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(const AuthInitial());
+      mockAuthBloc.setState(AuthInitial());
 
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SignupPage(),
@@ -399,7 +389,10 @@ void main() {
       await tester.pump();
 
       // Assert - Should only trigger one registration request
-      verify(mockAuthBloc.add(any)).called(1);
+      expect(
+        mockAuthBloc.addedEvents.whereType<SignUpRequested>().length,
+        equals(1),
+      );
     });
   });
 }

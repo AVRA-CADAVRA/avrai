@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:spots/presentation/pages/spots/spots_page.dart';
 import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
 import '../../helpers/widget_test_helpers.dart';
@@ -18,7 +17,7 @@ void main() {
 
     testWidgets('displays all required UI elements', (WidgetTester tester) async {
       // Arrange
-      when(mockSpotsBloc.state).thenReturn(SpotsInitial());
+      mockSpotsBloc.setState(SpotsInitial());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SpotsPage(),
         spotsBloc: mockSpotsBloc,
@@ -35,7 +34,7 @@ void main() {
 
     testWidgets('displays search field with correct hint', (WidgetTester tester) async {
       // Arrange
-      when(mockSpotsBloc.state).thenReturn(SpotsInitial());
+      mockSpotsBloc.setState(SpotsInitial());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SpotsPage(),
         spotsBloc: mockSpotsBloc,
@@ -51,7 +50,7 @@ void main() {
 
     testWidgets('loads spots on initialization', (WidgetTester tester) async {
       // Arrange
-      when(mockSpotsBloc.state).thenReturn(SpotsInitial());
+      mockSpotsBloc.setState(SpotsInitial());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SpotsPage(),
         spotsBloc: mockSpotsBloc,
@@ -67,7 +66,7 @@ void main() {
 
     testWidgets('displays loading state when spots are loading', (WidgetTester tester) async {
       // Arrange
-      when(mockSpotsBloc.state).thenReturn(SpotsLoading());
+      mockSpotsBloc.setState(SpotsLoading());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SpotsPage(),
         spotsBloc: mockSpotsBloc,
@@ -82,7 +81,7 @@ void main() {
 
     testWidgets('displays empty state when no spots available', (WidgetTester tester) async {
       // Arrange
-      when(mockSpotsBloc.state).thenReturn(SpotsLoaded([]));
+      mockSpotsBloc.setState(SpotsLoaded([]));
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const SpotsPage(),
         spotsBloc: mockSpotsBloc,

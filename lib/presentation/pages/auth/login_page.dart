@@ -5,7 +5,7 @@ import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/presentation/routes/app_router.dart';
 import 'package:go_router/go_router.dart';
-import 'package:spots/data/datasources/local/auth_sembast_datasource.dart';
+import 'package:spots/presentation/pages/admin/god_mode_login_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -33,8 +34,14 @@ class _LoginPageState extends State<LoginPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            context.go(AppRouter.home);
+            final router = GoRouter.maybeOf(context);
+            router?.go(AppRouter.home);
           } else if (state is AuthError) {
+            if (mounted) {
+              setState(() {
+                _isSubmitting = false;
+              });
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -49,9 +56,10 @@ class _LoginPageState extends State<LoginPage> {
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: (MediaQuery.of(context).size.height -
-                    MediaQuery.of(context).padding.top -
-                    MediaQuery.of(context).padding.bottom -
-                    48).clamp(0, double.infinity),
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom -
+                        48)
+                    .clamp(0, double.infinity),
               ),
               child: IntrinsicHeight(
                 child: Form(
@@ -88,6 +96,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Email Field
                       TextFormField(
+                        key: const Key('email_field'),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
@@ -108,6 +117,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Password Field
                       TextFormField(
+                        key: const Key('password_field'),
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
@@ -148,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                  child: CircularProgressIndicator(
+                                    child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                           AppColors.white),
@@ -161,8 +171,9 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
 
                       // Sign Up Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             "Don't have an account? ",
@@ -170,7 +181,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           TextButton(
                             onPressed: () {
-                              context.go(AppRouter.signup);
+                              final router = GoRouter.maybeOf(context);
+                              router?.go(AppRouter.signup);
                             },
                             child: const Text('Sign Up'),
                           ),
@@ -188,30 +200,24 @@ class _LoginPageState extends State<LoginPage> {
                         },
                         child: const Text('🧪 Demo Login'),
                       ),
-                      const SizedBox(height: 8),
                       
-                      // Debug test button
-                      OutlinedButton(
-                        onPressed: () async {
-                          try {
-                            final authDataSource = AuthSembastDataSource();
-                            final testUser = await authDataSource.signIn('demo@spots.com', 'password123');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Debug: ${testUser?.email ?? 'null'}'),
-                                backgroundColor: testUser != null ? AppTheme.successColor : AppTheme.errorColor,
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Debug Error: $e'),
-                                backgroundColor: AppTheme.errorColor,
-                              ),
-                            );
-                          }
+                      const SizedBox(height: 16),
+
+                      // Admin Login Button
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const GodModeLoginPage(),
+                            ),
+                          );
                         },
-                        child: const Text('🔧 Debug Test'),
+                        icon: const Icon(Icons.admin_panel_settings, size: 18),
+                        label: const Text('Admin Login'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -225,7 +231,11 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() {
+    if (_isSubmitting) return;
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSubmitting = true;
+      });
       context.read<AuthBloc>().add(
             SignInRequested(
               _emailController.text.trim(),

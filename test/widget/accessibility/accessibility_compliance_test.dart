@@ -3,9 +3,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import '../helpers/accessibility_test_helpers.dart';
+import '../helpers/widget_test_helpers.dart';
 
 /// Comprehensive accessibility compliance tests for WCAG 2.1 AA
 void main() {
+  setUpAll(() async {
+    await WidgetTestHelpers.setupWidgetTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await WidgetTestHelpers.cleanupWidgetTestEnvironment();
+  });
+
   group('Accessibility Compliance Tests (WCAG 2.1 AA)', () {
     testWidgets('AppColors contrast ratios meet WCAG 2.1 AA requirements',
         (WidgetTester tester) async {

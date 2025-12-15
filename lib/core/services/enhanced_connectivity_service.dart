@@ -29,11 +29,22 @@ class EnhancedConnectivityService {
   /// Check if device has basic connectivity (WiFi/Mobile)
   Future<bool> hasBasicConnectivity() async {
     try {
+      // #region agent log
+      developer.log('Checking basic connectivity', name: _logName);
+      // #endregion
+      
       final result = await _connectivity.checkConnectivity();
-      return !result.contains(ConnectivityResult.none);
-          return result != ConnectivityResult.none;
+      final hasConnectivity = !result.contains(ConnectivityResult.none);
+      
+      // #region agent log
+      developer.log('Basic connectivity result: $hasConnectivity, types: ${result.map((r) => r.name).join(", ")}', name: _logName);
+      // #endregion
+      
+      return hasConnectivity;
     } catch (e) {
+      // #region agent log
       developer.log('Basic connectivity check failed: $e', name: _logName);
+      // #endregion
       return false;
     }
   }
@@ -41,10 +52,16 @@ class EnhancedConnectivityService {
   /// Check if device has actual internet access (with HTTP ping)
   /// Uses cached result if recent ping was successful
   Future<bool> hasInternetAccess({bool forceRefresh = false}) async {
+    // #region agent log
+    developer.log('Checking internet access: forceRefresh=$forceRefresh', name: _logName);
+    // #endregion
+    
     // Check basic connectivity first (fast check)
     final hasBasic = await hasBasicConnectivity();
     if (!hasBasic) {
-      developer.log('No basic connectivity', name: _logName);
+      // #region agent log
+      developer.log('No basic connectivity, skipping internet check', name: _logName);
+      // #endregion
       return false;
     }
     
@@ -52,8 +69,14 @@ class EnhancedConnectivityService {
     if (!forceRefresh && _lastPingResult != null && _lastPingTime != null) {
       final age = DateTime.now().difference(_lastPingTime!);
       if (age < _cacheTimeout) {
-        developer.log('Using cached ping result: $_lastPingResult (age: ${age.inSeconds}s)', name: _logName);
+        // #region agent log
+        developer.log('Using cached ping result: $_lastPingResult (age: ${age.inSeconds}s, cacheTimeout: ${_cacheTimeout.inSeconds}s)', name: _logName);
+        // #endregion
         return _lastPingResult!;
+      } else {
+        // #region agent log
+        developer.log('Cache expired (age: ${age.inSeconds}s >= ${_cacheTimeout.inSeconds}s), performing new ping', name: _logName);
+        // #endregion
       }
     }
     
@@ -62,24 +85,37 @@ class EnhancedConnectivityService {
     _lastPingTime = DateTime.now();
     _lastPingResult = pingResult;
     
+    // #region agent log
+    developer.log('Internet access check complete: $pingResult, cached for ${_cacheTimeout.inSeconds}s', name: _logName);
+    // #endregion
+    
     return pingResult;
   }
   
   /// Ping a reliable endpoint to verify internet access
   Future<bool> _pingEndpoint() async {
     try {
-      developer.log('Pinging $_pingUrl...', name: _logName);
+      // #region agent log
+      developer.log('Pinging $_pingUrl with timeout: ${_pingTimeout.inSeconds}s', name: _logName);
+      // #endregion
       
+      final startTime = DateTime.now();
       final response = await _httpClient
           .head(Uri.parse(_pingUrl))
           .timeout(_pingTimeout);
       
+      final duration = DateTime.now().difference(startTime);
       final success = response.statusCode >= 200 && response.statusCode < 500;
-      developer.log('Ping result: $success (status: ${response.statusCode})', name: _logName);
+      
+      // #region agent log
+      developer.log('Ping result: $success (status: ${response.statusCode}, duration: ${duration.inMilliseconds}ms)', name: _logName);
+      // #endregion
       
       return success;
     } catch (e) {
+      // #region agent log
       developer.log('Ping failed: $e', name: _logName);
+      // #endregion
       return false;
     }
   }
@@ -87,8 +123,13 @@ class EnhancedConnectivityService {
   /// Stream of connectivity changes (basic connectivity only)
   Stream<bool> get connectivityStream {
     return _connectivity.onConnectivityChanged.map((result) {
-      return !result.contains(ConnectivityResult.none);
-          return result != ConnectivityResult.none;
+      final hasConnectivity = !result.contains(ConnectivityResult.none);
+      
+      // #region agent log
+      developer.log('Connectivity changed: $hasConnectivity, types: ${result.map((r) => r.name).join(", ")}', name: _logName);
+      // #endregion
+      
+      return hasConnectivity;
     });
   }
   
@@ -97,38 +138,68 @@ class EnhancedConnectivityService {
   /// 
   /// [checkInterval] - How often to verify internet access (default: 30s)
   Stream<bool> internetAccessStream({Duration checkInterval = const Duration(seconds: 30)}) async* {
+    // #region agent log
+    developer.log('Starting internet access stream: checkInterval=${checkInterval.inSeconds}s', name: _logName);
+    // #endregion
+    
     // Initial check
-    yield await hasInternetAccess();
+    final initialResult = await hasInternetAccess();
+    // #region agent log
+    developer.log('Initial internet access check: $initialResult', name: _logName);
+    // #endregion
+    yield initialResult;
     
     // Periodic checks
     await for (final _ in Stream.periodic(checkInterval)) {
-      yield await hasInternetAccess(forceRefresh: true);
+      final periodicResult = await hasInternetAccess(forceRefresh: true);
+      // #region agent log
+      developer.log('Periodic internet access check: $periodicResult', name: _logName);
+      // #endregion
+      yield periodicResult;
     }
   }
   
   /// Get detailed connectivity status
   Future<ConnectivityStatus> getDetailedStatus() async {
+    // #region agent log
+    developer.log('Getting detailed connectivity status', name: _logName);
+    // #endregion
+    
     final basic = await hasBasicConnectivity();
     final internet = basic ? await hasInternetAccess() : false;
     
     final result = await _connectivity.checkConnectivity();
-    final connectionType = result is List 
-        ? (result.isNotEmpty ? result.first : ConnectivityResult.none)
-        : result as ConnectivityResult;
+    // checkConnectivity() always returns List<ConnectivityResult>
+    final connectionType = result.isNotEmpty 
+        ? result.first 
+        : ConnectivityResult.none;
     
-    return ConnectivityStatus(
+    final status = ConnectivityStatus(
       hasBasicConnectivity: basic,
       hasInternetAccess: internet,
       connectionType: connectionType,
       lastChecked: DateTime.now(),
     );
+    
+    // #region agent log
+    developer.log('Detailed status: ${status.statusString}, type: ${status.connectionTypeString}, fullyOnline: ${status.isFullyOnline}', name: _logName);
+    // #endregion
+    
+    return status;
   }
   
   /// Clear ping cache
   void clearCache() {
+    // #region agent log
+    developer.log('Clearing ping cache (lastResult: $_lastPingResult, lastTime: $_lastPingTime)', name: _logName);
+    // #endregion
+    
     _lastPingTime = null;
     _lastPingResult = null;
-    developer.log('Cleared ping cache', name: _logName);
+    
+    // #region agent log
+    developer.log('Ping cache cleared', name: _logName);
+    // #endregion
   }
   
   /// Dispose resources
@@ -184,8 +255,6 @@ class ConnectivityStatus {
         return 'Other';
       case ConnectivityResult.none:
         return 'None';
-      default:
-        return 'Unknown';
     }
   }
   

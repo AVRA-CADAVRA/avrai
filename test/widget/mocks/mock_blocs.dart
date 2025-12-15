@@ -12,12 +12,13 @@ class MockAuthBloc extends Mock implements AuthBloc {
   AuthState? _state;
   Stream<AuthState>? _stream;
   bool _isClosed = false;
+  final List<AuthEvent> addedEvents = [];
 
   @override
   AuthState get state => _state ?? AuthInitial();
 
   @override
-  Stream<AuthState> get stream => _stream ?? Stream.value(AuthInitial());
+  Stream<AuthState> get stream => _stream?.asBroadcastStream() ?? Stream.value(AuthInitial()).asBroadcastStream();
 
   @override
   Future<void> close() async {
@@ -27,20 +28,111 @@ class MockAuthBloc extends Mock implements AuthBloc {
   @override
   bool get isClosed => _isClosed;
 
+  @override
+  void add(AuthEvent event) {
+    addedEvents.add(event);
+  }
+
   void setState(AuthState state) {
     _state = state;
-    _stream = Stream.value(state);
+    _stream = Stream.value(state).asBroadcastStream();
+  }
+
+  void setStream(Stream<AuthState> stream) {
+    _stream = stream.asBroadcastStream();
   }
 }
 
 /// Mock ListsBloc for widget testing
-class MockListsBloc extends Mock implements ListsBloc {}
+class MockListsBloc extends Mock implements ListsBloc {
+  ListsState? _state;
+  Stream<ListsState>? _stream;
+  bool _isClosed = false;
+  final List<ListsEvent> addedEvents = [];
+
+  @override
+  ListsState get state => _state ?? ListsInitial();
+
+  @override
+  Stream<ListsState> get stream =>
+      _stream?.asBroadcastStream() ?? Stream.value(ListsInitial()).asBroadcastStream();
+
+  @override
+  Future<void> close() async {
+    _isClosed = true;
+  }
+
+  @override
+  bool get isClosed => _isClosed;
+
+  @override
+  void add(ListsEvent event) {
+    addedEvents.add(event);
+  }
+
+  void setState(ListsState state) {
+    _state = state;
+    _stream = Stream.value(state).asBroadcastStream();
+  }
+
+  void setStream(Stream<ListsState> stream) {
+    _stream = stream.asBroadcastStream();
+  }
+}
 
 /// Mock SpotsBloc for widget testing
-class MockSpotsBloc extends Mock implements SpotsBloc {}
+class MockSpotsBloc extends Mock implements SpotsBloc {
+  SpotsState? _state;
+  Stream<SpotsState>? _stream;
+  bool _isClosed = false;
+
+  @override
+  SpotsState get state => _state ?? SpotsInitial();
+
+  @override
+  Stream<SpotsState> get stream =>
+      _stream?.asBroadcastStream() ?? Stream.value(SpotsInitial()).asBroadcastStream();
+
+  @override
+  Future<void> close() async {
+    _isClosed = true;
+  }
+
+  @override
+  bool get isClosed => _isClosed;
+
+  void setState(SpotsState state) {
+    _state = state;
+    _stream = Stream.value(state).asBroadcastStream();
+  }
+}
 
 /// Mock HybridSearchBloc for widget testing
-class MockHybridSearchBloc extends Mock implements HybridSearchBloc {}
+class MockHybridSearchBloc extends Mock implements HybridSearchBloc {
+  HybridSearchState? _state;
+  Stream<HybridSearchState>? _stream;
+  bool _isClosed = false;
+
+  @override
+  HybridSearchState get state => _state ?? HybridSearchInitial();
+
+  @override
+  Stream<HybridSearchState> get stream => _stream?.asBroadcastStream() ??
+      Stream.value(HybridSearchInitial()).asBroadcastStream();
+
+  @override
+  Future<void> close() async {
+    _isClosed = true;
+  }
+
+  @override
+  bool get isClosed => _isClosed;
+
+  void setState(HybridSearchState state) {
+    _state = state;
+    _stream = Stream.value(state).asBroadcastStream();
+  }
+}
 
 /// Helper class to create mock blocs with predefined states
 class MockBlocFactory {
@@ -80,47 +172,42 @@ class MockBlocFactory {
   /// Creates a mock lists bloc with loaded state
   static MockListsBloc createLoadedListsBloc(List<SpotList> lists) {
     final mockBloc = MockListsBloc();
-    when(mockBloc.state).thenReturn(ListsLoaded(lists, lists));
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(ListsLoaded(lists, lists)));
+    mockBloc.setState(ListsLoaded(lists, lists));
     return mockBloc;
   }
 
   /// Creates a mock lists bloc with loading state
   static MockListsBloc createLoadingListsBloc() {
     final mockBloc = MockListsBloc();
-    when(mockBloc.state).thenReturn(ListsLoading());
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(ListsLoading()));
+    mockBloc.setState(ListsLoading());
     return mockBloc;
   }
 
   /// Creates a mock lists bloc with error state
   static MockListsBloc createErrorListsBloc(String message) {
     final mockBloc = MockListsBloc();
-    when(mockBloc.state).thenReturn(ListsError(message));
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(ListsError(message)));
+    mockBloc.setState(ListsError(message));
     return mockBloc;
   }
 
   /// Creates a mock spots bloc with loaded state
   static MockSpotsBloc createLoadedSpotsBloc(List<Spot> spots) {
     final mockBloc = MockSpotsBloc();
-    when(mockBloc.state).thenReturn(SpotsLoaded(spots));
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(SpotsLoaded(spots)));
+    mockBloc.setState(SpotsLoaded(spots));
     return mockBloc;
   }
 
   /// Creates a mock spots bloc with loading state
   static MockSpotsBloc createLoadingSpotsBloc() {
     final mockBloc = MockSpotsBloc();
-    when(mockBloc.state).thenReturn(SpotsLoading());
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(SpotsLoading()));
+    mockBloc.setState(SpotsLoading());
     return mockBloc;
   }
 
   /// Creates a mock search bloc with results
   static MockHybridSearchBloc createSearchResultsBloc(List<Spot> results) {
     final mockBloc = MockHybridSearchBloc();
-    when(mockBloc.state).thenReturn(HybridSearchLoaded(
+    mockBloc.setState(HybridSearchLoaded(
       spots: results,
       communityCount: results.length,
       externalCount: 0,
@@ -128,14 +215,6 @@ class MockBlocFactory {
       searchDuration: const Duration(milliseconds: 100),
       sources: const {},
     ));
-    when(mockBloc.stream).thenAnswer((_) => Stream.value(HybridSearchLoaded(
-      spots: results,
-      communityCount: results.length,
-      externalCount: 0,
-      totalCount: results.length,
-      searchDuration: const Duration(milliseconds: 100),
-      sources: const {},
-    )));
     return mockBloc;
   }
 

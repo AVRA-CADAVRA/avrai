@@ -3,7 +3,7 @@ import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spots/core/ai/feedback_learning.dart' show UserFeedbackAnalyzer, FeedbackEvent, FeedbackType, FeedbackAnalysisResult, BehavioralPattern, SatisfactionPrediction, FeedbackLearningInsights;
-import 'package:spots/core/ai/personality_learning.dart';
+import 'package:spots/core/ai/personality_learning.dart' show PersonalityLearning;
 
 import 'feedback_learning_test.mocks.dart';
 
@@ -93,7 +93,8 @@ void main() {
 
         when(mockPrefs.getString(any)).thenReturn(null);
 
-        final dimensions = await analyzer.extractNewDimensions(userId);
+        // Provide recent feedback input (required by updated API)
+        final dimensions = await analyzer.extractNewDimensions(userId, const []);
 
         expect(dimensions, isA<Map<String, double>>());
       });

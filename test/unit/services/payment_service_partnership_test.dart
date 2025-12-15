@@ -14,6 +14,7 @@ import 'package:spots/core/models/payment_status.dart';
 import '../../fixtures/model_factories.dart';
 
 import 'payment_service_partnership_test.mocks.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 @GenerateMocks([
   StripeService,
@@ -109,49 +110,39 @@ void main() {
       when(mockStripeService.initializeStripe()).thenAnswer((_) async => {});
     });
 
+    // Removed: Property assignment tests
+    // Payment service partnership tests focus on business logic (partnership checking, revenue split calculation, payment distribution), not property assignment
+
     group('hasPartnership', () {
-      test('should return true if event has partnership', () async {
-        // Arrange
+      test(
+          'should return true if event has partnership, return false if event has no partnership, or return false if partnership service not available',
+          () async {
+        // Test business logic: partnership checking
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
             .thenAnswer((_) async => [testPartnership]);
+        final hasPartnership1 = await service.hasPartnership('event-123');
+        expect(hasPartnership1, isTrue);
 
-        // Act
-        final hasPartnership = await service.hasPartnership('event-123');
-
-        // Assert
-        expect(hasPartnership, isTrue);
-      });
-
-      test('should return false if event has no partnership', () async {
-        // Arrange
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
             .thenAnswer((_) async => []);
+        final hasPartnership2 = await service.hasPartnership('event-123');
+        expect(hasPartnership2, isFalse);
 
-        // Act
-        final hasPartnership = await service.hasPartnership('event-123');
-
-        // Assert
-        expect(hasPartnership, isFalse);
-      });
-
-      test('should return false if partnership service not available', () async {
-        // Arrange
         final serviceWithoutPartnership = PaymentService(
           mockStripeService,
           mockEventService,
         );
-
-        // Act
-        final hasPartnership = await serviceWithoutPartnership.hasPartnership('event-123');
-
-        // Assert
-        expect(hasPartnership, isFalse);
+        final hasPartnership3 =
+            await serviceWithoutPartnership.hasPartnership('event-123');
+        expect(hasPartnership3, isFalse);
       });
     });
 
     group('calculatePartnershipRevenueSplit', () {
-      test('should calculate revenue split for partnership event', () async {
-        // Arrange
+      test(
+          'should calculate revenue split for partnership event, throw exception if partnership services not available, throw exception if no partnership found, or use existing revenue split if available',
+          () async {
+        // Test business logic: revenue split calculation
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
             .thenAnswer((_) async => [testPartnership]);
         when(mockRevenueSplitService.calculateFromPartnership(
@@ -159,31 +150,22 @@ void main() {
           totalAmount: 100.00,
           ticketsSold: 4,
         )).thenAnswer((_) async => testRevenueSplit);
-
-        // Act
-        final revenueSplit = await service.calculatePartnershipRevenueSplit(
+        final revenueSplit1 = await service.calculatePartnershipRevenueSplit(
           eventId: 'event-123',
           totalAmount: 100.00,
           ticketsSold: 4,
         );
+        expect(revenueSplit1, isA<RevenueSplit>());
+        expect(revenueSplit1.eventId, equals('event-123'));
+        expect(revenueSplit1.partnershipId, equals('partnership-123'));
+        expect(revenueSplit1.parties, hasLength(2));
+        expect(revenueSplit1.parties[0].partyId, equals('user-123'));
+        expect(revenueSplit1.parties[1].partyId, equals('business-123'));
 
-        // Assert
-        expect(revenueSplit, isA<RevenueSplit>());
-        expect(revenueSplit.eventId, equals('event-123'));
-        expect(revenueSplit.partnershipId, equals('partnership-123'));
-        expect(revenueSplit.parties, hasLength(2));
-        expect(revenueSplit.parties[0].partyId, equals('user-123'));
-        expect(revenueSplit.parties[1].partyId, equals('business-123'));
-      });
-
-      test('should throw exception if partnership services not available', () async {
-        // Arrange
         final serviceWithoutServices = PaymentService(
           mockStripeService,
           mockEventService,
         );
-
-        // Act & Assert
         expect(
           () => serviceWithoutServices.calculatePartnershipRevenueSplit(
             eventId: 'event-123',
@@ -196,14 +178,9 @@ void main() {
             contains('Partnership services not available'),
           )),
         );
-      });
 
-      test('should throw exception if no partnership found', () async {
-        // Arrange
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
             .thenAnswer((_) async => []);
-
-        // Act & Assert
         expect(
           () => service.calculatePartnershipRevenueSplit(
             eventId: 'event-123',
@@ -216,10 +193,7 @@ void main() {
             contains('No partnership found'),
           )),
         );
-      });
 
-      test('should use existing revenue split if available', () async {
-        // Arrange
         final partnershipWithSplit = testPartnership.copyWith(
           revenueSplitId: 'split-123',
         );
@@ -232,24 +206,22 @@ void main() {
           totalAmount: 100.00,
           ticketsSold: 4,
         )).thenAnswer((_) async => testRevenueSplit);
-
-        // Act
-        final revenueSplit = await service.calculatePartnershipRevenueSplit(
+        final revenueSplit2 = await service.calculatePartnershipRevenueSplit(
           eventId: 'event-123',
           totalAmount: 100.00,
           ticketsSold: 4,
         );
-
-        // Assert
-        expect(revenueSplit, isNotNull);
+        expect(revenueSplit2, isNotNull);
         verify(mockRevenueSplitService.getRevenueSplit('split-123')).called(1);
       });
     });
 
     group('distributePartnershipPayment', () {
-      test('should distribute payment to partnership parties', () async {
-        // Arrange
-        final payment = Payment(
+      test(
+          'should distribute payment to partnership parties, throw exception if payment not found, or throw exception if partnership not found',
+          () async {
+        // Test business logic: payment distribution
+        final payment1 = Payment(
           id: 'payment-123',
           eventId: 'event-123',
           userId: 'user-456',
@@ -258,36 +230,29 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-
+        service.upsertPaymentForTests(payment1);
+        when(mockEventService.getEventById('event-123'))
+            .thenAnswer((_) async => testEvent);
         when(mockPartnershipService.getPartnershipById('partnership-123'))
-            .thenAnswer((_) async => testPartnership);
+            .thenAnswer((_) async =>
+                testPartnership.copyWith(revenueSplitId: 'split-123'));
         when(mockRevenueSplitService.getRevenueSplit(any))
             .thenAnswer((_) async => testRevenueSplit);
         when(mockRevenueSplitService.distributePayments(
           revenueSplitId: anyNamed('revenueSplitId'),
           eventEndTime: anyNamed('eventEndTime'),
         )).thenAnswer((_) async => {
-          'user-123': 43.50,
-          'business-123': 43.50,
-        });
-
-        // Act
-        final distribution = await service.distributePartnershipPayment(
+              'user-123': 43.50,
+              'business-123': 43.50,
+            });
+        final distribution1 = await service.distributePartnershipPayment(
           paymentId: 'payment-123',
           partnershipId: 'partnership-123',
         );
+        expect(distribution1, isA<Map<String, double>>());
+        expect(distribution1['user-123'], equals(43.50));
+        expect(distribution1['business-123'], equals(43.50));
 
-        // Assert
-        expect(distribution, isA<Map<String, double>>());
-        expect(distribution['user-123'], equals(43.50));
-        expect(distribution['business-123'], equals(43.50));
-      });
-
-      test('should throw exception if payment not found', () async {
-        // Arrange
-        // Payment not in service's internal storage
-
-        // Act & Assert
         expect(
           () => service.distributePartnershipPayment(
             paymentId: 'nonexistent-payment',
@@ -299,12 +264,9 @@ void main() {
             contains('Payment not found'),
           )),
         );
-      });
 
-      test('should throw exception if partnership not found', () async {
-        // Arrange
-        final payment = Payment(
-          id: 'payment-123',
+        final payment2 = Payment(
+          id: 'payment-456',
           eventId: 'event-123',
           userId: 'user-456',
           amount: 100.00,
@@ -312,17 +274,14 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        // Add payment to service's internal storage
-        service.getPayment(payment.id); // This won't work, need to access private field
-        // Instead, we'll mock the service to have the payment
-
+        service.upsertPaymentForTests(payment2);
+        when(mockEventService.getEventById('event-123'))
+            .thenAnswer((_) async => testEvent);
         when(mockPartnershipService.getPartnershipById('partnership-123'))
             .thenAnswer((_) async => null);
-
-        // Act & Assert
         expect(
           () => service.distributePartnershipPayment(
-            paymentId: payment.id,
+            paymentId: payment2.id,
             partnershipId: 'partnership-123',
           ),
           throwsA(isA<Exception>().having(
@@ -335,8 +294,10 @@ void main() {
     });
 
     group('purchaseEventTicket with partnership', () {
-      test('should use partnership revenue split for partnership events', () async {
-        // Arrange
+      test(
+          'should use partnership revenue split for partnership events, or use solo revenue split for non-partnership events',
+          () async {
+        // Test business logic: ticket purchase with partnership handling
         await service.initialize();
         when(mockEventService.getEventById('event-123'))
             .thenAnswer((_) async => testEvent);
@@ -348,65 +309,38 @@ void main() {
           ticketsSold: 4,
         )).thenAnswer((_) async => testRevenueSplit);
         when(mockStripeService.createPaymentIntent(
-          amountInCents: 10000,
+          amount: 10000,
           currency: 'usd',
           metadata: anyNamed('metadata'),
-        )).thenAnswer((_) async => {
-          'id': 'pi_test123',
-          'client_secret': 'pi_test123_secret',
-          'status': 'requires_payment_method',
-        });
-
-        // Act
-        final result = await service.purchaseEventTicket(
+        )).thenAnswer((_) async => 'pi_test123_secret');
+        final result1 = await service.purchaseEventTicket(
           eventId: 'event-123',
           userId: 'user-456',
           ticketPrice: 25.00,
           quantity: 4,
         );
-
-        // Assert
-        expect(result.isSuccess, isTrue);
-        expect(result.revenueSplit, isNotNull);
-        expect(result.revenueSplit?.partnershipId, equals('partnership-123'));
-        expect(result.revenueSplit?.parties, hasLength(2));
+        expect(result1.isSuccess, isTrue);
+        expect(result1.revenueSplit, isNotNull);
+        expect(result1.revenueSplit?.partnershipId, equals('partnership-123'));
+        expect(result1.revenueSplit?.parties, hasLength(2));
         verify(mockRevenueSplitService.calculateFromPartnership(
           partnershipId: 'partnership-123',
           totalAmount: 100.00,
           ticketsSold: 4,
         )).called(1);
-      });
 
-      test('should use solo revenue split for non-partnership events', () async {
-        // Arrange
-        await service.initialize();
-        when(mockEventService.getEventById('event-123'))
-            .thenAnswer((_) async => testEvent);
         when(mockPartnershipService.getPartnershipsForEvent('event-123'))
-            .thenAnswer((_) async => []); // No partnership
-        when(mockStripeService.createPaymentIntent(
-          amountInCents: 10000,
-          currency: 'usd',
-          metadata: anyNamed('metadata'),
-        )).thenAnswer((_) async => {
-          'id': 'pi_test123',
-          'client_secret': 'pi_test123_secret',
-          'status': 'requires_payment_method',
-        });
-
-        // Act
-        final result = await service.purchaseEventTicket(
+            .thenAnswer((_) async => []);
+        final result2 = await service.purchaseEventTicket(
           eventId: 'event-123',
-          userId: 'user-456',
+          userId: 'user-789',
           ticketPrice: 25.00,
           quantity: 4,
         );
-
-        // Assert
-        expect(result.isSuccess, isTrue);
-        expect(result.revenueSplit, isNotNull);
-        expect(result.revenueSplit?.partnershipId, isNull); // Solo event
-        expect(result.revenueSplit?.parties, isEmpty); // Solo event uses hostPayout
+        expect(result2.isSuccess, isTrue);
+        expect(result2.revenueSplit, isNotNull);
+        expect(result2.revenueSplit?.partnershipId, isNull);
+        expect(result2.revenueSplit?.parties, isEmpty);
         verifyNever(mockRevenueSplitService.calculateFromPartnership(
           partnershipId: anyNamed('partnershipId'),
           totalAmount: anyNamed('totalAmount'),
@@ -414,6 +348,9 @@ void main() {
         ));
       });
     });
+
+    tearDownAll(() async {
+      await cleanupTestStorage();
+    });
   });
 }
-

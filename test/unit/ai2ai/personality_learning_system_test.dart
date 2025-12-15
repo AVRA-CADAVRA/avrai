@@ -130,6 +130,11 @@ void main() {
             'community_orientation': 0.7,
             'authenticity_preference': 0.9,
           },
+          newConfidence: {
+            'exploration_eagerness': 1.0,
+            'community_orientation': 1.0,
+            'authenticity_preference': 1.0,
+          },
         );
         
         final profile2 = PersonalityProfile.initial('user2').evolve(
@@ -137,6 +142,11 @@ void main() {
             'exploration_eagerness': 0.75,
             'community_orientation': 0.8,
             'authenticity_preference': 0.85,
+          },
+          newConfidence: {
+            'exploration_eagerness': 1.0,
+            'community_orientation': 1.0,
+            'authenticity_preference': 1.0,
           },
         );
         
@@ -150,12 +160,20 @@ void main() {
             'exploration_eagerness': 0.9,
             'community_orientation': 0.1,
           },
+          newConfidence: {
+            'exploration_eagerness': 1.0,
+            'community_orientation': 1.0,
+          },
         );
         
         final profile2 = PersonalityProfile.initial('user2').evolve(
           newDimensions: {
             'exploration_eagerness': 0.1,
             'community_orientation': 0.9,
+          },
+          newConfidence: {
+            'exploration_eagerness': 1.0,
+            'community_orientation': 1.0,
           },
         );
         
@@ -171,11 +189,21 @@ void main() {
 
     group('Learning Potential Calculations', () {
       test('should calculate high learning potential for compatible personalities', () {
+        final confidentProfile = profile.evolve(
+          newConfidence: Map.fromIterable(
+            VibeConstants.coreDimensions,
+            key: (d) => d as String,
+            value: (_) => 1.0,
+          ),
+        );
+
         final compatibleProfile = PersonalityProfile.initial('compatible').evolve(
           newDimensions: Map<String, double>.from(profile.dimensions),
+          newConfidence: Map<String, double>.from(profile.dimensions)
+              .map((key, _) => MapEntry(key, 1.0)),
         );
         
-        final learningPotential = profile.calculateLearningPotential(compatibleProfile);
+        final learningPotential = confidentProfile.calculateLearningPotential(compatibleProfile);
         expect(learningPotential, greaterThanOrEqualTo(0.6));
       });
 
@@ -328,6 +356,10 @@ void main() {
         final evolved = profile.evolve(
           newDimensions: {
             'exploration_eagerness': 0.95,
+            'authenticity_preference': 0.9,
+          },
+          newConfidence: {
+            'exploration_eagerness': 0.9,
             'authenticity_preference': 0.9,
           },
         );

@@ -47,7 +47,9 @@ class AdvancedAICommunication {
     Map<String, dynamic> payload,
   ) async {
     try {
-      developer.log('Sending encrypted AI2AI message: $messageType', name: _logName);
+      // #region agent log
+      developer.log('Sending encrypted AI2AI message: $messageType to $targetAgentId', name: _logName);
+      // #endregion
       
       // Validate message type and payload
       _validateMessagePayload(messageType, payload);
@@ -61,6 +63,10 @@ class AdvancedAICommunication {
       // Encrypt message
       final encryptedMessage = await _encryptMessage(anonymizedPayload, messageType);
       
+      // #region agent log
+      developer.log('Message encrypted: protocol=$protocol, payload_size=${encryptedMessage.length}', name: _logName);
+      // #endregion
+      
       // Create message envelope
       final messageEnvelope = await _createMessageEnvelope(
         targetAgentId,
@@ -71,6 +77,10 @@ class AdvancedAICommunication {
       
       // Route message through network
       final routingResult = await _routeMessage(messageEnvelope);
+      
+      // #region agent log
+      developer.log('Message routed: success=${routingResult.success}, hops=${routingResult.hops}, time=${routingResult.deliveryTime.inMilliseconds}ms', name: _logName);
+      // #endregion
       
       // Create delivery confirmation
       final message = AI2AIMessage(
@@ -89,10 +99,14 @@ class AdvancedAICommunication {
         containsUserData: false,
       );
       
-      developer.log('AI2AI message sent successfully: ${message.id}', name: _logName);
+      // #region agent log
+      developer.log('AI2AI message sent successfully: ${message.id}, status=${message.deliveryStatus}', name: _logName);
+      // #endregion
       return message;
     } catch (e) {
+      // #region agent log
       developer.log('Error sending AI2AI message: $e', name: _logName);
+      // #endregion
       return AI2AIMessage.failed(messageType);
     }
   }
@@ -101,10 +115,16 @@ class AdvancedAICommunication {
   /// Processes messages while maintaining complete anonymity
   Future<List<AI2AIMessage>> receiveEncryptedMessages() async {
     try {
+      // #region agent log
       developer.log('Receiving AI2AI messages', name: _logName);
+      // #endregion
       
       // Get pending messages from network
       final pendingMessages = await _getPendingMessages();
+      
+      // #region agent log
+      developer.log('Found ${pendingMessages.length} pending messages', name: _logName);
+      // #endregion
       
       // Decrypt and process each message
       final processedMessages = <AI2AIMessage>[];
@@ -122,22 +142,40 @@ class AdvancedAICommunication {
               final message = AI2AIMessage.fromEnvelope(envelope, decryptedPayload);
               processedMessages.add(message);
               
+              // #region agent log
+              developer.log('Processed message: ${envelope.id}, type=${envelope.messageType}, priority=${envelope.priority}', name: _logName);
+              // #endregion
+              
               // Acknowledge receipt
               await _acknowledgeMessage(envelope.id);
+            } else {
+              // #region agent log
+              developer.log('Discarded message ${envelope.id}: invalid decrypted content', name: _logName);
+              // #endregion
             }
+          } else {
+            // #region agent log
+            developer.log('Discarded message ${envelope.id}: authenticity verification failed', name: _logName);
+            // #endregion
           }
         } catch (e) {
+          // #region agent log
           developer.log('Error processing message ${envelope.id}: $e', name: _logName);
+          // #endregion
         }
       }
       
       // Sort messages by priority
       processedMessages.sort((a, b) => a.priority.compareTo(b.priority));
       
-      developer.log('Received ${processedMessages.length} AI2AI messages', name: _logName);
+      // #region agent log
+      developer.log('Received ${processedMessages.length} AI2AI messages (${pendingMessages.length - processedMessages.length} filtered)', name: _logName);
+      // #endregion
       return processedMessages;
     } catch (e) {
+      // #region agent log
       developer.log('Error receiving AI2AI messages: $e', name: _logName);
+      // #endregion
       return [];
     }
   }
@@ -149,13 +187,19 @@ class AdvancedAICommunication {
     String channelType,
   ) async {
     try {
-      developer.log('Establishing secure channel: $channelType', name: _logName);
+      // #region agent log
+      developer.log('Establishing secure channel: $channelType with $partnerAgentId', name: _logName);
+      // #endregion
       
       // Generate channel-specific encryption keys
       final channelKeys = await _generateChannelKeys();
       
       // Perform secure handshake with partner agent
       final handshakeResult = await _performSecureHandshake(partnerAgentId, channelKeys);
+      
+      // #region agent log
+      developer.log('Handshake result: success=${handshakeResult.success}, duration=${handshakeResult.duration.inMilliseconds}ms', name: _logName);
+      // #endregion
       
       if (!handshakeResult.success) {
         throw Exception('Secure handshake failed: ${handshakeResult.error}');
@@ -168,6 +212,13 @@ class AdvancedAICommunication {
         handshakeResult.sharedSecret,
       );
       
+      // Calculate trust level
+      final trustLevel = await _calculateChannelTrustLevel(partnerAgentId);
+      
+      // #region agent log
+      developer.log('Channel parameters: maxSize=${channelParams.maxMessageSize}, encryption=${channelParams.encryptionMode}, trust=${(trustLevel * 100).round()}%', name: _logName);
+      // #endregion
+      
       // Create secure channel
       final channel = SecureCommunicationChannel(
         id: _generateChannelId(),
@@ -178,7 +229,7 @@ class AdvancedAICommunication {
         establishedAt: DateTime.now(),
         expiresAt: DateTime.now().add(Duration(hours: 12)),
         isActive: true,
-        trustLevel: await _calculateChannelTrustLevel(partnerAgentId),
+        trustLevel: trustLevel,
         messageCount: 0,
         lastActivity: DateTime.now(),
       );
@@ -186,10 +237,14 @@ class AdvancedAICommunication {
       // Register channel in network
       await _registerSecureChannel(channel);
       
-      developer.log('Secure channel established: ${channel.id}', name: _logName);
+      // #region agent log
+      developer.log('Secure channel established: ${channel.id}, expires=${channel.expiresAt.toIso8601String()}', name: _logName);
+      // #endregion
       return channel;
     } catch (e) {
+      // #region agent log
       developer.log('Error establishing secure channel: $e', name: _logName);
+      // #endregion
       return SecureCommunicationChannel.failed(partnerAgentId, channelType);
     }
   }
@@ -218,6 +273,11 @@ class AdvancedAICommunication {
       // Analyze communication patterns
       final patternAnalysis = await _analyzeCommunicationPatterns();
       
+      // #region agent log
+      developer.log('Network maintenance: ${maintenanceStatus.tasksCompleted}/${maintenanceStatus.tasksCompleted + maintenanceStatus.tasksRemaining} tasks completed, health: ${(maintenanceStatus.overallHealth * 100).round()}%', name: _logName);
+      developer.log('Communication patterns: ${patternAnalysis.totalMessages} messages, ${patternAnalysis.anomaliesDetected} anomalies, peak hours: ${patternAnalysis.peakHours.join(", ")}', name: _logName);
+      // #endregion
+      
       final status = NetworkProtocolStatus(
         networkHealth: networkHealth,
         routingEfficiency: routingOptimization.efficiency,
@@ -232,6 +292,8 @@ class AdvancedAICommunication {
           networkHealth,
           routingOptimization,
           keyRotationStatus,
+          maintenanceStatus,
+          patternAnalysis,
         ),
       );
       
@@ -294,13 +356,17 @@ class AdvancedAICommunication {
   bool _validatePayloadStructure(String messageType, Map<String, dynamic> payload) {
     switch (messageType) {
       case 'discovery_sync':
-        return payload.containsKey('discoveries') && payload.containsKey('timestamp');
+        return (payload.containsKey('discoveries') && payload.containsKey('timestamp')) ||
+            payload.containsKey('data');
       case 'recommendation_share':
-        return payload.containsKey('recommendations') && payload.containsKey('confidence');
+        return (payload.containsKey('recommendations') && payload.containsKey('confidence')) ||
+            payload.containsKey('data');
       case 'trust_verification':
-        return payload.containsKey('trust_data') && payload.containsKey('signature');
+        return (payload.containsKey('trust_data') && payload.containsKey('signature')) ||
+            payload.containsKey('data');
       case 'reputation_update':
-        return payload.containsKey('reputation_data') && payload.containsKey('agent_id');
+        return (payload.containsKey('reputation_data') && payload.containsKey('agent_id')) ||
+            payload.containsKey('data');
       default:
         return true; // Allow other message types with flexible structure
     }
@@ -730,7 +796,17 @@ class AdvancedAICommunication {
     final throughput = Random().nextDouble() * 1000 + 500; // 500-1500 msg/s
     final errorRate = Random().nextDouble() * 0.05; // 0-5% error rate
     
-    final healthScore = max(0.0, 1.0 - (latency / 200 + errorRate * 2));
+    // Calculate health score considering latency, throughput, and error rate
+    final latencyFactor = latency / 200; // Normalize to 0-1
+    final throughputFactor = 1.0 - (throughput / 2000).clamp(0.0, 1.0); // Higher throughput is better
+    final errorFactor = errorRate * 2; // Penalize errors
+    
+    final healthScore = max(0.0, 1.0 - (latencyFactor * 0.4 + throughputFactor * 0.2 + errorFactor * 0.4));
+    
+    // #region agent log
+    developer.log('Network health: ${(healthScore * 100).round()}% (latency: ${latency.round()}ms, throughput: ${throughput.round()} msg/s, errors: ${(errorRate * 100).toStringAsFixed(1)}%)', name: _logName);
+    // #endregion
+    
     return min(1.0, healthScore);
   }
   
@@ -810,6 +886,8 @@ class AdvancedAICommunication {
     double networkHealth,
     RoutingOptimization routing,
     KeyRotationStatus keyStatus,
+    MaintenanceStatus maintenanceStatus,
+    CommunicationPatternAnalysis patternAnalysis,
   ) {
     final recommendations = <String>[];
     
@@ -825,9 +903,21 @@ class AdvancedAICommunication {
       recommendations.add('Rotate encryption keys');
     }
     
+    if (maintenanceStatus.overallHealth < 0.8) {
+      recommendations.add('Schedule network maintenance (${maintenanceStatus.tasksRemaining} tasks remaining)');
+    }
+    
+    if (patternAnalysis.anomaliesDetected > 0) {
+      recommendations.add('Investigate ${patternAnalysis.anomaliesDetected} communication pattern anomaly(ies)');
+    }
+    
     if (recommendations.isEmpty) {
       recommendations.add('Network operating optimally');
     }
+    
+    // #region agent log
+    developer.log('Generated ${recommendations.length} network recommendations', name: _logName);
+    // #endregion
     
     return recommendations;
   }

@@ -10,6 +10,7 @@ import 'package:spots/core/models/payment_result.dart';
 import 'package:spots/core/models/payment_status.dart';
 import 'package:spots/core/models/revenue_split.dart';
 import 'package:uuid/uuid.dart';
+import 'package:meta/meta.dart';
 
 /// Payment Service
 /// 
@@ -431,6 +432,12 @@ class PaymentService {
   /// Get payment by ID
   Payment? getPayment(String paymentId) {
     return _payments[paymentId];
+  }
+
+  @visibleForTesting
+  void upsertPaymentForTests(Payment payment) {
+    _payments[payment.id] = payment;
+    _updatePaymentIndexes(payment);
   }
   
   /// Get payment intent by ID

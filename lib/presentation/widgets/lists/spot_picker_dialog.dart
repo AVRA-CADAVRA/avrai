@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/list.dart';
@@ -27,6 +29,27 @@ class _SpotPickerDialogState extends State<SpotPickerDialog> {
   @override
   void initState() {
     super.initState();
+    // #region agent log
+    // Debug mode: log dialog initialization (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H4',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-init',
+        'hypothesisId': 'H4',
+        'location': 'lib/presentation/widgets/lists/spot_picker_dialog.dart:initState',
+        'message': 'SpotPickerDialog initialized',
+        'data': {
+          'listId': widget.list.id,
+          'excludedSpotIdsCount': widget.excludedSpotIds.length,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+    
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -46,6 +69,28 @@ class _SpotPickerDialogState extends State<SpotPickerDialog> {
 
   void _toggleSpotSelection(String spotId) {
     setState(() {
+      // #region agent log
+      // Debug mode: log spot selection toggle (no PII values)
+      try {
+        final payload = <String, dynamic>{
+          'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H2',
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'sessionId': 'debug-session',
+          'runId': 'pre-fix-toggle',
+          'hypothesisId': 'H2',
+          'location': 'lib/presentation/widgets/lists/spot_picker_dialog.dart:_toggleSpotSelection',
+          'message': 'Spot selection toggled',
+          'data': {
+            'spotId': spotId,
+            'wasSelected': _selectedSpotIds.contains(spotId),
+            'selectedCount': _selectedSpotIds.length,
+          },
+        };
+        File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+            .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+      } catch (_) {}
+      // #endregion
+      
       if (_selectedSpotIds.contains(spotId)) {
         _selectedSpotIds.remove(spotId);
       } else {
@@ -55,6 +100,27 @@ class _SpotPickerDialogState extends State<SpotPickerDialog> {
   }
 
   void _addSelectedSpots() {
+    // #region agent log
+    // Debug mode: log add selected spots (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H3',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-add',
+        'hypothesisId': 'H3',
+        'location': 'lib/presentation/widgets/lists/spot_picker_dialog.dart:_addSelectedSpots',
+        'message': 'Add selected spots',
+        'data': {
+          'selectedCount': _selectedSpotIds.length,
+          'listId': widget.list.id,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+    
     if (_selectedSpotIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -166,6 +232,29 @@ class _SpotPickerDialogState extends State<SpotPickerDialog> {
                   }
 
                   if (state is SpotsLoaded) {
+                    // #region agent log
+                    // Debug mode: log spots loaded (no PII values)
+                    try {
+                      final payload = <String, dynamic>{
+                        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H5',
+                        'timestamp': DateTime.now().millisecondsSinceEpoch,
+                        'sessionId': 'debug-session',
+                        'runId': 'pre-fix-loaded',
+                        'hypothesisId': 'H5',
+                        'location': 'lib/presentation/widgets/lists/spot_picker_dialog.dart:SpotsLoaded',
+                        'message': 'Spots loaded for filtering',
+                        'data': {
+                          'spotsCount': state.spots.length,
+                          'respectedSpotsCount': state.respectedSpots.length,
+                          'listSpotIdsCount': widget.list.spotIds.length,
+                          'excludedSpotIdsCount': widget.excludedSpotIds.length,
+                        },
+                      };
+                      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+                          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+                    } catch (_) {}
+                    // #endregion
+                    
                     final allSpots = [...state.spots, ...state.respectedSpots];
                     
                     // Filter out spots already in list and excluded spots
@@ -176,9 +265,31 @@ class _SpotPickerDialogState extends State<SpotPickerDialog> {
                       
                       // Apply search filter
                       if (_searchQuery.isNotEmpty) {
+                        // #region agent log
+                        // Debug mode: log search filtering (no PII values)
+                        try {
+                          final payload = <String, dynamic>{
+                            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H1',
+                            'timestamp': DateTime.now().millisecondsSinceEpoch,
+                            'sessionId': 'debug-session',
+                            'runId': 'pre-fix-search',
+                            'hypothesisId': 'H1',
+                            'location': 'lib/presentation/widgets/lists/spot_picker_dialog.dart:searchFilter',
+                            'message': 'Search filter applied',
+                            'data': {
+                              'searchQueryLength': _searchQuery.length,
+                              'spotId': spot.id,
+                              'hasAddress': spot.address != null,
+                            },
+                          };
+                          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+                              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+                        } catch (_) {}
+                        // #endregion
+                        
                         return spot.name.toLowerCase().contains(_searchQuery) ||
                             spot.category.toLowerCase().contains(_searchQuery) ||
-                            (spot.description.toLowerCase().contains(_searchQuery) ?? false) ||
+                            spot.description.toLowerCase().contains(_searchQuery) ||
                             (spot.address?.toLowerCase().contains(_searchQuery) ?? false);
                       }
                       return true;

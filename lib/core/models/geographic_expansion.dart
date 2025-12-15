@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'dart:convert';
+import 'dart:io';
 
 /// Geographic Expansion Model
 /// 
@@ -261,7 +263,36 @@ class GeographicExpansion extends Equatable {
 
   /// Create from JSON
   factory GeographicExpansion.fromJson(Map<String, dynamic> json) {
-    final localityCoverageMap = json['localityCoverage'] as Map<String, dynamic>?;
+    // #region agent log
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H5',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-geo-expansion',
+        'hypothesisId': 'H5',
+        'location': 'lib/core/models/geographic_expansion.dart:GeographicExpansion.fromJson',
+        'message': 'fromJson map runtime types',
+        'data': {
+          'localityCoverage_type': json['localityCoverage']?.runtimeType.toString(),
+          'cityCoverage_type': json['cityCoverage']?.runtimeType.toString(),
+          'stateCoverage_type': json['stateCoverage']?.runtimeType.toString(),
+          'nationCoverage_type': json['nationCoverage']?.runtimeType.toString(),
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+
+    Map<String, dynamic>? _asStringKeyedMap(dynamic v) {
+      if (v == null) return null;
+      if (v is Map<String, dynamic>) return v;
+      if (v is Map) return Map<String, dynamic>.from(v);
+      return null;
+    }
+
+    final localityCoverageMap = _asStringKeyedMap(json['localityCoverage']);
     final localityCoverage = <String, double>{};
     if (localityCoverageMap != null) {
       localityCoverageMap.forEach((key, value) {
@@ -269,7 +300,7 @@ class GeographicExpansion extends Equatable {
       });
     }
 
-    final cityCoverageMap = json['cityCoverage'] as Map<String, dynamic>?;
+    final cityCoverageMap = _asStringKeyedMap(json['cityCoverage']);
     final cityCoverage = <String, double>{};
     if (cityCoverageMap != null) {
       cityCoverageMap.forEach((key, value) {
@@ -277,7 +308,7 @@ class GeographicExpansion extends Equatable {
       });
     }
 
-    final stateCoverageMap = json['stateCoverage'] as Map<String, dynamic>?;
+    final stateCoverageMap = _asStringKeyedMap(json['stateCoverage']);
     final stateCoverage = <String, double>{};
     if (stateCoverageMap != null) {
       stateCoverageMap.forEach((key, value) {
@@ -285,7 +316,7 @@ class GeographicExpansion extends Equatable {
       });
     }
 
-    final nationCoverageMap = json['nationCoverage'] as Map<String, dynamic>?;
+    final nationCoverageMap = _asStringKeyedMap(json['nationCoverage']);
     final nationCoverage = <String, double>{};
     if (nationCoverageMap != null) {
       nationCoverageMap.forEach((key, value) {
@@ -293,7 +324,7 @@ class GeographicExpansion extends Equatable {
       });
     }
 
-    final commutePatternsMap = json['commutePatterns'] as Map<String, dynamic>?;
+    final commutePatternsMap = _asStringKeyedMap(json['commutePatterns']);
     final commutePatterns = <String, List<String>>{};
     if (commutePatternsMap != null) {
       commutePatternsMap.forEach((key, value) {
@@ -301,7 +332,7 @@ class GeographicExpansion extends Equatable {
       });
     }
 
-    final eventHostingLocationsMap = json['eventHostingLocations'] as Map<String, dynamic>?;
+    final eventHostingLocationsMap = _asStringKeyedMap(json['eventHostingLocations']);
     final eventHostingLocations = <String, List<String>>{};
     if (eventHostingLocationsMap != null) {
       eventHostingLocationsMap.forEach((key, value) {

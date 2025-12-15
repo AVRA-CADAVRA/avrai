@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/geographic_scope_service.dart';
 import 'package:spots/core/services/large_city_detection_service.dart';
 import '../../fixtures/model_factories.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Geographic Scope Service Tests
 /// Tests geographic hierarchy validation for event hosting
@@ -15,456 +16,295 @@ void main() {
       service = GeographicScopeService(largeCityService: largeCityService);
     });
 
+    // Removed: Property assignment tests
+    // Geographic scope tests focus on business logic (expertise level validation, location matching), not property assignment
+
     group('canHostInLocality', () {
-      test('should allow local expert to host in their own locality', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'local'},
-        );
-
-        final canHost = service.canHostInLocality(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          locality: 'Greenpoint',
-        );
-
-        expect(canHost, isTrue);
-      });
-
-      test('should prevent local expert from hosting in different locality', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'local'},
-        );
-
-        final canHost = service.canHostInLocality(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          locality: 'Williamsburg',
-        );
-
-        expect(canHost, isFalse);
-      });
-
-      test('should allow city expert to host in any locality in their city', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'city'},
-        );
-
-        // City expert can host in any locality in Brooklyn
+      test(
+          'should correctly determine hosting eligibility based on expertise level and location, or return false for no expertise or no location',
+          () {
+        // Test business logic: expertise-based hosting eligibility
+        // Local expert - own locality only
+        final localUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn',
+                expertiseMap: {'food': 'local'});
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Greenpoint',
-          ),
-          isTrue,
-        );
+            service.canHostInLocality(
+                userId: localUser.id,
+                user: localUser,
+                category: 'food',
+                locality: 'Greenpoint'),
+            isTrue);
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Williamsburg',
-          ),
-          isTrue,
-        );
+            service.canHostInLocality(
+                userId: localUser.id,
+                user: localUser,
+                category: 'food',
+                locality: 'Williamsburg'),
+            isFalse);
+
+        // City expert - any locality in city
+        final cityUser = ModelFactories.createTestUser(id: 'user-123').copyWith(
+            location: 'Greenpoint, Brooklyn', expertiseMap: {'food': 'city'});
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'DUMBO',
-          ),
-          isTrue,
-        );
-      });
-
-      test('should prevent city expert from hosting in different city', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'city'},
-        );
-
-        final canHost = service.canHostInLocality(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          locality: 'Manhattan',
-        );
-
-        expect(canHost, isFalse);
-      });
-
-      test('should allow state expert to host in any locality in their state', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'regional'},
-        );
-
-        // State expert can host in any locality in NY
+            service.canHostInLocality(
+                userId: cityUser.id,
+                user: cityUser,
+                category: 'food',
+                locality: 'Greenpoint'),
+            isTrue);
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Greenpoint',
-          ),
-          isTrue,
-        );
+            service.canHostInLocality(
+                userId: cityUser.id,
+                user: cityUser,
+                category: 'food',
+                locality: 'Williamsburg'),
+            isTrue);
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Manhattan',
-          ),
-          isTrue,
-        );
-      });
-
-      test('should allow national expert to host in any locality in their nation', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'national'},
-        );
-
-        // National expert can host anywhere in USA
+            service.canHostInLocality(
+                userId: cityUser.id,
+                user: cityUser,
+                category: 'food',
+                locality: 'DUMBO'),
+            isTrue);
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Greenpoint',
-          ),
-          isTrue,
-        );
+            service.canHostInLocality(
+                userId: cityUser.id,
+                user: cityUser,
+                category: 'food',
+                locality: 'Manhattan'),
+            isFalse);
+
+        // Regional expert - any locality in state
+        final regionalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn, NY, USA',
+                expertiseMap: {'food': 'regional'});
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Los Angeles',
-          ),
-          isTrue,
-        );
-      });
-
-      test('should allow global expert to host anywhere', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'global'},
-        );
-
+            service.canHostInLocality(
+                userId: regionalUser.id,
+                user: regionalUser,
+                category: 'food',
+                locality: 'Greenpoint'),
+            isTrue);
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Tokyo',
-          ),
-          isTrue,
-        );
+            service.canHostInLocality(
+                userId: regionalUser.id,
+                user: regionalUser,
+                category: 'food',
+                locality: 'Manhattan'),
+            isTrue);
+
+        // National expert - any locality in nation
+        final nationalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn, NY, USA',
+                expertiseMap: {'food': 'national'});
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Paris',
-          ),
-          isTrue,
-        );
-      });
-
-      test('should allow universal expert to host anywhere', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'universal'},
-        );
-
+            service.canHostInLocality(
+                userId: nationalUser.id,
+                user: nationalUser,
+                category: 'food',
+                locality: 'Greenpoint'),
+            isTrue);
         expect(
-          service.canHostInLocality(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            locality: 'Anywhere',
-          ),
-          isTrue,
-        );
-      });
+            service.canHostInLocality(
+                userId: nationalUser.id,
+                user: nationalUser,
+                category: 'food',
+                locality: 'Los Angeles'),
+            isTrue);
 
-      test('should return false if user has no expertise in category', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {}, // No expertise
-        );
+        // Global/Universal expert - anywhere
+        final globalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(expertiseMap: {'food': 'global'});
+        expect(
+            service.canHostInLocality(
+                userId: globalUser.id,
+                user: globalUser,
+                category: 'food',
+                locality: 'Tokyo'),
+            isTrue);
+        expect(
+            service.canHostInLocality(
+                userId: globalUser.id,
+                user: globalUser,
+                category: 'food',
+                locality: 'Paris'),
+            isTrue);
 
-        final canHost = service.canHostInLocality(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          locality: 'Greenpoint',
-        );
+        final universalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(expertiseMap: {'food': 'universal'});
+        expect(
+            service.canHostInLocality(
+                userId: universalUser.id,
+                user: universalUser,
+                category: 'food',
+                locality: 'Anywhere'),
+            isTrue);
 
-        expect(canHost, isFalse);
-      });
+        // Edge cases
+        final noExpertiseUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(location: 'Greenpoint, Brooklyn', expertiseMap: {});
+        expect(
+            service.canHostInLocality(
+                userId: noExpertiseUser.id,
+                user: noExpertiseUser,
+                category: 'food',
+                locality: 'Greenpoint'),
+            isFalse);
 
-      test('should return false if user has no location', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-          location: null,
-        ).copyWith(
-          expertiseMap: {'food': 'local'},
-        );
-
-        final canHost = service.canHostInLocality(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          locality: 'Greenpoint',
-        );
-
-        expect(canHost, isFalse);
+        final noLocationUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(expertiseMap: {'food': 'local'});
+        expect(
+            service.canHostInLocality(
+                userId: noLocationUser.id,
+                user: noLocationUser,
+                category: 'food',
+                locality: 'Greenpoint'),
+            isFalse);
       });
     });
 
     group('canHostInCity', () {
-      test('should allow city expert to host in their own city', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'city'},
-        );
-
-        final canHost = service.canHostInCity(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          city: 'Brooklyn',
-        );
-
-        expect(canHost, isTrue);
-      });
-
-      test('should prevent local expert from hosting in different city', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'local'},
-        );
-
-        final canHost = service.canHostInCity(
-          userId: user.id,
-          user: user,
-          category: 'food',
-          city: 'Manhattan',
-        );
-
-        expect(canHost, isFalse);
-      });
-
-      test('should allow state expert to host in any city in their state', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'regional'},
-        );
-
+      test(
+          'should correctly determine city hosting eligibility based on expertise level',
+          () {
+        // Test business logic: city-level hosting eligibility
+        final cityUser = ModelFactories.createTestUser(id: 'user-123').copyWith(
+            location: 'Greenpoint, Brooklyn', expertiseMap: {'food': 'city'});
         expect(
-          service.canHostInCity(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            city: 'Brooklyn',
-          ),
-          isTrue,
-        );
+            service.canHostInCity(
+                userId: cityUser.id,
+                user: cityUser,
+                category: 'food',
+                city: 'Brooklyn'),
+            isTrue);
+
+        final localUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn',
+                expertiseMap: {'food': 'local'});
         expect(
-          service.canHostInCity(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            city: 'Manhattan',
-          ),
-          isTrue,
-        );
+            service.canHostInCity(
+                userId: localUser.id,
+                user: localUser,
+                category: 'food',
+                city: 'Manhattan'),
+            isFalse);
+
+        final regionalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn, NY, USA',
+                expertiseMap: {'food': 'regional'});
+        expect(
+            service.canHostInCity(
+                userId: regionalUser.id,
+                user: regionalUser,
+                category: 'food',
+                city: 'Brooklyn'),
+            isTrue);
+        expect(
+            service.canHostInCity(
+                userId: regionalUser.id,
+                user: regionalUser,
+                category: 'food',
+                city: 'Manhattan'),
+            isTrue);
       });
     });
 
     group('getHostingScope', () {
-      test('should return only user locality for local expert', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'local'},
-        );
+      test(
+          'should return correct hosting scope based on expertise level (local, city, global)',
+          () {
+        // Test business logic: hosting scope calculation
+        final localUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn',
+                expertiseMap: {'food': 'local'});
+        final localScope =
+            service.getHostingScope(user: localUser, category: 'food');
+        expect(localScope['localities'], isA<List<String>>());
+        expect(localScope['cities'], isEmpty);
 
-        final scope = service.getHostingScope(
-          user: user,
-          category: 'food',
-        );
+        final cityUser = ModelFactories.createTestUser(id: 'user-123').copyWith(
+            location: 'Greenpoint, Brooklyn', expertiseMap: {'food': 'city'});
+        final cityScope =
+            service.getHostingScope(user: cityUser, category: 'food');
+        expect(cityScope['localities'], isA<List<String>>());
+        expect(cityScope['cities'], isA<List<String>>());
 
-        expect(scope['localities'], isA<List<String>>());
-        expect(scope['cities'], isEmpty);
-      });
-
-      test('should return all localities in city for city expert', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'city'},
-        );
-
-        final scope = service.getHostingScope(
-          user: user,
-          category: 'food',
-        );
-
-        expect(scope['localities'], isA<List<String>>());
-        expect(scope['cities'], isA<List<String>>());
-      });
-
-      test('should return all localities and cities for global expert', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'global'},
-        );
-
-        final scope = service.getHostingScope(
-          user: user,
-          category: 'food',
-        );
-
-        expect(scope['localities'], contains('*'));
-        expect(scope['cities'], contains('*'));
+        final globalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(expertiseMap: {'food': 'global'});
+        final globalScope =
+            service.getHostingScope(user: globalUser, category: 'food');
+        expect(globalScope['localities'], contains('*'));
+        expect(globalScope['cities'], contains('*'));
       });
     });
 
     group('validateEventLocation', () {
-      test('should validate local expert hosting in their locality', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'local'},
-        );
-
+      test(
+          'should validate event location based on expertise level, or throw exception for invalid locations',
+          () {
+        // Test business logic: location validation with error handling
+        final localUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(
+                location: 'Greenpoint, Brooklyn',
+                expertiseMap: {'food': 'local'});
         expect(
           () => service.validateEventLocation(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            eventLocality: 'Greenpoint',
-          ),
+              userId: localUser.id,
+              user: localUser,
+              category: 'food',
+              eventLocality: 'Greenpoint'),
           returnsNormally,
         );
-      });
-
-      test('should throw exception when local expert hosts in different locality', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'local'},
-        );
-
         expect(
           () => service.validateEventLocation(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            eventLocality: 'Williamsburg',
-          ),
+              userId: localUser.id,
+              user: localUser,
+              category: 'food',
+              eventLocality: 'Williamsburg'),
           throwsException,
         );
-      });
 
-      test('should validate city expert hosting in any locality in their city', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'city'},
-        );
-
+        final cityUser = ModelFactories.createTestUser(id: 'user-123').copyWith(
+            location: 'Greenpoint, Brooklyn', expertiseMap: {'food': 'city'});
         expect(
           () => service.validateEventLocation(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            eventLocality: 'Williamsburg',
-          ),
+              userId: cityUser.id,
+              user: cityUser,
+              category: 'food',
+              eventLocality: 'Williamsburg'),
           returnsNormally,
         );
-      });
-
-      test('should throw exception when city expert hosts outside their city', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'city'},
-        );
-
         expect(
           () => service.validateEventLocation(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            eventLocality: 'Manhattan',
-          ),
+              userId: cityUser.id,
+              user: cityUser,
+              category: 'food',
+              eventLocality: 'Manhattan'),
           throwsException,
         );
-      });
 
-      test('should validate global expert hosting anywhere', () {
-        final user = ModelFactories.createTestUser(
-          id: 'user-123',
-        ).copyWith(
-          location: 'Greenpoint, Brooklyn, NY, USA',
-          expertiseMap: {'food': 'global'},
-        );
-
+        final globalUser = ModelFactories.createTestUser(id: 'user-123')
+            .copyWith(expertiseMap: {'food': 'global'});
         expect(
           () => service.validateEventLocation(
-            userId: user.id,
-            user: user,
-            category: 'food',
-            eventLocality: 'Tokyo',
-          ),
+              userId: globalUser.id,
+              user: globalUser,
+              category: 'food',
+              eventLocality: 'Tokyo'),
           returnsNormally,
         );
       });
     });
+
+    tearDownAll(() async {
+      await cleanupTestStorage();
+    });
   });
 }
-

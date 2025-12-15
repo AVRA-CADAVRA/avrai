@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
@@ -6,6 +9,8 @@ import 'expertise_level.dart';
 /// Expertise Pin Model
 /// OUR_GUTS.md: "Pins, Not Badges" - Expertise recognition tied to subjects and areas
 class ExpertisePin extends Equatable {
+  // Sentinel value to distinguish "parameter not provided" from "explicit null".
+  static const Object _unset = Object();
   final String id;
   final String userId;
   final String category; // e.g., "Coffee", "Thai Food", "Bookstores"
@@ -152,19 +157,41 @@ class ExpertisePin extends Equatable {
     String? userId,
     String? category,
     ExpertiseLevel? level,
-    String? location,
+    Object? location = _unset,
     DateTime? earnedAt,
     String? earnedReason,
     int? contributionCount,
     double? communityTrustScore,
     List<String>? unlockedFeatures,
   }) {
+    // #region agent log
+    // Debug mode: prove whether location was explicitly cleared vs omitted.
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H6',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-expertise-pin',
+        'hypothesisId': 'H6',
+        'location': 'lib/core/models/expertise_pin.dart:ExpertisePin.copyWith',
+        'message': 'copyWith location param handling',
+        'data': {
+          'location_param_is_unset': identical(location, _unset),
+          'location_param_is_null': location == null,
+          'previous_location_is_null': this.location == null,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+
     return ExpertisePin(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       category: category ?? this.category,
       level: level ?? this.level,
-      location: location ?? this.location,
+      location: identical(location, _unset) ? this.location : location as String?,
       earnedAt: earnedAt ?? this.earnedAt,
       earnedReason: earnedReason ?? this.earnedReason,
       contributionCount: contributionCount ?? this.contributionCount,

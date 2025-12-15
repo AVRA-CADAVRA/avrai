@@ -7,9 +7,7 @@ import 'package:spots/presentation/widgets/settings/ai2ai_learning_recommendatio
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/services/ai2ai_learning_service.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spots/injection_container.dart' as di;
-import 'package:spots/core/ai/personality_learning.dart';
 
 /// AI2AI Learning Methods Page
 /// 
@@ -45,13 +43,8 @@ class _AI2AILearningMethodsPageState extends State<AI2AILearningMethodsPage> {
         _errorMessage = null;
       });
 
-      final prefs = di.sl<SharedPreferences>();
-      final personalityLearning = di.sl<PersonalityLearning>();
-      
-      final service = AI2AILearning.create(
-        prefs: prefs,
-        personalityLearning: personalityLearning,
-      );
+      // Get service from dependency injection
+      final service = di.sl<AI2AILearning>();
 
       if (mounted) {
         setState(() {

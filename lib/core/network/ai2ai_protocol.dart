@@ -1,7 +1,9 @@
 import 'dart:developer' as developer;
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math';
 import 'package:crypto/crypto.dart';
+import 'package:pointycastle/export.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/models/anonymous_user.dart';
@@ -65,13 +67,16 @@ class AI2AIProtocol {
         encryptedBytes = Uint8List.fromList(bytes);
       }
       
-      // Create protocol packet
+      // Create protocol packet (for future transport layer implementation)
       final packet = ProtocolPacket(
         identifier: _spotsIdentifier,
         version: _protocolVersion,
         data: encryptedBytes,
         checksum: _calculateChecksum(encryptedBytes),
       );
+      
+      // Log packet creation for debugging (packet will be used when transport layer is implemented)
+      developer.log('Protocol packet created: ${packet.identifier} v${packet.version}, checksum: ${packet.checksum.substring(0, 8)}...', name: _logName);
       
       return message;
     } catch (e) {
@@ -351,13 +356,14 @@ class AI2AIProtocol {
       // In production, this would send via existing transport layer
       // and wait for response with timeout
       developer.log(
-        'Exchanging personality profile with device: $deviceId',
+        'Exchanging personality profile with device: $deviceId (message type: ${message.type.name}, payload size: ${message.payload.toString().length} chars)',
         name: _logName,
       );
       
       // Timeout after 5 seconds
       // For now, return null - full transport implementation needed
       // TODO: Implement actual send/receive via Bluetooth/NSD
+      // Message is prepared but not sent until transport layer is implemented
       return null;
       
     } catch (e) {
@@ -461,21 +467,123 @@ class AI2AIProtocol {
     }
   }
   
-  /// Encrypt data (simple XOR encryption for now, should use AES in production)
+  /// Encrypt data using AES-256-GCM authenticated encryption
+  ///
+  /// Replaces insecure XOR encryption with proper cryptographic encryption.
+  /// Returns encrypted data with format: IV (12 bytes) + ciphertext + tag (16 bytes)
   Uint8List _encrypt(Uint8List data) {
-    if (_encryptionKey == null) return data;
-    
-    final encrypted = Uint8List(data.length);
-    for (int i = 0; i < data.length; i++) {
-      encrypted[i] = data[i] ^ _encryptionKey![i % _encryptionKey!.length];
+    if (_encryptionKey == null) {
+      developer.log('Warning: No encryption key set, returning unencrypted data', name: _logName);
+      return data;
     }
-    return encrypted;
+    
+    try {
+      // Generate random IV (12 bytes for GCM - 96 bits recommended)
+      final iv = _generateIV();
+      
+      // Create AES-256-GCM cipher
+      final cipher = GCMBlockCipher(AESEngine())
+        ..init(
+          true, // encrypt
+          AEADParameters(
+            KeyParameter(_encryptionKey!),
+            128, // MAC length (128 bits)
+            iv,
+            Uint8List(0), // Additional authenticated data (none)
+          ),
+        );
+      
+      // Encrypt
+      final ciphertext = cipher.process(data);
+      final tag = cipher.mac;
+      
+      // Combine: IV + ciphertext + tag
+      final encrypted = Uint8List(iv.length + ciphertext.length + tag.length);
+      encrypted.setRange(0, iv.length, iv);
+      encrypted.setRange(iv.length, iv.length + ciphertext.length, ciphertext);
+      encrypted.setRange(
+        iv.length + ciphertext.length,
+        encrypted.length,
+        tag,
+      );
+      
+      return encrypted;
+    } catch (e) {
+      developer.log('Error encrypting data: $e', name: _logName);
+      throw Exception('Encryption failed: $e');
+    }
   }
   
-  /// Decrypt data
-  Uint8List _decrypt(Uint8List data) {
-    // XOR encryption is symmetric
-    return _encrypt(data);
+  /// Decrypt data using AES-256-GCM authenticated encryption
+  ///
+  /// Verifies authentication tag to ensure message integrity and authenticity.
+  Uint8List _decrypt(Uint8List encrypted) {
+    if (_encryptionKey == null) {
+      developer.log('Warning: No encryption key set, returning data as-is', name: _logName);
+      return encrypted;
+    }
+    
+    try {
+      // Extract IV, ciphertext, and tag
+      if (encrypted.length < 12 + 16) {
+        // Need at least IV (12 bytes) + tag (16 bytes)
+        throw Exception('Invalid encrypted data length: ${encrypted.length}');
+      }
+      
+      final iv = encrypted.sublist(0, 12);
+      final tag = encrypted.sublist(encrypted.length - 16);
+      final ciphertext = encrypted.sublist(12, encrypted.length - 16);
+      
+      // Create AES-256-GCM cipher
+      final cipher = GCMBlockCipher(AESEngine());
+      final params = AEADParameters(
+        KeyParameter(_encryptionKey!),
+        128, // MAC length
+        iv,
+        Uint8List(0), // Additional authenticated data
+      );
+      cipher.init(false, params); // false = decrypt
+      
+      // Decrypt
+      final plaintext = cipher.process(ciphertext);
+      
+      // Verify authentication tag (prevents tampering)
+      final calculatedTag = cipher.mac;
+      if (!_constantTimeEquals(tag, calculatedTag)) {
+        throw Exception('Authentication tag mismatch - message may be tampered');
+      }
+      
+      return plaintext;
+    } catch (e) {
+      developer.log('Error decrypting data: $e', name: _logName);
+      throw Exception('Decryption failed: $e');
+    }
+  }
+  
+  /// Generate random IV (Initialization Vector) for AES-GCM
+  ///
+  /// Uses cryptographically secure random number generator.
+  /// IV length: 12 bytes (96 bits) - recommended for GCM mode.
+  Uint8List _generateIV() {
+    final random = Random.secure();
+    final iv = Uint8List(12); // 96 bits for GCM
+    for (int i = 0; i < iv.length; i++) {
+      iv[i] = random.nextInt(256);
+    }
+    return iv;
+  }
+  
+  /// Constant-time comparison to prevent timing attacks
+  ///
+  /// Compares two byte arrays in constant time, preventing attackers
+  /// from using timing information to guess correct values.
+  bool _constantTimeEquals(Uint8List a, Uint8List b) {
+    if (a.length != b.length) return false;
+    int result = 0;
+    for (int i = 0; i < a.length; i++) {
+      result |= a[i] ^ b[i];
+    }
+    return result == 0;
   }
   
   /// Calculate checksum for data integrity

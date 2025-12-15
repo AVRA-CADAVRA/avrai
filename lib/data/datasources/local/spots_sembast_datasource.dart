@@ -30,6 +30,11 @@ class SpotsSembastDataSource implements SpotsLocalDataSource {
     try {
       final db = await SembastDatabase.database;
       final spotData = spot.toJson();
+      // Prefer stable IDs when provided so lookups by `spot.id` work.
+      if (spot.id.isNotEmpty) {
+        await _store.record(spot.id).put(db, spotData);
+        return spot.id;
+      }
       final key = await _store.add(db, spotData);
       return key;
     } catch (e) {

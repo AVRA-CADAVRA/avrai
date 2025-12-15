@@ -8,6 +8,7 @@ import 'dart:async' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:spots/core/ai/vibe_analysis_engine.dart' as _i3;
 import 'package:spots/core/models/personality_profile.dart' as _i5;
+import 'package:spots/core/models/unified_user.dart' as _i6;
 import 'package:spots/core/models/user_vibe.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -103,8 +104,11 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
   @override
   _i4.Future<_i3.VibeCompatibilityResult> analyzeVibeCompatibility(
     _i2.UserVibe? localVibe,
-    _i2.UserVibe? remoteVibe,
-  ) =>
+    _i2.UserVibe? remoteVibe, {
+    _i6.UnifiedUser? localUser,
+    _i6.UnifiedUser? remoteUser,
+    List<String>? recentActions,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #analyzeVibeCompatibility,
@@ -112,6 +116,11 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
             localVibe,
             remoteVibe,
           ],
+          {
+            #localUser: localUser,
+            #remoteUser: remoteUser,
+            #recentActions: recentActions,
+          },
         ),
         returnValue: _i4.Future<_i3.VibeCompatibilityResult>.value(
             _FakeVibeCompatibilityResult_1(
@@ -122,6 +131,11 @@ class MockUserVibeAnalyzer extends _i1.Mock implements _i3.UserVibeAnalyzer {
               localVibe,
               remoteVibe,
             ],
+            {
+              #localUser: localUser,
+              #remoteUser: remoteUser,
+              #recentActions: recentActions,
+            },
           ),
         )),
       ) as _i4.Future<_i3.VibeCompatibilityResult>);

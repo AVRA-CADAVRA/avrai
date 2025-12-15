@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:spots/presentation/widgets/search/hybrid_search_results.dart';
 import 'package:spots/presentation/blocs/search/hybrid_search_bloc.dart';
 import '../../helpers/widget_test_helpers.dart';
@@ -17,7 +16,7 @@ void main() {
 
     testWidgets('displays initial state message', (WidgetTester tester) async {
       // Arrange
-      when(mockHybridSearchBloc.state).thenReturn(HybridSearchInitial());
+      mockHybridSearchBloc.setState(HybridSearchInitial());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HybridSearchResults(),
         hybridSearchBloc: mockHybridSearchBloc,
@@ -33,14 +32,16 @@ void main() {
 
     testWidgets('displays loading state', (WidgetTester tester) async {
       // Arrange
-      when(mockHybridSearchBloc.state).thenReturn(HybridSearchLoading());
+      mockHybridSearchBloc.setState(HybridSearchLoading());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HybridSearchResults(),
         hybridSearchBloc: mockHybridSearchBloc,
       );
 
       // Act
-      await WidgetTestHelpers.pumpAndSettle(tester, widget);
+      // Don't use pumpAndSettle here: indeterminate progress animations keep scheduling frames.
+      await tester.pumpWidget(widget);
+      await tester.pump();
 
       // Assert - Should show loading indicator
       expect(find.text('Searching community and external sources...'), findsOneWidget);
@@ -48,7 +49,7 @@ void main() {
 
     testWidgets('displays error state', (WidgetTester tester) async {
       // Arrange
-      when(mockHybridSearchBloc.state).thenReturn(HybridSearchError('Test error'));
+      mockHybridSearchBloc.setState(HybridSearchError('Test error'));
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HybridSearchResults(),
         hybridSearchBloc: mockHybridSearchBloc,
@@ -58,7 +59,8 @@ void main() {
       await WidgetTestHelpers.pumpAndSettle(tester, widget);
 
       // Assert - Should show error message
-      expect(find.text('Search Error'), findsOneWidget);
+      expect(find.text('Test error'), findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 }

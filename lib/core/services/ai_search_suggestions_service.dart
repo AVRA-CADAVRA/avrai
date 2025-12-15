@@ -53,34 +53,62 @@ class AISearchSuggestionsService {
     Map<String, int>? communityTrends,
   }) async {
     try {
+      // #region agent log
+      developer.log('Generating suggestions: query="$query", hasLocation=${userLocation != null}, recentSpots=${recentSpots?.length ?? 0}, trends=${communityTrends != null ? communityTrends.length : 0}', name: _logName);
+      // #endregion
+      
       final suggestions = <SearchSuggestion>[];
       final normalizedQuery = query.toLowerCase().trim();
       
       // STEP 1: Query completion suggestions
       if (normalizedQuery.isNotEmpty) {
-        suggestions.addAll(await _generateQueryCompletions(normalizedQuery));
+        final completions = await _generateQueryCompletions(normalizedQuery);
+        suggestions.addAll(completions);
+        // #region agent log
+        developer.log('Query completions: ${completions.length} suggestions', name: _logName);
+        // #endregion
       }
       
       // STEP 2: Contextual suggestions based on time/location
       if (userLocation != null) {
-        suggestions.addAll(await _generateContextualSuggestions(userLocation));
+        final contextual = await _generateContextualSuggestions(userLocation);
+        suggestions.addAll(contextual);
+        // #region agent log
+        developer.log('Contextual suggestions: ${contextual.length} suggestions', name: _logName);
+        // #endregion
       }
       
       // STEP 3: Personalized suggestions based on search history
-      suggestions.addAll(_generatePersonalizedSuggestions(normalizedQuery));
+      final personalized = _generatePersonalizedSuggestions(normalizedQuery);
+      suggestions.addAll(personalized);
+      // #region agent log
+      developer.log('Personalized suggestions: ${personalized.length} suggestions', name: _logName);
+      // #endregion
       
       // STEP 4: Community trend suggestions
       if (communityTrends != null) {
-        suggestions.addAll(_generateCommunityTrendSuggestions(communityTrends));
+        final trends = _generateCommunityTrendSuggestions(communityTrends);
+        suggestions.addAll(trends);
+        // #region agent log
+        developer.log('Community trend suggestions: ${trends.length} suggestions', name: _logName);
+        // #endregion
       }
       
       // STEP 5: Discovery suggestions for exploration
       if (query.isEmpty || query.length < 3) {
-        suggestions.addAll(_generateDiscoverySuggestions());
+        final discovery = _generateDiscoverySuggestions();
+        suggestions.addAll(discovery);
+        // #region agent log
+        developer.log('Discovery suggestions: ${discovery.length} suggestions', name: _logName);
+        // #endregion
       }
       
       // STEP 6: Natural language processing suggestions
-      suggestions.addAll(_generateNLPSuggestions(normalizedQuery));
+      final nlp = _generateNLPSuggestions(normalizedQuery);
+      suggestions.addAll(nlp);
+      // #region agent log
+      developer.log('NLP suggestions: ${nlp.length} suggestions', name: _logName);
+      // #endregion
       
       // Deduplicate and rank suggestions
       final uniqueSuggestions = _deduplicateAndRank(suggestions);
@@ -88,11 +116,15 @@ class AISearchSuggestionsService {
       // Track suggestion generation for learning
       _trackSuggestionGeneration(query, uniqueSuggestions.length);
       
-      developer.log('Generated ${uniqueSuggestions.length} suggestions for: "$query"', name: _logName);
+      // #region agent log
+      developer.log('Generated ${uniqueSuggestions.length} unique suggestions (from ${suggestions.length} total) for: "$query"', name: _logName);
+      // #endregion
       return uniqueSuggestions.take(8).toList(); // Limit to top 8
       
     } catch (e) {
+      // #region agent log
       developer.log('Error generating suggestions: $e', name: _logName);
+      // #endregion
       return [];
     }
   }
@@ -105,6 +137,10 @@ class AISearchSuggestionsService {
     String? selectedSpotId,
   }) {
     try {
+      // #region agent log
+      developer.log('Learning from search: query="$query", results=${results.length}, selectedSpot=$selectedSpotId', name: _logName);
+      // #endregion
+      
       final normalizedQuery = query.toLowerCase().trim();
       
       // Track recent searches (privacy-preserving)
@@ -114,20 +150,32 @@ class AISearchSuggestionsService {
       }
       
       // Learn category preferences
+      final categoryCounts = <String, int>{};
       for (final spot in results) {
         final category = spot.category.toLowerCase();
         _categoryPreferences[category] = (_categoryPreferences[category] ?? 0) + 1;
+        categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
       }
+      
+      // #region agent log
+      developer.log('Category preferences updated: ${categoryCounts.length} unique categories, total preferences: ${_categoryPreferences.length}', name: _logName);
+      // #endregion
       
       // Track search timestamps for temporal patterns
       _searchTimestamps[normalizedQuery] = DateTime.now();
       
       // Clean up old data (privacy-preserving)
+      final beforeCleanup = _searchTimestamps.length;
       _cleanupOldLearningData();
+      final afterCleanup = _searchTimestamps.length;
       
-      developer.log('Learned from search: "$query" (${results.length} results)', name: _logName);
+      // #region agent log
+      developer.log('Learned from search: "$query" (${results.length} results), recentSearches=${_recentSearches.length}, timestamps: $beforeCleanup -> $afterCleanup', name: _logName);
+      // #endregion
     } catch (e) {
+      // #region agent log
       developer.log('Error learning from search: $e', name: _logName);
+      // #endregion
     }
   }
   
@@ -138,7 +186,7 @@ class AISearchSuggestionsService {
     
     final searchFrequency = _getSearchFrequencyPatterns();
     
-    return {
+    final patterns = {
       'recent_searches': _recentSearches.take(10).toList(),
       'top_categories': topCategories.take(5).map((e) => {
         'category': e.key,
@@ -147,6 +195,14 @@ class AISearchSuggestionsService {
       'search_frequency': searchFrequency,
       'total_searches': _searchTimestamps.length,
     };
+    
+    // #region agent log
+    final recentSearchesList = patterns['recent_searches'] as List;
+    final topCategoriesList = patterns['top_categories'] as List;
+    developer.log('Retrieved search patterns: ${recentSearchesList.length} recent, ${topCategoriesList.length} top categories, ${patterns['total_searches']} total searches', name: _logName);
+    // #endregion
+    
+    return patterns;
   }
   
   /// Clear learning data (privacy control)
@@ -405,7 +461,6 @@ class AISearchSuggestionsService {
   
   Map<String, int> _getSearchFrequencyPatterns() {
     final patterns = <String, int>{};
-    final now = DateTime.now();
     
     for (final timestamp in _searchTimestamps.values) {
       final hour = timestamp.hour;
@@ -419,6 +474,10 @@ class AISearchSuggestionsService {
       
       patterns[period] = (patterns[period] ?? 0) + 1;
     }
+    
+    // #region agent log
+    developer.log('Search frequency patterns: ${patterns.length} periods tracked, total searches: ${_searchTimestamps.length}', name: _logName);
+    // #endregion
     
     return patterns;
   }

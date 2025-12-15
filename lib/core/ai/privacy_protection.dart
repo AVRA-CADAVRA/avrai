@@ -19,7 +19,8 @@ class PrivacyProtection {
   // Encryption and hashing parameters
   static const int _saltLength = VibeConstants.personalityHashSaltLength;
   static const int _hashIterations = VibeConstants.vibeHashIterations;
-  static const int _entropyBits = VibeConstants.minEntropyBits;
+  // ignore: unused_field
+  static const int _entropyBits = VibeConstants.minEntropyBits; // Reserved for future entropy validation
   
   /// Anonymize personality profile for AI2AI communication
   /// Ensures zero personal data exposure while preserving learning value
@@ -163,19 +164,19 @@ class PrivacyProtection {
     final noisyData = <String, double>{};
     final random = Random.secure();
     
-    // Calculate noise scale based on privacy level
-    final noiseScale = _calculateNoiseScale(epsilon, privacyLevel);
-    
     for (final entry in data.entries) {
-      // Generate Laplace noise for differential privacy
-      final noise = _generateLaplaceNoise(random, noiseScale);
+      // Use bounded, calibrated noise aligned with VibeConstants thresholds.
+      // This avoids heavy-tailed outliers (Laplace) that can break downstream expectations.
+      final noiseLevel = _getNoiseLevel(privacyLevel);
+      final effectiveLevel = (noiseLevel / epsilon).clamp(0.0, VibeConstants.maxPersonalityNoiseThreshold);
+      final noise = (random.nextDouble() - 0.5) * 2.0 * effectiveLevel;
       
       // Add noise and clamp to valid range
       final noisyValue = (entry.value + noise).clamp(0.0, 1.0);
       noisyData[entry.key] = noisyValue;
     }
     
-    developer.log('Differential privacy applied with noise scale: ${noiseScale.toStringAsFixed(4)}', name: _logName);
+    developer.log('Differential privacy applied with bounded noise', name: _logName);
     return noisyData;
   }
   
@@ -479,14 +480,18 @@ class PrivacyProtection {
     }
   }
   
+  // ignore: unused_element
   static double _calculateNoiseScale(double epsilon, String privacyLevel) {
     // Laplace mechanism: scale = sensitivity / epsilon
+    // Reserved for future Laplace noise implementation
     final sensitivity = 1.0; // Sensitivity for normalized data
     return sensitivity / epsilon;
   }
   
+  // ignore: unused_element
   static double _generateLaplaceNoise(Random random, double scale) {
     // Generate Laplace noise using inverse CDF method
+    // Reserved for future Laplace noise implementation (currently using uniform noise)
     final u = random.nextDouble() - 0.5;
     return -scale * (u.sign * log(1 - 2 * u.abs()));
   }

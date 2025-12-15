@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'package:pointycastle/export.dart';
 
 /// OUR_GUTS.md: "Privacy and Control Are Non-Negotiable"
 /// Anonymous AI2AI communication protocol with zero user data exposure
@@ -8,7 +10,8 @@ class AnonymousCommunicationProtocol {
   static const String _logName = 'AnonymousCommunicationProtocol';
   
   // Encryption settings for maximum privacy
-  static const int _keyRotationIntervalMinutes = 30;
+  // ignore: unused_field
+  static const int _keyRotationIntervalMinutes = 30; // Reserved for future key rotation implementation
   static const int _messageExpirationMinutes = 60;
   static const int _maxHopsForMessage = 5;
   
@@ -134,6 +137,11 @@ class AnonymousCommunicationProtocol {
       'phone', 'phoneNumber', 'phone_number', 'mobile', 'telephone',
       'address', 'streetAddress', 'street_address', 'homeAddress', 'home_address',
       'personalInfo', 'personal_info', 'personalData', 'personal_data',
+      // Device fingerprinting / session identifiers
+      'device', 'deviceId', 'device_id', 'deviceInfo', 'device_info',
+      'session', 'sessionId', 'session_id',
+      // Explicit location data
+      'location', 'geo', 'geolocation', 'gps', 'latitude', 'longitude', 'lat', 'lng',
       'ssn', 'socialSecurityNumber', 'social_security_number',
       'creditCard', 'credit_card', 'cardNumber', 'card_number',
     ];
@@ -266,15 +274,131 @@ class AnonymousCommunicationProtocol {
     return 'ch_${timestamp}_$random';
   }
   
-  Future<String> _encryptPayload(Map<String, dynamic> payload, String key) async {
-    final payloadJson = jsonEncode(payload);
-    final payloadBytes = utf8.encode(payloadJson);
-    final keyBytes = base64Decode(key);
-    
-    // Use AES-256-GCM for authenticated encryption
-    // This is a simplified implementation - would use proper crypto library
-    final encrypted = base64Encode(payloadBytes);
-    return encrypted;
+  /// Encrypt payload using AES-256-GCM authenticated encryption
+  ///
+  /// Uses proper cryptographic library (pointycastle) for real encryption.
+  /// Returns base64-encoded encrypted data with format: IV (12 bytes) + ciphertext + tag (16 bytes)
+  Future<String> _encryptPayload(Map<String, dynamic> payload, String keyBase64) async {
+    try {
+      // 1. Prepare data
+      final payloadJson = jsonEncode(payload);
+      final plaintext = Uint8List.fromList(utf8.encode(payloadJson));
+      final keyBytes = base64Decode(keyBase64);
+      
+      // 2. Generate random IV (12 bytes for GCM - 96 bits recommended)
+      final iv = _generateIV();
+      
+      // 3. Create AES-256-GCM cipher
+      final cipher = GCMBlockCipher(AESEngine())
+        ..init(
+          true, // encrypt
+          AEADParameters(
+            KeyParameter(keyBytes),
+            128, // MAC length (128 bits)
+            iv,
+            Uint8List(0), // Additional authenticated data (none)
+          ),
+        );
+      
+      // 4. Encrypt
+      final ciphertext = cipher.process(plaintext);
+      final tag = cipher.mac;
+      
+      // 5. Combine: IV + ciphertext + tag
+      final encrypted = Uint8List(iv.length + ciphertext.length + tag.length);
+      encrypted.setRange(0, iv.length, iv);
+      encrypted.setRange(iv.length, iv.length + ciphertext.length, ciphertext);
+      encrypted.setRange(
+        iv.length + ciphertext.length,
+        encrypted.length,
+        tag,
+      );
+      
+      // 6. Return base64 encoded
+      return base64Encode(encrypted);
+    } catch (e) {
+      developer.log('Error encrypting payload: $e', name: _logName);
+      throw AnonymousCommunicationException('Failed to encrypt payload: $e');
+    }
+  }
+  
+  /// Decrypt payload using AES-256-GCM authenticated encryption
+  ///
+  /// Verifies authentication tag to ensure message integrity and authenticity.
+  /// Returns decrypted payload as Map.
+  Future<Map<String, dynamic>> _decryptPayload(String encryptedBase64, String keyBase64) async {
+    try {
+      // 1. Decode base64
+      final encrypted = base64Decode(encryptedBase64);
+      
+      // 2. Extract IV, ciphertext, and tag
+      if (encrypted.length < 12 + 16) {
+        // Need at least IV (12 bytes) + tag (16 bytes)
+        throw AnonymousCommunicationException('Invalid encrypted data length');
+      }
+      
+      final iv = encrypted.sublist(0, 12);
+      final tag = encrypted.sublist(encrypted.length - 16);
+      final ciphertext = encrypted.sublist(12, encrypted.length - 16);
+      
+      // 3. Create AES-256-GCM cipher
+      final cipher = GCMBlockCipher(AESEngine());
+      final keyBytes = base64Decode(keyBase64);
+      final params = AEADParameters(
+        KeyParameter(keyBytes),
+        128, // MAC length
+        iv,
+        Uint8List(0), // Additional authenticated data
+      );
+      cipher.init(false, params); // false = decrypt
+      
+      // 4. Decrypt
+      final plaintext = cipher.process(ciphertext);
+      
+      // 5. Verify authentication tag (prevents tampering)
+      final calculatedTag = cipher.mac;
+      if (!_constantTimeEquals(tag, calculatedTag)) {
+        throw AnonymousCommunicationException(
+          'Authentication tag mismatch - message may be tampered'
+        );
+      }
+      
+      // 6. Decode JSON
+      final json = utf8.decode(plaintext);
+      return jsonDecode(json) as Map<String, dynamic>;
+    } catch (e) {
+      developer.log('Error decrypting payload: $e', name: _logName);
+      if (e is AnonymousCommunicationException) {
+        rethrow;
+      }
+      throw AnonymousCommunicationException('Failed to decrypt payload: $e');
+    }
+  }
+  
+  /// Generate random IV (Initialization Vector) for AES-GCM
+  ///
+  /// Uses cryptographically secure random number generator.
+  /// IV length: 12 bytes (96 bits) - recommended for GCM mode.
+  Uint8List _generateIV() {
+    final random = math.Random.secure();
+    final iv = Uint8List(12); // 96 bits for GCM
+    for (int i = 0; i < iv.length; i++) {
+      iv[i] = random.nextInt(256);
+    }
+    return iv;
+  }
+  
+  /// Constant-time comparison to prevent timing attacks
+  ///
+  /// Compares two byte arrays in constant time, preventing attackers
+  /// from using timing information to guess correct values.
+  bool _constantTimeEquals(Uint8List a, Uint8List b) {
+    if (a.length != b.length) return false;
+    int result = 0;
+    for (int i = 0; i < a.length; i++) {
+      result |= a[i] ^ b[i];
+    }
+    return result == 0;
   }
   
   Future<void> _routeThroughPrivacyNetwork(AnonymousMessage message) async {
@@ -318,18 +442,51 @@ class AnonymousCommunicationProtocol {
     return [];
   }
   
+  /// Decrypt incoming encrypted message
+  ///
+  /// Decrypts the payload and reconstructs the AnonymousMessage.
+  /// Note: In a real implementation, the key would be retrieved from
+  /// the secure channel or key exchange. For now, we use the shared secret.
   Future<AnonymousMessage> _decryptMessage(EncryptedMessage encrypted) async {
-    // Decrypt incoming message
-    return AnonymousMessage(
-      messageId: encrypted.messageId,
-      targetAgentId: encrypted.targetAgentId,
-      messageType: MessageType.discoverySync,
-      encryptedPayload: encrypted.payload,
-      timestamp: encrypted.timestamp,
-      expiresAt: encrypted.expiresAt,
-      routingHops: [],
-      privacyLevel: PrivacyLevel.maximum,
-    );
+    try {
+      // In a real implementation, we would:
+      // 1. Look up the key for this sender/agent
+      // 2. Decrypt the payload
+      // 3. Validate and reconstruct the message
+      
+      // For now, we need the key - this should come from the secure channel
+      // TODO: Integrate with KeyExchange (lib/core/crypto/key_exchange.dart) to get the correct key
+      // For now, using ephemeral key as placeholder - in production, retrieve from SecureCommunicationChannel
+      final key = await _generateEphemeralKey(); // Temporary - should use actual key from key exchange
+      
+      // Decrypt the payload
+      final decryptedPayload = await _decryptPayload(encrypted.payload, key);
+      
+      // Extract message type from decrypted payload if available
+      final messageType = decryptedPayload['messageType'] != null
+          ? MessageType.values.firstWhere(
+              (e) => e.name == decryptedPayload['messageType'],
+              orElse: () => MessageType.discoverySync,
+            )
+          : MessageType.discoverySync;
+      
+      // Reconstruct message with decrypted payload
+      // Note: The encryptedPayload field keeps the encrypted version for storage
+      // The actual decrypted data is in decryptedPayload
+      return AnonymousMessage(
+        messageId: encrypted.messageId,
+        targetAgentId: encrypted.targetAgentId,
+        messageType: messageType,
+        encryptedPayload: encrypted.payload, // Keep encrypted for storage
+        timestamp: encrypted.timestamp,
+        expiresAt: encrypted.expiresAt,
+        routingHops: [],
+        privacyLevel: PrivacyLevel.maximum,
+      );
+    } catch (e) {
+      developer.log('Error decrypting message: $e', name: _logName);
+      throw AnonymousCommunicationException('Failed to decrypt message: $e');
+    }
   }
   
   Future<bool> _validateMessageIntegrity(AnonymousMessage message) async {

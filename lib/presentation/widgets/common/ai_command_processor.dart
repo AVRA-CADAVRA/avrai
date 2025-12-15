@@ -1,6 +1,15 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:spots/core/services/llm_service.dart' as llm
-    show LLMService, ChatMessage, ChatRole, LLMContext, OfflineException;
+    show
+        LLMService,
+        ChatMessage,
+        ChatRole,
+        LLMContext,
+        OfflineException,
+        DataCenterFailureException;
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/user_vibe.dart';
 import 'package:spots/core/models/connection_metrics.dart';
@@ -11,6 +20,7 @@ import 'package:spots/core/ai/action_parser.dart';
 import 'package:spots/core/ai/action_executor.dart';
 import 'package:spots/core/ai/action_models.dart';
 import 'package:spots/core/services/action_history_service.dart';
+import 'package:spots/core/services/action_error_handler.dart';
 import 'package:spots/presentation/widgets/common/action_confirmation_dialog.dart';
 import 'package:spots/presentation/widgets/common/action_error_dialog.dart';
 import 'package:spots/presentation/widgets/common/action_success_widget.dart';
@@ -43,6 +53,7 @@ class AICommandProcessor {
     Position? currentLocation,
     bool useStreaming = true,
     bool showThinkingIndicator = true,
+    Connectivity? connectivity,
   }) async {
     // Phase 5: Try to parse and execute actions first
     // Phase 7 Week 33: Enhanced action intent parsing
@@ -145,14 +156,59 @@ class AICommandProcessor {
     }
 
     // Check connectivity first to avoid unnecessary attempts
-    final connectivity = Connectivity();
-    final connectivityResult = await connectivity.checkConnectivity();
-    final isOnline = connectivityResult is List
-        ? !connectivityResult.contains(ConnectivityResult.none)
-        : connectivityResult != ConnectivityResult.none;
+    final connectivityInstance = connectivity ?? Connectivity();
+    final connectivityResult = await connectivityInstance.checkConnectivity();
+    // connectivity_plus always returns List<ConnectivityResult>
+    final isOnline = !connectivityResult.contains(ConnectivityResult.none);
+    
+    // #region agent log
+    // Debug mode: log connectivity check (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H1',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-connectivity',
+        'hypothesisId': 'H1',
+        'location': 'lib/presentation/widgets/common/ai_command_processor.dart:processCommand',
+        'message': 'Connectivity check',
+        'data': {
+          'isOnline': isOnline,
+          'connectivityResultsCount': connectivityResult.length,
+          'hasNone': connectivityResult.contains(ConnectivityResult.none),
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
 
     // Try to get LLM service from GetIt if not provided
+    // Note: _llmService instance field is not used in static context
+    // It's kept for future instance-based usage
     final service = llmService ?? _tryGetLLMService();
+    
+    // #region agent log
+    // Debug mode: log LLM service availability (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H2',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-llm-service',
+        'hypothesisId': 'H2',
+        'location': 'lib/presentation/widgets/common/ai_command_processor.dart:processCommand',
+        'message': 'LLM service check',
+        'data': {
+          'hasService': service != null,
+          'hasProvidedService': llmService != null,
+          'commandLength': command.length,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
 
     // Use LLM if available and online
     if (service != null && isOnline) {
@@ -203,15 +259,22 @@ class AICommandProcessor {
           thinkingOverlay?.remove();
         }
       } catch (e) {
-        // If it's an offline exception, log and fall through to rule-based
+        // Handle different failure types gracefully
         if (e is llm.OfflineException) {
           developer.log('Device is offline, using rule-based processing',
+              name: _logName);
+        } else if (e is llm.DataCenterFailureException) {
+          developer.log(
+              'AI data center failure, using rule-based processing: $e',
+              name: _logName);
+        } else if (e is TimeoutException) {
+          developer.log('AI request timed out, using rule-based processing: $e',
               name: _logName);
         } else {
           developer.log('LLM processing failed, falling back to rules: $e',
               name: _logName);
         }
-        // Fall through to rule-based processing
+        // Fall through to rule-based processing - app continues to function
       }
     } else if (!isOnline) {
       developer.log('Device is offline, using rule-based processing',
@@ -508,9 +571,29 @@ class AICommandProcessor {
         // Try to get LLM response for more natural language
         final connectivity = Connectivity();
         final connectivityResult = await connectivity.checkConnectivity();
-        final isOnline = connectivityResult is List
-            ? !connectivityResult.contains(ConnectivityResult.none)
-            : connectivityResult != ConnectivityResult.none;
+        // connectivity_plus always returns List<ConnectivityResult>
+        final isOnline = !connectivityResult.contains(ConnectivityResult.none);
+        
+        // #region agent log
+        // Debug mode: log connectivity check for LLM response (no PII values)
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H3',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-llm-response-connectivity',
+            'hypothesisId': 'H3',
+            'location': 'lib/presentation/widgets/common/ai_command_processor.dart:_executeActionWithUI',
+            'message': 'Connectivity check for LLM response',
+            'data': {
+              'isOnline': isOnline,
+              'connectivityResultsCount': connectivityResult.length,
+            },
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
 
         final service = llmService ?? _tryGetLLMService();
         if (service != null && isOnline) {
@@ -536,7 +619,13 @@ class AICommandProcessor {
       return result.successMessage ?? 'Action completed successfully';
     } else {
       // Action failed, show error dialog with retry option
-      developer.log('Action failed: ${result.errorMessage}', name: _logName);
+      // Use ActionErrorHandler for consistent error logging
+      ActionErrorHandler.logError(
+        result.errorMessage,
+        result,
+        intent,
+        context: 'AICommandProcessor._executeActionWithUI',
+      );
 
       if (!context.mounted) {
         return result.errorMessage ?? 'Failed to execute action';
@@ -601,6 +690,8 @@ class AICommandProcessor {
   }
 
   /// Try to get LLM service from GetIt (may not be registered)
+  /// Note: _llmService instance field is not accessible in static context
+  /// It's kept for future instance-based usage when processCommand becomes non-static
   static llm.LLMService? _tryGetLLMService() {
     try {
       return GetIt.instance<llm.LLMService>();
@@ -608,6 +699,10 @@ class AICommandProcessor {
       return null;
     }
   }
+  
+  /// Get LLM service from instance field (for future instance-based usage)
+  /// Currently unused since processCommand is static
+  llm.LLMService? get llmService => _llmService;
 
   /// Rule-based command processing (fallback)
   static String _processRuleBased(String command) {

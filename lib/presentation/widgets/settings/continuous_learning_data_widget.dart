@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/ai/continuous_learning_system.dart';
+import 'dart:async';
 
 /// Continuous Learning Data Collection Widget
 /// 
@@ -38,6 +39,7 @@ class _ContinuousLearningDataWidgetState extends State<ContinuousLearningDataWid
   DataCollectionStatus? _dataStatus;
   bool _isLoading = true;
   String? _errorMessage;
+  Timer? _refreshTimer;
   
   @override
   void initState() {
@@ -45,11 +47,15 @@ class _ContinuousLearningDataWidgetState extends State<ContinuousLearningDataWid
     _loadDataStatus();
     
     // Refresh data status periodically
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        _loadDataStatus();
-      }
+    _refreshTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) _loadDataStatus();
     });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
   
   Future<void> _loadDataStatus() async {

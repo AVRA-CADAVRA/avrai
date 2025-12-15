@@ -85,20 +85,29 @@ class AIListGeneratorService {
     required Map<String, List<String>> preferences,
   }) async {
     try {
+      // #region agent log
       developer.log('Generating personalized lists for user: $userName', name: _logName);
+      // #endregion
+      
+      // Validate and enhance preferences using category preferences
+      final validatedPreferences = _validateAndEnhancePreferences(preferences);
+      
+      // #region agent log
+      developer.log('Validated preferences: ${validatedPreferences.keys.length} categories, ${validatedPreferences.values.fold(0, (sum, prefs) => sum + prefs.length)} total preferences', name: _logName);
+      // #endregion
       
       final suggestions = <String>[];
       
       // Generate location-aware suggestions
       if (homebase != null && homebase.isNotEmpty) {
-        suggestions.addAll(_generateLocationBasedSuggestions(homebase, preferences));
+        suggestions.addAll(_generateLocationBasedSuggestions(homebase, validatedPreferences));
       }
       
       // Generate preference-based suggestions
-      suggestions.addAll(_generatePreferenceBasedSuggestions(preferences));
+      suggestions.addAll(_generatePreferenceBasedSuggestions(validatedPreferences));
       
       // Generate personality-based suggestions
-      suggestions.addAll(await _generatePersonalityBasedSuggestions(userName, preferences));
+      suggestions.addAll(await _generatePersonalityBasedSuggestions(userName, validatedPreferences));
       
       // Generate AI-enhanced suggestions
       suggestions.addAll(_generateAIEnhancedSuggestions(homebase));
@@ -110,12 +119,12 @@ class AIListGeneratorService {
       
       // Generate age-appropriate suggestions
       if (age != null) {
-        suggestions.addAll(_generateAgeAppropriateSuggestions(age, homebase, preferences));
+        suggestions.addAll(_generateAgeAppropriateSuggestions(age, homebase, validatedPreferences));
       }
       
       // Generate professional networking suggestions (for college students and professionals)
       if (age != null && age >= 18) {
-        suggestions.addAll(_generateProfessionalNetworkingSuggestions(age, homebase, preferences));
+        suggestions.addAll(_generateProfessionalNetworkingSuggestions(age, homebase, validatedPreferences));
       }
       
       // Filter out age-inappropriate suggestions
@@ -158,12 +167,45 @@ class AIListGeneratorService {
       
       final finalSuggestions = prioritizedSuggestions.take(8).toList();
       
+      // #region agent log
       developer.log('Generated ${finalSuggestions.length} personalized lists (age: ${age ?? 'not provided'})', name: _logName);
+      // #endregion
       return finalSuggestions;
     } catch (e) {
+      // #region agent log
       developer.log('Error generating personalized lists: $e', name: _logName);
+      // #endregion
       return _getFallbackSuggestions(userName);
     }
+  }
+  
+  /// Validates and enhances preferences using category preferences
+  /// Filters out invalid preferences and ensures all preferences are from known categories
+  static Map<String, List<String>> _validateAndEnhancePreferences(
+    Map<String, List<String>> preferences,
+  ) {
+    final validated = <String, List<String>>{};
+    
+    // Iterate through known categories
+    for (final category in _categoryPreferences.keys) {
+      final categoryPrefs = preferences[category];
+      if (categoryPrefs != null && categoryPrefs.isNotEmpty) {
+        // Filter preferences to only include valid ones from _categoryPreferences
+        final validPrefs = categoryPrefs.where((pref) {
+          return _categoryPreferences[category]!.contains(pref);
+        }).toList();
+        
+        if (validPrefs.isNotEmpty) {
+          validated[category] = validPrefs;
+        }
+      }
+    }
+    
+    // #region agent log
+    developer.log('Preference validation: ${preferences.length} input categories, ${validated.length} validated categories', name: _logName);
+    // #endregion
+    
+    return validated;
   }
 
   /// Generates location-based list suggestions

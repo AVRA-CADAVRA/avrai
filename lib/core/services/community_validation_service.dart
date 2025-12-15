@@ -2,8 +2,7 @@ import 'dart:developer' as developer;
 import 'package:spots/core/models/community_validation.dart';
 import 'package:spots/core/models/spot.dart';
 import 'package:spots/core/models/unified_list.dart';
-import 'package:spots/core/services/storage_service.dart' hide SharedPreferences;
-import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat, StorageService;
 
 /// OUR_GUTS.md: "Community, Not Just Places" - Community-driven quality assurance
 /// Service for validating spots and lists through community and expert curation
@@ -16,7 +15,7 @@ class CommunityValidationService {
   static const String _listValidationsKey = 'list_validations';
   
   final StorageService _storageService;
-  final SharedPreferences _prefs;
+  final SharedPreferencesCompat _prefs;
   
   // In-memory cache
   final Map<String, SpotValidationSummary> _spotValidationCache = {};
@@ -24,7 +23,7 @@ class CommunityValidationService {
   
   CommunityValidationService({
     required StorageService storageService,
-    required SharedPreferences prefs,
+    required SharedPreferencesCompat prefs,
   }) : _storageService = storageService,
        _prefs = prefs;
   

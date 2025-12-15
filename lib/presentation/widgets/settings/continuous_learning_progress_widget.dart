@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/ai/continuous_learning_system.dart';
+import 'dart:async';
 
 /// Continuous Learning Progress Widget
 /// 
@@ -38,6 +39,7 @@ class _ContinuousLearningProgressWidgetState extends State<ContinuousLearningPro
   bool _isLoading = true;
   String? _errorMessage;
   final Map<String, bool> _expandedSections = {};
+  Timer? _refreshTimer;
   
   // Learning rates for display
   static const Map<String, double> _learningRates = {
@@ -59,11 +61,15 @@ class _ContinuousLearningProgressWidgetState extends State<ContinuousLearningPro
     _loadProgress();
     
     // Refresh progress periodically
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        _loadProgress();
-      }
+    _refreshTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) _loadProgress();
     });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
   
   Future<void> _loadProgress() async {

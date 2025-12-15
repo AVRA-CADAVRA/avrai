@@ -10,6 +10,8 @@ import 'package:spots/core/services/multi_path_expertise_service.dart';
 import 'package:spots/core/services/partnership_profile_service.dart';
 import 'package:spots/core/services/dynamic_threshold_service.dart';
 import 'package:spots/core/services/logger.dart';
+import 'dart:convert';
+import 'dart:io';
 
 /// Expertise Calculation Service
 /// 
@@ -34,10 +36,42 @@ class ExpertiseCalculationService {
     minimumLevel: LogLevel.debug,
   );
 
+  // ignore: unused_field
   final SaturationAlgorithmService _saturationService;
+  // ignore: unused_field
   final MultiPathExpertiseService _multiPathService;
   final PartnershipProfileService? _partnershipProfileService;
   final DynamicThresholdService? _dynamicThresholdService;
+
+  // #region agent log
+  static const String _agentDebugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+  final String _agentRunId = 'expertise_calc_${DateTime.now().microsecondsSinceEpoch}';
+  void _agentLog(
+    String hypothesisId,
+    String location,
+    String message,
+    Map<String, Object?> data,
+  ) {
+    try {
+      final payload = <String, Object?>{
+        'sessionId': 'debug-session',
+        'runId': _agentRunId,
+        'hypothesisId': hypothesisId,
+        'location': location,
+        'message': message,
+        'data': data,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+      File(_agentDebugLogPath).writeAsStringSync(
+        '${jsonEncode(payload)}\n',
+        mode: FileMode.append,
+        flush: true,
+      );
+    } catch (_) {
+      // ignore: avoid_catches_without_on_clauses
+    }
+  }
+  // #endregion
 
   ExpertiseCalculationService({
     required SaturationAlgorithmService saturationService,
@@ -264,6 +298,25 @@ class ExpertiseCalculationService {
       // Local expertise adds bonus (up to 0.1)
       total += pathExpertise.local!.score * 0.10;
     }
+
+    // #region agent log
+    _agentLog(
+      'B',
+      'expertise_calculation_service.dart:_calculateWeightedTotalScore',
+      'Computed weighted total score (including partnership boost behavior)',
+      {
+        'explorationPresent': pathExpertise.exploration != null,
+        'credentialPresent': pathExpertise.credential != null,
+        'influencePresent': pathExpertise.influence != null,
+        'professionalPresent': pathExpertise.professional != null,
+        'communityPresent': pathExpertise.community != null,
+        'localPresent': pathExpertise.local != null,
+        'partnershipBoostTotal': partnershipBoost?.totalBoost,
+        'partnershipBoostHasBoost': partnershipBoost?.hasBoost,
+        'totalPreClamp': total,
+      },
+    );
+    // #endregion
 
     // Cap at 1.0
     return total.clamp(0.0, 1.0);

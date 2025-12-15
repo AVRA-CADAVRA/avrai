@@ -63,6 +63,10 @@ class _ContinuousLearningPageState extends State<ContinuousLearningPage> {
 
   @override
   void dispose() {
+    // Clean up learning system if it was started
+    if (_learningSystem != null && _learningSystem!.isLearningActive) {
+      _learningSystem!.stopContinuousLearning();
+    }
     super.dispose();
   }
 

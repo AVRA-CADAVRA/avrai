@@ -1,4 +1,4 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 import 'dart:convert';
 import 'package:spots/core/models/usage_pattern.dart';
 import 'package:spots/core/services/logger.dart';
@@ -14,7 +14,7 @@ class UsagePatternTracker {
   );
   static const String _storageKey = 'usage_pattern_';
   
-  final SharedPreferences _prefs;
+  final SharedPreferencesCompat _prefs;
   
   UsagePatternTracker(this._prefs);
   

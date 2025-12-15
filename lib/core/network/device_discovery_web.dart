@@ -5,11 +5,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 // This file is only imported when dart.library.html is available (web platform)
 // Conditional import ensures this code is never analyzed on mobile platforms
-import 'dart:html' as html show window, WebSocket, WebSocketEvent;
+// Note: dart:html is deprecated but still needed for WebSocket and window APIs
+// TODO: Migrate to package:web and dart:js_interop when stable
+import 'dart:html' as html show window, WebSocket;
 // Note: flutter_nsd may not be fully supported on web
 // Using conditional imports would be ideal, but for now we'll use dynamic typing
+import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spots/core/network/device_discovery.dart';
-import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/ai/privacy_protection.dart';
 import 'package:spots/core/network/webrtc_signaling_config.dart';
 import 'package:spots/core/network/personality_data_codec.dart';
@@ -147,7 +150,8 @@ class WebDeviceDiscovery extends DeviceDiscoveryPlatform {
   /// Get user agent string
   String _getUserAgent() {
     try {
-      return html.window.navigator.userAgent ?? 'Unknown Browser';
+      // userAgent is non-nullable in dart:html, but wrap in try-catch for safety
+      return html.window.navigator.userAgent;
     } catch (e) {
       developer.log('Error getting user agent: $e', name: _logName);
       return 'Unknown Browser';
@@ -330,6 +334,8 @@ class WebDeviceDiscovery extends DeviceDiscoveryPlatform {
   }
   
   /// Check if a network service is a SPOTS service
+  /// Reserved for future mDNS/NSD implementation on Web
+  // ignore: unused_element
   bool _isSpotsService(dynamic service) {
     if (service.name.toLowerCase().contains('spots')) {
       return true;
@@ -344,6 +350,8 @@ class WebDeviceDiscovery extends DeviceDiscoveryPlatform {
   }
   
   /// Extract personality data from network service
+  /// Reserved for future mDNS/NSD implementation on Web
+  // ignore: unused_element
   AnonymizedVibeData? _extractPersonalityFromService(dynamic service) {
     try {
       final txtRecord = service.txtRecord;
@@ -407,7 +415,8 @@ class WebDeviceDiscovery extends DeviceDiscoveryPlatform {
 /// This function is called from device_discovery_factory.dart via conditional import
 DeviceDiscoveryPlatform createWebDeviceDiscovery() {
   try {
-    final prefs = GetIt.instance<SharedPreferences>();
+    final getIt = GetIt.instance;
+    final prefs = getIt.get<SharedPreferences>();
     final signalingConfig = WebRTCSignalingConfig(prefs: prefs);
     return WebDeviceDiscovery(signalingConfig: signalingConfig);
   } catch (e) {

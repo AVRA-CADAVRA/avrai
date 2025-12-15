@@ -16,6 +16,10 @@ class UserMatchingEngine {
       
       // Get user's behavior signature while preserving privacy
       final userSignature = await _generateBehaviorSignature(user);
+      // #region agent log
+      developer.log('Generated behavior signature for user ${user.id} (exploration: ${userSignature.explorationLevel.toStringAsFixed(2)})', name: _logName);
+      // #endregion
+      
       final allUsers = await _getAllUsers();
       final similarUsers = <User>[];
       
@@ -23,6 +27,11 @@ class UserMatchingEngine {
         if (otherUser.id == user.id) continue;
         
         final otherSignature = await _generateBehaviorSignature(otherUser);
+        // #region agent log
+        developer.log('Generated behavior signature for user ${otherUser.id} (exploration: ${otherSignature.explorationLevel.toStringAsFixed(2)})', name: _logName);
+        // #endregion
+        
+        // TODO: Optimize to use pre-generated signatures instead of recalculating in calculateUserSimilarity
         final similarity = await calculateUserSimilarity(user, otherUser);
         
         if (similarity >= threshold) {

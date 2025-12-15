@@ -8,6 +8,8 @@ import 'dart:async' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:shared_preferences/src/shared_preferences_legacy.dart' as _i4;
 import 'package:spots/core/ai/personality_learning.dart' as _i3;
+import 'package:spots/core/models/multi_path_expertise.dart' as _i6;
+import 'package:spots/core/models/outcome_result.dart' as _i7;
 import 'package:spots/core/models/personality_profile.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -276,11 +278,15 @@ class MockPersonalityLearning extends _i1.Mock
       );
 
   @override
-  _i5.Future<_i2.PersonalityProfile> initializePersonality(String? userId) =>
+  _i5.Future<_i2.PersonalityProfile> initializePersonality(
+    String? userId, {
+    String? password,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #initializePersonality,
           [userId],
+          {#password: password},
         ),
         returnValue:
             _i5.Future<_i2.PersonalityProfile>.value(_FakePersonalityProfile_0(
@@ -288,6 +294,7 @@ class MockPersonalityLearning extends _i1.Mock
           Invocation.method(
             #initializePersonality,
             [userId],
+            {#password: password},
           ),
         )),
       ) as _i5.Future<_i2.PersonalityProfile>);
@@ -295,8 +302,9 @@ class MockPersonalityLearning extends _i1.Mock
   @override
   _i5.Future<_i2.PersonalityProfile> evolveFromUserAction(
     String? userId,
-    _i3.UserAction? action,
-  ) =>
+    _i3.UserAction? action, {
+    _i6.LocalExpertise? localExpertise,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #evolveFromUserAction,
@@ -304,6 +312,7 @@ class MockPersonalityLearning extends _i1.Mock
             userId,
             action,
           ],
+          {#localExpertise: localExpertise},
         ),
         returnValue:
             _i5.Future<_i2.PersonalityProfile>.value(_FakePersonalityProfile_0(
@@ -314,6 +323,7 @@ class MockPersonalityLearning extends _i1.Mock
               userId,
               action,
             ],
+            {#localExpertise: localExpertise},
           ),
         )),
       ) as _i5.Future<_i2.PersonalityProfile>);
@@ -321,8 +331,9 @@ class MockPersonalityLearning extends _i1.Mock
   @override
   _i5.Future<_i2.PersonalityProfile> evolveFromAI2AILearning(
     String? userId,
-    _i3.AI2AILearningInsight? insight,
-  ) =>
+    _i3.AI2AILearningInsight? insight, {
+    _i7.OutcomeResult? outcome,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #evolveFromAI2AILearning,
@@ -330,6 +341,7 @@ class MockPersonalityLearning extends _i1.Mock
             userId,
             insight,
           ],
+          {#outcome: outcome},
         ),
         returnValue:
             _i5.Future<_i2.PersonalityProfile>.value(_FakePersonalityProfile_0(
@@ -340,6 +352,7 @@ class MockPersonalityLearning extends _i1.Mock
               userId,
               insight,
             ],
+            {#outcome: outcome},
           ),
         )),
       ) as _i5.Future<_i2.PersonalityProfile>);

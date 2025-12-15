@@ -2,6 +2,8 @@ import 'package:spots/core/models/event_safety_guidelines.dart';
 import 'package:spots/core/models/expertise_event.dart';
 import 'package:spots/core/services/expertise_event_service.dart';
 import 'package:spots/core/services/logger.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:uuid/uuid.dart';
 
 /// Event Safety Service
@@ -39,6 +41,27 @@ class EventSafetyService {
   
   // In-memory storage for safety guidelines (in production, use database)
   final Map<String, EventSafetyGuidelines> _safetyGuidelines = {};
+
+  // #region agent log
+  static const String _agentDebugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+  late final String _agentRunId = 'event_safety_${_uuid.v4()}';
+  void _agentLog(String hypothesisId, String location, String message, Map<String, Object?> data) {
+    try {
+      final payload = <String, Object?>{
+        'sessionId': 'debug-session',
+        'runId': _agentRunId,
+        'hypothesisId': hypothesisId,
+        'location': location,
+        'message': message,
+        'data': data,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+      File(_agentDebugLogPath).writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append, flush: true);
+    } catch (_) {
+      // ignore: avoid_catches_without_on_clauses
+    }
+  }
+  // #endregion
   
   EventSafetyService({
     required ExpertiseEventService eventService,
@@ -315,8 +338,27 @@ class EventSafetyService {
   
   /// Acknowledge safety guidelines
   Future<void> acknowledgeGuidelines(String eventId) async {
-    final guidelines = await getGuidelines(eventId);
+    // #region agent log
+    _agentLog(
+      'A',
+      'event_safety_service.dart:acknowledgeGuidelines:entry',
+      'acknowledgeGuidelines entry',
+      {'eventId': eventId, 'hasExistingGuidelines': _safetyGuidelines.containsKey(eventId)},
+    );
+    // #endregion
+
+    // Acknowledgement should only apply to already-generated guidelines.
+    // It should NOT auto-generate guidelines (that can mask missing-guidelines scenarios).
+    final guidelines = _safetyGuidelines[eventId];
     if (guidelines == null) {
+      // #region agent log
+      _agentLog(
+        'A',
+        'event_safety_service.dart:acknowledgeGuidelines:missing',
+        'No guidelines found; throwing',
+        {'eventId': eventId},
+      );
+      // #endregion
       throw Exception('Guidelines not found for event: $eventId');
     }
     
@@ -327,6 +369,15 @@ class EventSafetyService {
     
     await _saveGuidelines(updated);
     _logger.info('Guidelines acknowledged: event=$eventId', tag: _logName);
+
+    // #region agent log
+    _agentLog(
+      'A',
+      'event_safety_service.dart:acknowledgeGuidelines:done',
+      'Guidelines acknowledged',
+      {'eventId': eventId, 'acknowledged': true},
+    );
+    // #endregion
   }
   
   /// Determine safety requirements (public method)

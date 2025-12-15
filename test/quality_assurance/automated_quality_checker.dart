@@ -5,8 +5,7 @@
 
 import 'dart:io';
 import 'dart:convert';
-import 'dart:math';
-import 'package:path/path.dart' as path;
+import 'dart:math' as math;
 import 'test_health_metrics.dart';
 import 'performance_benchmarks.dart';
 
@@ -447,7 +446,8 @@ class AutomatedQualityChecker {
     }
     
     // Check for test descriptions
-    final testMatches = RegExp(r'test\(["\'](.+?)["\']').allMatches(content);
+    final testPattern = RegExp(r"test\(['""](.+?)['""]");
+    final testMatches = testPattern.allMatches(content);
     for (final match in testMatches) {
       final description = match.group(1) ?? '';
       if (description.length < 10) {

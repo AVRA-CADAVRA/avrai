@@ -28,11 +28,18 @@ class AppTheme {
       onSurface: AppColors.textPrimary,
     );
 
+    final baseTextTheme = ThemeData.light().textTheme;
+    // In tests we disable runtime fetching for GoogleFonts; if the font isn't bundled as an asset,
+    // GoogleFonts will throw. Fall back to the base TextTheme in that case.
+    final textTheme = GoogleFonts.config.allowRuntimeFetching
+        ? GoogleFonts.interTextTheme(baseTextTheme)
+        : baseTextTheme;
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.white,
-      textTheme: GoogleFonts.interTextTheme().apply(
+      textTheme: textTheme.apply(
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
@@ -133,11 +140,16 @@ class AppTheme {
       onSurface: AppColors.white,
     );
 
+    final baseTextTheme = ThemeData.dark().textTheme;
+    final textTheme = GoogleFonts.config.allowRuntimeFetching
+        ? GoogleFonts.interTextTheme(baseTextTheme)
+        : baseTextTheme;
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.grey900,
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
+      textTheme: textTheme.apply(
         bodyColor: AppColors.white,
         displayColor: AppColors.white,
       ),

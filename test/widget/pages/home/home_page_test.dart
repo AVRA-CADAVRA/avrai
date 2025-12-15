@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:spots/presentation/pages/home/home_page.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 import 'package:spots/core/models/user.dart';
@@ -11,6 +10,14 @@ import '../../mocks/mock_blocs.dart';
 /// Widget tests for HomePage
 /// Tests tab navigation, authentication states, and BLoC integration
 void main() {
+  setUpAll(() async {
+    await WidgetTestHelpers.setupWidgetTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await WidgetTestHelpers.cleanupWidgetTestEnvironment();
+  });
+
   group('HomePage Widget Tests', () {
     late MockAuthBloc mockAuthBloc;
     late MockListsBloc mockListsBloc;
@@ -24,7 +31,7 @@ void main() {
 
     testWidgets('displays loading state when auth is loading', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(AuthLoading());
+      mockAuthBloc.setState(AuthLoading());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HomePage(),
         authBloc: mockAuthBloc,
@@ -33,7 +40,8 @@ void main() {
       );
 
       // Act
-      await WidgetTestHelpers.pumpAndSettle(tester, widget);
+      await tester.pumpWidget(widget);
+      await tester.pump(); // Pump once to render loading state
 
       // Assert - Should show loading indicator
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -41,7 +49,7 @@ void main() {
 
     testWidgets('displays unauthenticated content when not logged in', (WidgetTester tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(Unauthenticated());
+      mockAuthBloc.setState(Unauthenticated());
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HomePage(),
         authBloc: mockAuthBloc,
@@ -66,7 +74,7 @@ void main() {
         createdAt: TestHelpers.createTestDateTime(),
         updatedAt: TestHelpers.createTestDateTime(),
       );
-      when(mockAuthBloc.state).thenReturn(Authenticated(user: testUser));
+      mockAuthBloc.setState(Authenticated(user: testUser));
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HomePage(),
         authBloc: mockAuthBloc,
@@ -91,7 +99,7 @@ void main() {
         createdAt: TestHelpers.createTestDateTime(),
         updatedAt: TestHelpers.createTestDateTime(),
       );
-      when(mockAuthBloc.state).thenReturn(Authenticated(user: testUser));
+      mockAuthBloc.setState(Authenticated(user: testUser));
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HomePage(initialTabIndex: 1),
         authBloc: mockAuthBloc,
@@ -116,7 +124,7 @@ void main() {
         createdAt: TestHelpers.createTestDateTime(),
         updatedAt: TestHelpers.createTestDateTime(),
       );
-      when(mockAuthBloc.state).thenReturn(Authenticated(user: testUser));
+      mockAuthBloc.setState(Authenticated(user: testUser));
       final widget = WidgetTestHelpers.createTestableWidget(
         child: const HomePage(),
         authBloc: mockAuthBloc,

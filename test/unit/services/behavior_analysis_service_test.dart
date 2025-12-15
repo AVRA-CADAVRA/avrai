@@ -1,9 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/behavior_analysis_service.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Behavior Analysis Service Tests
 /// Tests user behavior analysis functionality
 void main() {
+
+  setUpAll(() async {
+    await setupTestStorage();
+  });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+
   group('BehaviorAnalysisService', () {
     group('analyzeUserBehavior', () {
       test('should analyze empty actions list', () {

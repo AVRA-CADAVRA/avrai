@@ -9,69 +9,111 @@ import '../../helpers/widget_test_helpers.dart';
 
 void main() {
   group('FederatedLearningPage Tests', () {
-    setUp(() async {
-      await WidgetTestHelpers.initializeTestEnvironment();
-    });
-
     testWidgets('Page renders correctly', (tester) async {
-      await tester.pumpWidget(
-        WidgetTestHelpers.wrapWithMaterialApp(
-          const FederatedLearningPage(),
-        ),
+      final widget = WidgetTestHelpers.createTestableWidget(
+        child: const FederatedLearningPage(),
       );
+      await tester.pumpWidget(widget);
+      await tester.pump();
 
-      // Verify app bar
-      expect(find.text('Federated Learning'), findsOneWidget);
+      // Verify app bar (AppBar title is more specific)
+      expect(find.byType(AppBar), findsOneWidget);
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect((appBar.title as Text).data, equals('Federated Learning'));
       
-      // Verify header
+      // Verify header (should be visible immediately)
       expect(find.text('Privacy-Preserving AI Training'), findsOneWidget);
       expect(find.text('Help improve AI without sharing your data'), findsOneWidget);
       
-      // Verify section headers
+      // Verify first section header (should be visible)
       expect(find.text('Settings & Participation'), findsOneWidget);
-      expect(find.text('Active Learning Rounds'), findsOneWidget);
-      expect(find.text('Your Privacy Metrics'), findsOneWidget);
-      expect(find.text('Participation History'), findsOneWidget);
+      
+      // Scroll to bring other sections into view (ListView builds lazily)
+      final listView = find.byType(ListView);
+      final activeRoundsText = find.text('Active Learning Rounds');
+      for (var i = 0; i < 10 && activeRoundsText.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
+      expect(activeRoundsText, findsOneWidget);
+      
+      final privacyMetricsText = find.text('Your Privacy Metrics');
+      for (var i = 0; i < 5 && privacyMetricsText.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
+      expect(privacyMetricsText, findsOneWidget);
+      
+      final historyText = find.text('Participation History');
+      for (var i = 0; i < 5 && historyText.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
+      // Text may appear multiple times (section header + widget title), so just verify it exists
+      expect(historyText, findsWidgets);
     });
 
     testWidgets('All 4 widgets are present', (tester) async {
-      await tester.pumpWidget(
-        WidgetTestHelpers.wrapWithMaterialApp(
-          const FederatedLearningPage(),
-        ),
+      final widget = WidgetTestHelpers.createTestableWidget(
+        child: const FederatedLearningPage(),
       );
+      await tester.pumpWidget(widget);
+      await tester.pump();
 
-      // Verify all 4 widgets are rendered
+      // Verify first widget is rendered (should be visible immediately)
       expect(find.byType(FederatedLearningSettingsSection), findsOneWidget);
-      expect(find.byType(FederatedLearningStatusWidget), findsOneWidget);
-      expect(find.byType(PrivacyMetricsWidget), findsOneWidget);
-      expect(find.byType(FederatedParticipationHistoryWidget), findsOneWidget);
+      
+      // Scroll to bring other widgets into view (ListView builds lazily)
+      final listView = find.byType(ListView);
+      final statusWidget = find.byType(FederatedLearningStatusWidget);
+      for (var i = 0; i < 10 && statusWidget.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
+      expect(statusWidget, findsOneWidget);
+      
+      final privacyWidget = find.byType(PrivacyMetricsWidget);
+      for (var i = 0; i < 5 && privacyWidget.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
+      expect(privacyWidget, findsOneWidget);
+      
+      final historyWidget = find.byType(FederatedParticipationHistoryWidget);
+      for (var i = 0; i < 5 && historyWidget.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
+      expect(historyWidget, findsOneWidget);
     });
 
     testWidgets('Page is scrollable', (tester) async {
-      await tester.pumpWidget(
-        WidgetTestHelpers.wrapWithMaterialApp(
-          const FederatedLearningPage(),
-        ),
+      final widget = WidgetTestHelpers.createTestableWidget(
+        child: const FederatedLearningPage(),
       );
+      await tester.pumpWidget(widget);
 
       // Verify ListView is present
       expect(find.byType(ListView), findsOneWidget);
     });
 
     testWidgets('Footer information is displayed', (tester) async {
-      await tester.pumpWidget(
-        WidgetTestHelpers.wrapWithMaterialApp(
-          const FederatedLearningPage(),
-        ),
+      final widget = WidgetTestHelpers.createTestableWidget(
+        child: const FederatedLearningPage(),
       );
+      await tester.pumpWidget(widget);
+      await tester.pump();
 
-      // Scroll to bottom to see footer
-      await tester.drag(find.byType(ListView), const Offset(0, -1000));
-      await tester.pumpAndSettle();
+      // Scroll to footer (ListView builds lazily)
+      final listView = find.byType(ListView);
+      final learnMoreFinder = find.text('Learn More');
+      for (var i = 0; i < 15 && learnMoreFinder.evaluate().isEmpty; i++) {
+        await tester.drag(listView, const Offset(0, -200));
+        await tester.pump();
+      }
 
       // Verify footer content
-      expect(find.text('Learn More'), findsOneWidget);
+      expect(learnMoreFinder, findsOneWidget);
       expect(find.text('Your data never leaves your device'), findsOneWidget);
     });
 

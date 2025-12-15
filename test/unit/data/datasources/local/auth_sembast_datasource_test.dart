@@ -17,8 +17,7 @@ void main() {
 
     tearDown(() async {
       // Clean up database after each test
-      final db = await SembastDatabase.database;
-      await db.close();
+      await SembastDatabase.resetForTests();
     });
 
     group('signIn', () {

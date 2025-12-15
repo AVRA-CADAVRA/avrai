@@ -19,7 +19,7 @@ void main() {
 
     tearDown(() async {
       // Clean up database after each test
-      await database.close();
+      await SembastDatabase.resetForTests();
     });
 
     group('saveRespectedLists', () {

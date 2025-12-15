@@ -2,7 +2,9 @@ import 'dart:developer' as developer;
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/user_vibe.dart';
+import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/services/storage_service.dart';
+import 'package:spots/core/services/age_compatibility_filter.dart';
 
 /// OUR_GUTS.md: "Anonymous vibe compilation that preserves privacy while enabling AI2AI personality matching"
 /// Comprehensive vibe analysis engine that creates privacy-preserving vibe signatures
@@ -11,6 +13,7 @@ class UserVibeAnalyzer {
   
   // Storage keys for vibe data
   static const String _vibeHistoryKey = 'vibe_history';
+  // ignore: unused_field
   static const String _vibeSignatureKey = 'vibe_signature';
   static const String _vibeAnalyticsKey = 'vibe_analytics';
   
@@ -86,21 +89,53 @@ class UserVibeAnalyzer {
   }
   
   /// Analyze vibe compatibility between two users for AI2AI connections
+  /// Age is ALWAYS considered as part of the compatibility matrix
   Future<VibeCompatibilityResult> analyzeVibeCompatibility(
     UserVibe localVibe,
-    UserVibe remoteVibe,
-  ) async {
+    UserVibe remoteVibe, {
+    UnifiedUser? localUser,
+    UnifiedUser? remoteUser,
+    List<String>? recentActions, // For parent-child override detection
+  }) async {
     try {
       developer.log('Analyzing vibe compatibility between ${localVibe.getVibeArchetype()} and ${remoteVibe.getVibeArchetype()}', name: _logName);
       
-      // Calculate basic compatibility
+      // Calculate basic compatibility (personality-based)
       final basicCompatibility = localVibe.calculateVibeCompatibility(remoteVibe);
       
-      // Calculate AI pleasure potential
-      final aiPleasurePotential = localVibe.calculateAIPleasurePotential(remoteVibe);
+      // Apply age compatibility filter if user data is available
+      double ageAdjustedCompatibility = basicCompatibility;
+      if (localUser != null && remoteUser != null) {
+        final ageFilter = AgeCompatibilityFilter();
+        final allowOverride = recentActions != null
+            ? ageFilter.shouldAllowAgeOverride(localUser, remoteUser, recentActions)
+            : false;
+        
+        ageAdjustedCompatibility = ageFilter.applyAgeMultiplier(
+          basicCompatibility,
+          localUser,
+          remoteUser,
+          allowOverride: allowOverride,
+        );
+        
+        developer.log(
+          'Age-adjusted compatibility: ${basicCompatibility.toStringAsFixed(2)} -> ${ageAdjustedCompatibility.toStringAsFixed(2)}',
+          name: _logName,
+        );
+      }
       
-      // Analyze learning opportunities
-      final learningOpportunities = await _analyzeLearningOpportunities(localVibe, remoteVibe);
+      // Use age-adjusted compatibility for all subsequent calculations
+      final finalCompatibility = ageAdjustedCompatibility;
+      
+      // Calculate AI pleasure potential (based on age-adjusted compatibility)
+      final aiPleasurePotential = finalCompatibility > 0.0
+          ? localVibe.calculateAIPleasurePotential(remoteVibe)
+          : 0.0; // No pleasure if age-incompatible
+      
+      // Analyze learning opportunities (only if compatible)
+      final learningOpportunities = finalCompatibility > 0.0
+          ? await _analyzeLearningOpportunities(localVibe, remoteVibe)
+          : <LearningOpportunity>[]; // No learning if age-incompatible
       
       // Calculate connection strength
       final connectionStrength = await _calculateConnectionStrength(localVibe, remoteVibe);
@@ -112,17 +147,17 @@ class UserVibeAnalyzer {
       final trustBuildingPotential = await _calculateTrustBuildingPotential(localVibe, remoteVibe);
       
       final result = VibeCompatibilityResult(
-        basicCompatibility: basicCompatibility,
+        basicCompatibility: finalCompatibility, // Use age-adjusted compatibility
         aiPleasurePotential: aiPleasurePotential,
         learningOpportunities: learningOpportunities,
         connectionStrength: connectionStrength,
         interactionStyle: interactionStyle,
         trustBuildingPotential: trustBuildingPotential,
-        recommendedConnectionDuration: _calculateRecommendedDuration(basicCompatibility),
-        connectionPriority: _calculateConnectionPriority(basicCompatibility, aiPleasurePotential),
+        recommendedConnectionDuration: _calculateRecommendedDuration(finalCompatibility),
+        connectionPriority: _calculateConnectionPriority(finalCompatibility, aiPleasurePotential),
       );
       
-      developer.log('Vibe compatibility: ${(basicCompatibility * 100).round()}%, AI pleasure: ${(aiPleasurePotential * 100).round()}%', name: _logName);
+      developer.log('Vibe compatibility: ${(finalCompatibility * 100).round()}% (age-adjusted), AI pleasure: ${(aiPleasurePotential * 100).round()}%', name: _logName);
       
       return result;
     } catch (e) {

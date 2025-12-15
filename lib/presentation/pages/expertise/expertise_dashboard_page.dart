@@ -4,12 +4,15 @@ import 'package:spots/core/models/expertise_pin.dart';
 import 'package:spots/core/models/expertise_progress.dart';
 import 'package:spots/core/models/unified_user.dart';
 import 'package:spots/core/services/expertise_service.dart';
+import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/presentation/widgets/expertise/expertise_display_widget.dart';
 import 'package:spots/presentation/widgets/expertise/expertise_progress_widget.dart';
 import 'package:spots/presentation/widgets/expertise/partnership_expertise_boost_widget.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
+import 'package:spots/data/datasources/local/sembast_database.dart';
+import 'package:sembast/sembast.dart';
 import 'package:go_router/go_router.dart';
 
 /// Expertise Dashboard Page
@@ -61,24 +64,84 @@ class _ExpertiseDashboardPageState extends State<ExpertiseDashboardPage> {
       UnifiedUser? user = widget.user;
 
       if (user == null && authState is Authenticated) {
-        // Convert User to UnifiedUser for expertise service
-        // Note: This is a simplified conversion - in production, you'd want a proper conversion service
-        user = UnifiedUser(
-          id: authState.user.id,
-          email: authState.user.email,
-          displayName: authState.user.displayName ?? authState.user.name,
-          photoUrl: null, // User model doesn't have avatarUrl - would need to get from profile
-          location: null, // User model doesn't have location - would need to get from profile
-          createdAt: authState.user.createdAt,
-          updatedAt: authState.user.updatedAt,
-          isOnline: authState.user.isOnline ?? false,
-          expertiseMap: {}, // Empty for now - would be populated from user data
-        );
+        // Load user data from database to get expertiseMap
+        Map<String, String> expertiseMap = {};
+        try {
+          final db = await SembastDatabase.database;
+          final userRecord = await SembastDatabase.usersStore.record(authState.user.id).get(db);
+          if (userRecord != null) {
+            // Try to use UnifiedUser.fromJson first (handles expertiseMap properly)
+            try {
+              user = UnifiedUser.fromJson(userRecord);
+              // If UnifiedUser.fromJson worked, use it directly
+              if (user.expertiseMap.isNotEmpty) {
+                // User loaded successfully with expertiseMap
+                print('✅ Loaded user with ${user.expertiseMap.length} expertise categories');
+              } else {
+                // User exists but has no expertise - add it now
+                print('⚠️ User exists but has no expertiseMap, adding universal expertise...');
+                await _addExpertiseToUser(authState.user.id, db);
+                // Reload user after adding expertise
+                final updatedRecord = await SembastDatabase.usersStore.record(authState.user.id).get(db);
+                if (updatedRecord != null) {
+                  user = UnifiedUser.fromJson(updatedRecord);
+                  print('✅ Updated user with ${user.expertiseMap.length} expertise categories');
+                }
+              }
+            } catch (e) {
+              // Fallback: Extract expertiseMap manually
+              final storedExpertiseMap = userRecord['expertiseMap'] as Map<String, dynamic>?;
+              if (storedExpertiseMap != null) {
+                expertiseMap = Map<String, String>.from(
+                  storedExpertiseMap.map((key, value) => MapEntry(key, value.toString())),
+                );
+                print('✅ Loaded ${expertiseMap.length} expertise categories from database');
+              } else {
+                print('⚠️ No expertiseMap found in user record');
+              }
+            }
+          } else {
+            print('⚠️ User record not found in database for: ${authState.user.id}');
+          }
+        } catch (e) {
+          print('❌ Error loading user from database: $e');
+          // If loading fails, use empty map
+          expertiseMap = {};
+        }
+        
+        // If UnifiedUser.fromJson didn't work, create UnifiedUser manually
+        if (user == null) {
+          user = UnifiedUser(
+            id: authState.user.id,
+            email: authState.user.email,
+            displayName: authState.user.displayName ?? authState.user.name,
+            photoUrl: null, // User model doesn't have avatarUrl - would need to get from profile
+            location: null, // User model doesn't have location - would need to get from profile
+            createdAt: authState.user.createdAt,
+            updatedAt: authState.user.updatedAt,
+            isOnline: authState.user.isOnline ?? false,
+            expertiseMap: expertiseMap, // Loaded from database
+          );
+        }
       }
 
       if (user != null) {
         _currentUser = user;
+        print('🔍 Expertise Dashboard: User loaded with ${user.expertiseMap.length} expertise categories');
+        print('🔍 Expertise Dashboard: ExpertiseMap keys: ${user.expertiseMap.keys.take(5).toList()}');
+        print('🔍 Expertise Dashboard: First few values: ${user.expertiseMap.values.take(5).toList()}');
+        
         final pins = _expertiseService.getUserPins(user);
+        print('🔍 Expertise Dashboard: Generated ${pins.length} pins from expertiseMap');
+        
+        if (pins.isEmpty && user.expertiseMap.isNotEmpty) {
+          print('⚠️ Expertise Dashboard: WARNING - expertiseMap has ${user.expertiseMap.length} entries but getUserPins returned 0 pins');
+          // Debug: Check why pins aren't being created
+          for (final entry in user.expertiseMap.entries.take(3)) {
+            final level = ExpertiseLevel.fromString(entry.value);
+            print('🔍 Entry: ${entry.key} = "${entry.value}" -> level: $level');
+          }
+        }
         
         // Calculate progress for each category
         final progressMap = <String, ExpertiseProgress>{};
@@ -114,6 +177,39 @@ class _ExpertiseDashboardPageState extends State<ExpertiseDashboardPage> {
         _progressMap = {};
         _isLoading = false;
       });
+    }
+  }
+
+  /// Add universal expertise to user if missing
+  Future<void> _addExpertiseToUser(String userId, Database db) async {
+    try {
+      final userRecord = await SembastDatabase.usersStore.record(userId).get(db);
+      if (userRecord == null) return;
+
+      final allCategories = [
+        'Coffee', 'Restaurants', 'Bars', 'Pastry', 'Wine', 'Cocktails',
+        'Food', 'Dining', 'Retail', 'Shopping', 'Hospitality', 'Service',
+        'Art', 'Music', 'Outdoor', 'Fitness', 'Books', 'Tech', 'Wellness', 'Travel',
+        'Parks', 'Bookstores', 'Museums', 'Theaters', 'Live Music', 'Sports',
+        'Fashion', 'Vintage', 'Markets', 'Food Trucks', 'Bakeries',
+        'Ice Cream', 'Wine Bars', 'Craft Beer', 'Vegan/Vegetarian', 'Pizza',
+        'Sushi', 'BBQ', 'Mexican', 'Italian', 'Thai', 'Indian', 'Mediterranean',
+        'Korean', 'Hiking Trails', 'Beaches', 'Gardens', 'Botanical Gardens',
+        'Nature Reserves', 'Camping', 'Fishing', 'Kayaking', 'Biking Trails',
+        'Bird Watching', 'Stargazing', 'Picnic Spots', 'Waterfalls', 'Scenic Views',
+      ];
+      
+      final expertiseMap = <String, String>{};
+      for (final category in allCategories) {
+        expertiseMap[category] = 'universal'; // Highest expertise level
+      }
+      
+      // Update user record with expertiseMap
+      userRecord['expertiseMap'] = expertiseMap;
+      await SembastDatabase.usersStore.record(userId).put(db, userRecord);
+      print('✅ Added ${expertiseMap.length} expertise categories to user');
+    } catch (e) {
+      print('❌ Error adding expertise to user: $e');
     }
   }
 

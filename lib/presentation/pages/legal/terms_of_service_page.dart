@@ -3,17 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:spots/core/legal/terms_of_service.dart';
 import 'package:spots/core/services/legal_document_service.dart';
-import 'package:spots/core/services/expertise_event_service.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
 
 /// Terms of Service Page
-/// 
+///
 /// Agent 2: Phase 5, Week 18-19 - Legal Document UI
-/// 
+///
 /// CRITICAL: Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// Features:
 /// - Terms of Service display
 /// - Version number
@@ -32,9 +31,8 @@ class TermsOfServicePage extends StatefulWidget {
 }
 
 class _TermsOfServicePageState extends State<TermsOfServicePage> {
-  final LegalDocumentService _legalService = LegalDocumentService(
-    eventService: GetIt.instance<ExpertiseEventService>(),
-  );
+  final LegalDocumentService _legalService =
+      GetIt.instance<LegalDocumentService>();
 
   bool _hasAccepted = false;
   bool _isSubmitting = false;
@@ -50,7 +48,8 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
     try {
       final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
-        final accepted = await _legalService.hasAcceptedTerms(authState.user.id);
+        final accepted =
+            await _legalService.hasAcceptedTerms(authState.user.id);
         setState(() {
           _hasAccepted = accepted;
         });
@@ -88,6 +87,16 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
           SnackBar(
             content: const Text('Terms of Service accepted'),
             backgroundColor: AppColors.electricGreen,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: AppColors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+            margin: const EdgeInsets.all(16),
           ),
         );
         if (widget.requireAcceptance) {
@@ -104,8 +113,6 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
 
   @override
   Widget build(BuildContext context) {
-    final terms = TermsOfService.current();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -135,7 +142,7 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Version ${terms.version}',
+                            'Version ${TermsOfService.version}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -143,7 +150,7 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
                             ),
                           ),
                           Text(
-                            'Effective: ${_formatDate(terms.effectiveDate)}',
+                            'Effective: ${_formatDate(TermsOfService.effectiveDate)}',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -154,14 +161,16 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
                     ),
                     if (_hasAccepted)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.electricGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, size: 16, color: AppColors.electricGreen),
+                            Icon(Icons.check_circle,
+                                size: 16, color: AppColors.electricGreen),
                             const SizedBox(width: 4),
                             Text(
                               'Accepted',
@@ -212,16 +221,19 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                          Icon(Icons.error_outline,
+                              color: AppColors.error, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _error!,
-                              style: TextStyle(color: AppColors.error, fontSize: 12),
+                              style: TextStyle(
+                                  color: AppColors.error, fontSize: 12),
                             ),
                           ),
                         ],
@@ -241,7 +253,8 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.white),
                             ),
                           )
                         : const Text('I Accept the Terms of Service'),
@@ -259,4 +272,3 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
     return '${date.month}/${date.day}/${date.year}';
   }
 }
-

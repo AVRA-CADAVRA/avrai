@@ -56,7 +56,7 @@ void main() {
         final reputation = await networks.calculateAIReputation(aiAgentId);
         
         expect(reputation, isA<ReputationSystem>());
-        expect(reputation.aiAgentId, equals(aiAgentId));
+        expect(reputation.agentId, equals(aiAgentId));
       });
 
       test('should handle unknown agent ID', () async {

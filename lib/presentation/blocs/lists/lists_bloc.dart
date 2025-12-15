@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spots/core/models/list.dart';
 import 'package:spots/domain/usecases/lists/create_list_usecase.dart';
@@ -131,9 +133,36 @@ class ListsBloc extends Bloc<ListsEvent, ListsState> {
       final currentState = state as ListsLoaded;
       final query = event.query.toLowerCase();
       final filteredLists = currentState.lists.where((list) {
-        return list.title.toLowerCase().contains(query) ||
-               list.description.toLowerCase().contains(query) ||
-               (list.category?.toLowerCase().contains(query) ?? false);
+        final titleMatch = list.title.toLowerCase().contains(query);
+        final descMatch = list.description.toLowerCase().contains(query);
+        final catMatch = (list.category?.toLowerCase().contains(query) ?? false);
+
+        // #region agent log
+        // Debug mode: prove which field matched for null-category lists.
+        try {
+          final payload = <String, dynamic>{
+            'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H9',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'sessionId': 'debug-session',
+            'runId': 'pre-fix-lists-bloc',
+            'hypothesisId': 'H9',
+            'location': 'lib/presentation/blocs/lists/lists_bloc.dart:_onSearchLists',
+            'message': 'search match breakdown',
+            'data': {
+              'query': query,
+              'title': list.title,
+              'category_is_null': list.category == null,
+              'titleMatch': titleMatch,
+              'descMatch': descMatch,
+              'catMatch': catMatch,
+            },
+          };
+          File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+              .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+        } catch (_) {}
+        // #endregion
+
+        return titleMatch || descMatch || catMatch;
       }).toList();
       emit(ListsLoaded(currentState.lists, filteredLists));
     }

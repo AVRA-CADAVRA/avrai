@@ -1,5 +1,5 @@
 /// AuthBloc Unit Tests - Phase 4: BLoC State Management Testing
-/// 
+///
 /// Comprehensive testing of AuthBloc with all event→state transitions
 /// Ensures optimal development stages and deployment optimization
 /// Tests current implementation as-is without modifying production code
@@ -8,8 +8,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:spots/presentation/blocs/auth/auth_bloc.dart';
+import 'package:spots/core/services/personality_sync_service.dart';
+import 'package:spots/core/ai/personality_learning.dart';
+import 'package:spots/core/models/personality_profile.dart';
+import 'package:spots/injection_container.dart' as di;
 import '../../helpers/bloc_test_helpers.dart';
 import '../../mocks/bloc_mock_dependencies.dart';
+
+// Mocks for services accessed via GetIt
+class MockPersonalitySyncService extends Mock implements PersonalitySyncService {}
+class MockPersonalityLearning extends Mock implements PersonalityLearning {}
 
 void main() {
   group('AuthBloc', () {
@@ -18,9 +26,29 @@ void main() {
     late MockSignUpUseCase mockSignUpUseCase;
     late MockSignOutUseCase mockSignOutUseCase;
     late MockGetCurrentUserUseCase mockGetCurrentUserUseCase;
+    late MockUpdatePasswordUseCase mockUpdatePasswordUseCase;
 
     setUpAll(() {
       BlocMockFactory.registerFallbacks();
+      
+      // Register mock PersonalitySyncService in GetIt
+      final mockSyncService = MockPersonalitySyncService();
+      when(() => mockSyncService.isCloudSyncEnabled(any())).thenAnswer((_) async => false);
+      when(() => mockSyncService.reEncryptWithNewPassword(any(), any(), any())).thenAnswer((_) async {});
+      if (di.sl.isRegistered<PersonalitySyncService>()) {
+        di.sl.unregister<PersonalitySyncService>();
+      }
+      di.sl.registerSingleton<PersonalitySyncService>(mockSyncService);
+      
+      // Register mock PersonalityLearning in GetIt
+      final mockPersonalityLearning = MockPersonalityLearning();
+      final testProfile = PersonalityProfile.initial('test-user-123');
+      when(() => mockPersonalityLearning.initializePersonality(any(), password: any(named: 'password'))).thenAnswer((_) async => testProfile);
+      when(() => mockPersonalityLearning.initializePersonality(any())).thenAnswer((_) async => testProfile);
+      if (di.sl.isRegistered<PersonalityLearning>()) {
+        di.sl.unregister<PersonalityLearning>();
+      }
+      di.sl.registerSingleton<PersonalityLearning>(mockPersonalityLearning);
     });
 
     setUp(() {
@@ -28,14 +56,21 @@ void main() {
       mockSignUpUseCase = BlocMockFactory.signUpUseCase;
       mockSignOutUseCase = BlocMockFactory.signOutUseCase;
       mockGetCurrentUserUseCase = BlocMockFactory.getCurrentUserUseCase;
-      
+      mockUpdatePasswordUseCase = BlocMockFactory.updatePasswordUseCase;
+
       BlocMockFactory.resetAll();
+      
+      // Set up default successful response for updatePasswordUseCase
+      // Individual tests can override this if needed
+      when(() => mockUpdatePasswordUseCase(any(), any()))
+          .thenAnswer((_) async => {});
 
       authBloc = AuthBloc(
         signInUseCase: mockSignInUseCase,
         signUpUseCase: mockSignUpUseCase,
         signOutUseCase: mockSignOutUseCase,
         getCurrentUserUseCase: mockGetCurrentUserUseCase,
+        updatePasswordUseCase: mockUpdatePasswordUseCase,
       );
     });
 
@@ -52,18 +87,19 @@ void main() {
     group('SignInRequested Event', () {
       const testEmail = 'test@example.com';
       const testPassword = 'password123';
-      
+
       blocTest<AuthBloc, AuthState>(
         'emits [AuthLoading, Authenticated] when sign in succeeds',
         build: () {
           when(() => mockSignInUseCase(testEmail, testPassword))
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                email: testEmail,
-                isOnline: true,
-              ));
+                    email: testEmail,
+                    isOnline: true,
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(SignInRequested(testEmail, testPassword)),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
         expect: () => [
           isA<AuthLoading>(),
           isA<Authenticated>()
@@ -80,12 +116,13 @@ void main() {
         build: () {
           when(() => mockSignInUseCase(testEmail, testPassword))
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                email: testEmail,
-                isOnline: false,
-              ));
+                    email: testEmail,
+                    isOnline: false,
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(SignInRequested(testEmail, testPassword)),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
         expect: () => [
           isA<AuthLoading>(),
           isA<Authenticated>()
@@ -104,8 +141,8 @@ void main() {
         act: (bloc) => bloc.add(SignInRequested(testEmail, testPassword)),
         expect: () => [
           isA<AuthLoading>(),
-          isA<AuthError>()
-              .having((state) => state.message, 'message', 'Invalid credentials'),
+          isA<AuthError>().having(
+              (state) => state.message, 'message', 'Invalid credentials'),
         ],
       );
 
@@ -119,8 +156,8 @@ void main() {
         act: (bloc) => bloc.add(SignInRequested(testEmail, testPassword)),
         expect: () => [
           isA<AuthLoading>(),
-          isA<AuthError>()
-              .having((state) => state.message, 'message', contains('Network error')),
+          isA<AuthError>().having(
+              (state) => state.message, 'message', contains('Network error')),
         ],
       );
 
@@ -149,13 +186,14 @@ void main() {
         build: () {
           when(() => mockSignUpUseCase(testEmail, testPassword, testName))
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                email: testEmail,
-                name: testName,
-                isOnline: true,
-              ));
+                    email: testEmail,
+                    name: testName,
+                    isOnline: true,
+                  ));
           return authBloc;
         },
-        act: (bloc) => bloc.add(SignUpRequested(testEmail, testPassword, testName)),
+        act: (bloc) =>
+            bloc.add(SignUpRequested(testEmail, testPassword, testName)),
         expect: () => [
           isA<AuthLoading>(),
           isA<Authenticated>()
@@ -164,7 +202,8 @@ void main() {
               .having((state) => state.isOffline, 'isOffline', false),
         ],
         verify: (_) {
-          verify(() => mockSignUpUseCase(testEmail, testPassword, testName)).called(1);
+          verify(() => mockSignUpUseCase(testEmail, testPassword, testName))
+              .called(1);
         },
       );
 
@@ -173,13 +212,14 @@ void main() {
         build: () {
           when(() => mockSignUpUseCase(testEmail, testPassword, testName))
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                email: testEmail,
-                name: testName,
-                isOnline: false,
-              ));
+                    email: testEmail,
+                    name: testName,
+                    isOnline: false,
+                  ));
           return authBloc;
         },
-        act: (bloc) => bloc.add(SignUpRequested(testEmail, testPassword, testName)),
+        act: (bloc) =>
+            bloc.add(SignUpRequested(testEmail, testPassword, testName)),
         expect: () => [
           isA<AuthLoading>(),
           isA<Authenticated>()
@@ -194,11 +234,12 @@ void main() {
               .thenAnswer((_) async => null);
           return authBloc;
         },
-        act: (bloc) => bloc.add(SignUpRequested(testEmail, testPassword, testName)),
+        act: (bloc) =>
+            bloc.add(SignUpRequested(testEmail, testPassword, testName)),
         expect: () => [
           isA<AuthLoading>(),
-          isA<AuthError>()
-              .having((state) => state.message, 'message', 'Failed to create account'),
+          isA<AuthError>().having(
+              (state) => state.message, 'message', 'Failed to create account'),
         ],
       );
 
@@ -209,11 +250,12 @@ void main() {
               .thenThrow(Exception('Email already exists'));
           return authBloc;
         },
-        act: (bloc) => bloc.add(SignUpRequested(testEmail, testPassword, testName)),
+        act: (bloc) =>
+            bloc.add(SignUpRequested(testEmail, testPassword, testName)),
         expect: () => [
           isA<AuthLoading>(),
-          isA<AuthError>()
-              .having((state) => state.message, 'message', contains('Email already exists')),
+          isA<AuthError>().having((state) => state.message, 'message',
+              contains('Email already exists')),
         ],
       );
     });
@@ -245,8 +287,8 @@ void main() {
         act: (bloc) => bloc.add(SignOutRequested()),
         expect: () => [
           isA<AuthLoading>(),
-          isA<AuthError>()
-              .having((state) => state.message, 'message', contains('Sign out failed')),
+          isA<AuthError>().having(
+              (state) => state.message, 'message', contains('Sign out failed')),
         ],
       );
 
@@ -274,8 +316,8 @@ void main() {
         build: () {
           when(() => mockGetCurrentUserUseCase())
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                isOnline: true,
-              ));
+                    isOnline: true,
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(AuthCheckRequested()),
@@ -294,8 +336,8 @@ void main() {
         build: () {
           when(() => mockGetCurrentUserUseCase())
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                isOnline: false,
-              ));
+                    isOnline: false,
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(AuthCheckRequested()),
@@ -309,8 +351,7 @@ void main() {
       blocTest<AuthBloc, AuthState>(
         'emits [AuthLoading, Unauthenticated] when current user is null',
         build: () {
-          when(() => mockGetCurrentUserUseCase())
-              .thenAnswer((_) async => null);
+          when(() => mockGetCurrentUserUseCase()).thenAnswer((_) async => null);
           return authBloc;
         },
         act: (bloc) => bloc.add(AuthCheckRequested()),
@@ -386,12 +427,12 @@ void main() {
       test('Authenticated state preserves user and offline flag correctly', () {
         final testUser = TestDataFactory.createTestUser();
         const isOffline = true;
-        
+
         final authenticatedState = Authenticated(
           user: testUser,
           isOffline: isOffline,
         );
-        
+
         expect(authenticatedState.user, equals(testUser));
         expect(authenticatedState.isOffline, equals(isOffline));
       });
@@ -410,7 +451,7 @@ void main() {
 
         final stopwatch = Stopwatch()..start();
         authBloc.add(SignInRequested('test@test.com', 'password'));
-        
+
         // Wait for processing
         await Future.delayed(const Duration(milliseconds: 100));
         stopwatch.stop();
@@ -431,10 +472,10 @@ void main() {
           // Perform multiple sign in/out cycles
           bloc.add(SignInRequested('test1@test.com', 'pass1'));
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           bloc.add(SignOutRequested());
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           bloc.add(SignInRequested('test2@test.com', 'pass2'));
         },
         // Should not throw or enter invalid states
@@ -462,7 +503,7 @@ void main() {
           // First attempt fails
           bloc.add(SignInRequested('test@test.com', 'password'));
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           // Second attempt succeeds
           bloc.add(SignInRequested('test@test.com', 'password'));
         },
@@ -476,9 +517,9 @@ void main() {
         build: () {
           when(() => mockSignInUseCase(any(), any()))
               .thenAnswer((_) => Future.delayed(
-                const Duration(seconds: 30),
-                () => throw Exception('Timeout'),
-              ));
+                    const Duration(seconds: 30),
+                    () => throw Exception('Timeout'),
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(SignInRequested('test@test.com', 'password')),
@@ -496,11 +537,12 @@ void main() {
         build: () {
           when(() => mockSignInUseCase(any(), any()))
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                isOnline: false,
-              ));
+                    isOnline: false,
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(SignInRequested('test@test.com', 'password')),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
         expect: () => [
           isA<AuthLoading>(),
           isA<Authenticated>()
@@ -513,16 +555,149 @@ void main() {
         build: () {
           when(() => mockSignInUseCase(any(), any()))
               .thenAnswer((_) async => TestDataFactory.createTestUser(
-                isOnline: true,
-              ));
+                    isOnline: true,
+                  ));
           return authBloc;
         },
         act: (bloc) => bloc.add(SignInRequested('test@test.com', 'password')),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
         expect: () => [
           isA<AuthLoading>(),
           isA<Authenticated>()
               .having((state) => state.isOffline, 'isOffline', false),
         ],
+      );
+    });
+
+    group('UpdatePasswordRequested Event', () {
+      const testUserId = 'test_user_1';
+      const currentPassword = 'old_password';
+      const newPassword = 'new_password';
+
+      final testUser = TestDataFactory.createTestUser(
+        id: testUserId,
+        email: 'test@example.com',
+        isOnline: true,
+      );
+
+      blocTest<AuthBloc, AuthState>(
+        'emits [AuthLoading, Authenticated] when password update succeeds',
+        build: () {
+          // Create a new bloc instance for this test
+          final testBloc = AuthBloc(
+            signInUseCase: mockSignInUseCase,
+            signUpUseCase: mockSignUpUseCase,
+            signOutUseCase: mockSignOutUseCase,
+            getCurrentUserUseCase: mockGetCurrentUserUseCase,
+            updatePasswordUseCase: mockUpdatePasswordUseCase,
+          );
+          // Set initial authenticated state
+          testBloc.emit(Authenticated(user: testUser, isOffline: false));
+
+          return testBloc;
+        },
+        act: (bloc) =>
+            bloc.add(UpdatePasswordRequested(currentPassword, newPassword)),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
+        // Note: Re-encryption may fail in unit tests (GetIt not initialized),
+        // but password update should still succeed
+        expect: () => [
+          isA<AuthLoading>(),
+          // Password update succeeds even if re-encryption fails
+          isA<Authenticated>()
+              .having((state) => state.user.id, 'userId', testUserId),
+        ],
+        verify: (_) {
+          verify(() => mockUpdatePasswordUseCase(currentPassword, newPassword))
+              .called(1);
+        },
+      );
+
+      blocTest<AuthBloc, AuthState>(
+        'emits [AuthLoading, AuthError] when not authenticated',
+        build: () {
+          // Start with unauthenticated state
+          authBloc.emit(Unauthenticated());
+          return authBloc;
+        },
+        act: (bloc) =>
+            bloc.add(UpdatePasswordRequested(currentPassword, newPassword)),
+        wait: const Duration(milliseconds: 500), // Allow state emissions to complete
+        expect: () => [
+          isA<AuthLoading>(),
+          isA<AuthError>().having((state) => state.message, 'message',
+              'Must be authenticated to change password'),
+        ],
+        verify: (_) {
+          verifyNever(() => mockUpdatePasswordUseCase(any(), any()));
+        },
+      );
+
+      blocTest<AuthBloc, AuthState>(
+        'emits [AuthLoading, AuthError] when password update use case throws',
+        build: () {
+          // Create a new bloc instance for this test
+          final testBloc = AuthBloc(
+            signInUseCase: mockSignInUseCase,
+            signUpUseCase: mockSignUpUseCase,
+            signOutUseCase: mockSignOutUseCase,
+            getCurrentUserUseCase: mockGetCurrentUserUseCase,
+            updatePasswordUseCase: mockUpdatePasswordUseCase,
+          );
+          testBloc.emit(Authenticated(user: testUser, isOffline: false));
+
+          when(() => mockUpdatePasswordUseCase(currentPassword, newPassword))
+              .thenThrow(Exception('Password update failed'));
+
+          return testBloc;
+        },
+        act: (bloc) =>
+            bloc.add(UpdatePasswordRequested(currentPassword, newPassword)),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
+        expect: () => [
+          isA<AuthLoading>(),
+          // Re-encryption may fail first (GetIt not initialized), but then password update fails
+          isA<AuthError>().having((state) => state.message, 'message',
+              contains('Failed to update password')),
+        ],
+        verify: (_) {
+          verify(() => mockUpdatePasswordUseCase(currentPassword, newPassword))
+              .called(1);
+        },
+      );
+
+      blocTest<AuthBloc, AuthState>(
+        'calls updatePasswordUseCase with correct parameters',
+        build: () {
+          // Reset and set up mock before creating bloc
+          reset(mockUpdatePasswordUseCase);
+          when(() => mockUpdatePasswordUseCase(any(), any()))
+              .thenAnswer((_) async => {});
+          
+          // Create a new bloc instance for this test
+          final testBloc = AuthBloc(
+            signInUseCase: mockSignInUseCase,
+            signUpUseCase: mockSignUpUseCase,
+            signOutUseCase: mockSignOutUseCase,
+            getCurrentUserUseCase: mockGetCurrentUserUseCase,
+            updatePasswordUseCase: mockUpdatePasswordUseCase,
+          );
+          testBloc.emit(Authenticated(user: testUser, isOffline: false));
+
+          return testBloc;
+        },
+        act: (bloc) =>
+            bloc.add(UpdatePasswordRequested(currentPassword, newPassword)),
+        wait: const Duration(milliseconds: 1000), // Allow async operations to complete
+        expect: () => [
+          isA<AuthLoading>(),
+          isA<Authenticated>()
+              .having((state) => state.user.id, 'userId', testUserId),
+        ],
+        verify: (_) {
+          verify(() => mockUpdatePasswordUseCase(currentPassword, newPassword))
+              .called(1);
+        },
       );
     });
   });

@@ -36,14 +36,23 @@ class ContextualPersonalityService {
       // Calculate change magnitude
       final changeMagnitude = _calculateChangeMagnitude(proposedChanges);
       
+      // #region agent log
+      developer.log('Change magnitude: ${changeMagnitude.toStringAsFixed(3)}, threshold: $_significantChangeThreshold', name: _logName);
+      // #endregion
+      
       // Small changes always go to current layer (context or core)
       if (changeMagnitude < _significantChangeThreshold) {
+        // #region agent log
+        developer.log('Small change detected, routing to ${activeContext != null ? "context" : "core"}', name: _logName);
+        // #endregion
         return activeContext != null ? 'context' : 'core';
       }
       
       // Large AI2AI changes are suspicious (potential homogenization)
       if (changeSource == 'ai2ai' && changeMagnitude > _velocityThreshold) {
-        developer.log('Large AI2AI change detected, resisting', name: _logName);
+        // #region agent log
+        developer.log('Large AI2AI change detected (magnitude: ${changeMagnitude.toStringAsFixed(3)} > $_velocityThreshold), resisting homogenization', name: _logName);
+        // #endregion
         return 'resist';
       }
       
@@ -51,9 +60,15 @@ class ContextualPersonalityService {
       if (changeSource == 'user_action') {
         // If in specific context, update that context
         if (activeContext != null && activeContext != 'general') {
+          // #region agent log
+          developer.log('User action in context "$activeContext", routing to context', name: _logName);
+          // #endregion
           return 'context';
         }
         // Otherwise update core (this is authentic user behavior)
+        // #region agent log
+        developer.log('User action in general context, routing to core (authentic behavior)', name: _logName);
+        // #endregion
         return 'core';
       }
       
@@ -63,12 +78,23 @@ class ContextualPersonalityService {
         
         // If change aligns with transition direction, it's authentic
         if (_isChangeConsistentWithTransition(proposedChanges, transition)) {
+          // #region agent log
+          developer.log('Change consistent with active transition, routing to core (authentic transformation)', name: _logName);
+          // #endregion
           return 'core'; // Authentic transformation
+        } else {
+          // #region agent log
+          developer.log('Change inconsistent with active transition, routing to context', name: _logName);
+          // #endregion
         }
       }
       
       // Default: context-specific change
-      return activeContext != null ? 'context' : 'resist';
+      final result = activeContext != null ? 'context' : 'resist';
+      // #region agent log
+      developer.log('Default routing: $result (context: $activeContext)', name: _logName);
+      // #endregion
+      return result;
       
     } catch (e) {
       developer.log('Error classifying change: $e', name: _logName);
@@ -80,17 +106,25 @@ class ContextualPersonalityService {
   Future<TransitionMetrics?> detectTransition({
     required PersonalityProfile profile,
     required List<Map<String, double>> recentChanges,
-    required Duration window,
+    Duration? window,
   }) async {
     try {
-      if (recentChanges.length < 5) {
-        return null; // Not enough data
-      }
+      // Use provided window or default based on data size
+      final effectiveWindow = window ?? _determineWindow(recentChanges.length);
       
+      // #region agent log
       developer.log(
-        'Detecting transition: ${recentChanges.length} recent changes',
+        'Detecting transition: ${recentChanges.length} recent changes, window=${effectiveWindow.inDays} days',
         name: _logName,
       );
+      // #endregion
+      
+      if (recentChanges.length < 5) {
+        // #region agent log
+        developer.log('Not enough data for transition detection: ${recentChanges.length} < 5', name: _logName);
+        // #endregion
+        return null; // Not enough data
+      }
       
       // Calculate aggregate changes
       final aggregateChanges = _aggregateChanges(recentChanges);
@@ -98,7 +132,7 @@ class ContextualPersonalityService {
       // Calculate change velocity
       final velocity = _calculateChangeVelocity(
         aggregateChanges,
-        window,
+        effectiveWindow,
       );
       
       // Calculate consistency (are changes moving in same direction?)
@@ -116,16 +150,18 @@ class ContextualPersonalityService {
       if (authenticityScore >= _authenticTransitionThreshold &&
           consistency >= _consistencyThreshold) {
         
+        // #region agent log
         developer.log(
-          'Authentic transition detected: authenticity=$authenticityScore, consistency=$consistency',
+          'Authentic transition detected: authenticity=${authenticityScore.toStringAsFixed(3)}, consistency=${consistency.toStringAsFixed(3)}, velocity=${velocity.toStringAsFixed(3)}, triggers=${_identifyTriggers(aggregateChanges).length}',
           name: _logName,
         );
+        // #endregion
         
         final currentPhase = profile.getCurrentPhase();
         
         return TransitionMetrics(
           transitionId: '${profile.userId}_trans_${DateTime.now().millisecondsSinceEpoch}',
-          startDate: DateTime.now().subtract(window),
+          startDate: DateTime.now().subtract(effectiveWindow),
           fromPhaseId: currentPhase?.phaseId ?? 'unknown',
           dimensionChanges: aggregateChanges,
           changeVelocity: velocity,
@@ -135,10 +171,15 @@ class ContextualPersonalityService {
         );
       }
       
+      // #region agent log
+      developer.log('No transition detected: authenticity=${authenticityScore.toStringAsFixed(3)} < $_authenticTransitionThreshold or consistency=${consistency.toStringAsFixed(3)} < $_consistencyThreshold', name: _logName);
+      // #endregion
       return null; // No transition detected
       
     } catch (e) {
+      // #region agent log
       developer.log('Error detecting transition: $e', name: _logName);
+      // #endregion
       return null;
     }
   }
@@ -148,10 +189,12 @@ class ContextualPersonalityService {
     required PersonalityProfile profile,
     required TransitionMetrics metrics,
   }) async {
+    // #region agent log
     developer.log(
-      'Starting transition: ${metrics.transitionId}',
+      'Starting transition: ${metrics.transitionId}, fromPhase=${metrics.fromPhaseId}, dimensions=${metrics.dimensionChanges.length}, velocity=${metrics.changeVelocity.toStringAsFixed(3)}',
       name: _logName,
     );
+    // #endregion
     
     // Create new profile with transition active
     return PersonalityProfile(
@@ -183,10 +226,12 @@ class ContextualPersonalityService {
       throw Exception('No active transition to complete');
     }
     
+    // #region agent log
     developer.log(
-      'Completing transition: ${profile.activeTransition!.transitionId}',
+      'Completing transition: ${profile.activeTransition!.transitionId}, newPhase=$newPhaseName, evolutionGeneration=${profile.evolutionGeneration + 1}',
       name: _logName,
     );
+    // #endregion
     
     final currentPhase = profile.getCurrentPhase();
     if (currentPhase == null) {
@@ -388,6 +433,17 @@ class ContextualPersonalityService {
       ..sort((a, b) => b.value.compareTo(a.value));
     
     return sorted.take(3).map((e) => e.key).toList();
+  }
+  
+  /// Determine appropriate time window based on data size
+  Duration _determineWindow(int dataPoints) {
+    if (dataPoints < 10) {
+      return _shortTermWindow; // 7 days for small datasets
+    } else if (dataPoints < 30) {
+      return _mediumTermWindow; // 30 days for medium datasets
+    } else {
+      return _longTermWindow; // 90 days for large datasets
+    }
   }
 }
 

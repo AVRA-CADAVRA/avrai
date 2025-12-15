@@ -5,6 +5,8 @@ import 'package:spots/core/models/event_feedback.dart';
 import 'package:spots/core/services/post_event_feedback_service.dart';
 import 'package:spots/core/services/logger.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
+import 'dart:io';
 
 /// Review Fraud Detection Service
 /// 
@@ -41,6 +43,27 @@ class ReviewFraudDetectionService {
   
   // In-memory storage for review fraud scores (in production, use database)
   final Map<String, ReviewFraudScore> _fraudScores = {};
+
+  // #region agent log
+  static const String _agentDebugLogPath = '/Users/reisgordon/SPOTS/.cursor/debug.log';
+  final String _agentRunId = 'review_fraud_${DateTime.now().microsecondsSinceEpoch}';
+  void _agentLog(String hypothesisId, String location, String message, Map<String, Object?> data) {
+    try {
+      final payload = <String, Object?>{
+        'sessionId': 'debug-session',
+        'runId': _agentRunId,
+        'hypothesisId': hypothesisId,
+        'location': location,
+        'message': message,
+        'data': data,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+      File(_agentDebugLogPath).writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append, flush: true);
+    } catch (_) {
+      // ignore: avoid_catches_without_on_clauses
+    }
+  }
+  // #endregion
   
   ReviewFraudDetectionService({
     required PostEventFeedbackService feedbackService,
@@ -70,6 +93,21 @@ class ReviewFraudDetectionService {
       
       // Step 1: Get all feedback for event
       final feedbacks = await _feedbackService.getFeedbackForEvent(eventId);
+
+      // #region agent log
+      final ratings = feedbacks.map((f) => f.overallRating).toList();
+      _agentLog(
+        'A',
+        'review_fraud_detection_service.dart:analyzeReviews:feedbacks',
+        'Loaded feedbacks for fraud analysis',
+        {
+          'eventId': eventId,
+          'count': feedbacks.length,
+          'ratings': ratings,
+          'commentsEmptyCount': feedbacks.where((f) => (f.comments ?? '').trim().isEmpty).length,
+        },
+      );
+      // #endregion
       
       if (feedbacks.isEmpty) {
         // No reviews yet, return low-risk score
@@ -89,7 +127,16 @@ class ReviewFraudDetectionService {
       double riskScore = 0.0;
       
       // Check 1: All 5-star reviews
-      if (_hasAllFiveStarReviews(feedbacks)) {
+      final hasAllFiveStar = _hasAllFiveStarReviews(feedbacks);
+      // #region agent log
+      _agentLog(
+        'A',
+        'review_fraud_detection_service.dart:analyzeReviews:allFiveStar',
+        'All-five-star check evaluated',
+        {'eventId': eventId, 'count': feedbacks.length, 'result': hasAllFiveStar},
+      );
+      // #endregion
+      if (hasAllFiveStar) {
         signals.add(FraudSignal.allFiveStar);
         riskScore += FraudSignal.allFiveStar.riskWeight;
       }
@@ -101,7 +148,16 @@ class ReviewFraudDetectionService {
       }
       
       // Check 3: Generic reviews
-      if (_hasGenericReviews(feedbacks)) {
+      final hasGeneric = _hasGenericReviews(feedbacks);
+      // #region agent log
+      _agentLog(
+        'A',
+        'review_fraud_detection_service.dart:analyzeReviews:genericReviews',
+        'Generic-reviews check evaluated',
+        {'eventId': eventId, 'count': feedbacks.length, 'result': hasGeneric},
+      );
+      // #endregion
+      if (hasGeneric) {
         signals.add(FraudSignal.genericReviews);
         riskScore += FraudSignal.genericReviews.riskWeight;
       }

@@ -25,6 +25,9 @@ void main() {
         description: 'Updated Description',
         latitude: 37.7749,
         longitude: -122.4194,
+        category: 'restaurant',
+        rating: 0.0,
+        createdBy: 'test-user',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

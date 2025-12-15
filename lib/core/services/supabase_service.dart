@@ -10,13 +10,49 @@ class SupabaseService {
   static const String _logName = 'SupabaseService';
   final AppLogger _logger = const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
 
-  SupabaseClient get _client => Supabase.instance.client;
+  // In tests we cannot rely on Supabase.instance being initialized (it asserts).
+  // Provide a safe override for unit tests and guard access in production.
+  static SupabaseClient? _overrideClientForTests;
+
+  static void useClientForTests(SupabaseClient client) {
+    _overrideClientForTests = client;
+  }
+
+  static void resetClientForTests() {
+    _overrideClientForTests = null;
+  }
+
+  SupabaseClient? _tryGetClient() {
+    if (_overrideClientForTests != null) return _overrideClientForTests;
+    try {
+      return Supabase.instance.client;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  SupabaseClient get _client {
+    final client = _tryGetClient();
+    if (client == null) {
+      throw Exception('Supabase is not initialized');
+    }
+    return client;
+  }
 
   /// Expose client for internal service consumers (not UI)
   SupabaseClient get client => _client;
 
   /// Check if Supabase is available
-  bool get isAvailable => true;
+  bool get isAvailable {
+    try {
+      return _tryGetClient() != null;
+    } catch (_) {
+      return false;
+    }
+  }
+  
+  /// Safely get client if available (returns null if not initialized)
+  SupabaseClient? tryGetClient() => _tryGetClient();
 
   /// Test connection to Supabase
   Future<bool> testConnection() async {
@@ -31,7 +67,14 @@ class SupabaseService {
   }
 
   /// Get current user
-  User? get currentUser => _client.auth.currentUser;
+  User? get currentUser {
+    try {
+      final c = _tryGetClient();
+      return c?.auth.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Sign in with email and password
   Future<AuthResponse> signInWithEmail(String email, String password) async {
@@ -44,7 +87,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       _logger.error('Sign in failed', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 
@@ -59,7 +102,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       _logger.error('Sign up failed', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 
@@ -70,7 +113,7 @@ class SupabaseService {
       _logger.info('User signed out', tag: _logName);
     } catch (e) {
       _logger.error('Sign out failed', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 
@@ -98,7 +141,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       _logger.error('Failed to create spot', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 
@@ -152,7 +195,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       _logger.error('Failed to create spot list', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 
@@ -189,24 +232,36 @@ class SupabaseService {
       return response;
     } catch (e) {
       _logger.error('Failed to add spot to list', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 
   /// Get real-time updates for spots
   Stream<List<Map<String, dynamic>>> getSpotsStream() {
-    return _client
-        .from('spots')
-        .stream(primaryKey: ['id'])
-        .map((event) => List<Map<String, dynamic>>.from(event));
+    try {
+      final c = _tryGetClient();
+      if (c == null) return const Stream.empty();
+      return c
+          .from('spots')
+          .stream(primaryKey: ['id'])
+          .map((event) => List<Map<String, dynamic>>.from(event));
+    } catch (_) {
+      return const Stream.empty();
+    }
   }
 
   /// Get real-time updates for spot lists
   Stream<List<Map<String, dynamic>>> getSpotListsStream() {
-    return _client
-        .from('spot_lists')
-        .stream(primaryKey: ['id'])
-        .map((event) => List<Map<String, dynamic>>.from(event));
+    try {
+      final c = _tryGetClient();
+      if (c == null) return const Stream.empty();
+      return c
+          .from('spot_lists')
+          .stream(primaryKey: ['id'])
+          .map((event) => List<Map<String, dynamic>>.from(event));
+    } catch (_) {
+      return const Stream.empty();
+    }
   }
 
   /// Update user profile
@@ -239,7 +294,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       _logger.error('Failed to update user profile', error: e, tag: _logName);
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 

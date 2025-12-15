@@ -553,9 +553,10 @@ void main() {
     group('User state scenarios', () {
       test('should handle newly created user', () async {
         // Arrange
+        final now = DateTime.now();
         final newUser = testUser.copyWith(
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          createdAt: now,
+          updatedAt: now,
         );
 
         when(mockRepository.getCurrentUser())

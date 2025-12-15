@@ -1,7 +1,6 @@
-import "package:shared_preferences/shared_preferences.dart";
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spots/core/monitoring/network_analytics.dart';
-import 'package:spots/core/monitoring/connection_monitor.dart' as monitor;
+import 'package:spots/core/monitoring/network_analytics.dart' as analytics;
+import 'package:spots/core/monitoring/connection_monitor.dart';
 import 'package:spots/core/models/connection_metrics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,15 +18,15 @@ void main() {
     
     group('Network Analytics System', () {
       test('should create NetworkAnalytics successfully', () {
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
-        expect(analytics, isNotNull);
+        expect(analyticsSystem, isNotNull);
       });
       
       test('should analyze network health and generate report', () async {
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
-        final healthReport = await analytics.analyzeNetworkHealth();
+        final healthReport = await analyticsSystem.analyzeNetworkHealth();
         
         expect(healthReport.overallHealthScore, greaterThanOrEqualTo(0.0));
         expect(healthReport.overallHealthScore, lessThanOrEqualTo(1.0));
@@ -44,9 +43,9 @@ void main() {
       });
       
       test('should collect real-time network metrics', () async {
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
-        final realTimeMetrics = await analytics.collectRealTimeMetrics();
+        final realTimeMetrics = await analyticsSystem.collectRealTimeMetrics();
         
         expect(realTimeMetrics.connectionThroughput, greaterThanOrEqualTo(0.0));
         expect(realTimeMetrics.matchingSuccessRate, greaterThanOrEqualTo(0.0));
@@ -62,9 +61,9 @@ void main() {
       });
       
       test('should generate comprehensive analytics dashboard', () async {
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
-        final dashboard = await analytics.generateAnalyticsDashboard(Duration(days: 7));
+        final dashboard = await analyticsSystem.generateAnalyticsDashboard(Duration(days: 7));
         
         expect(dashboard.timeWindow, equals(Duration(days: 7)));
         expect(dashboard.performanceTrends, isA<List>());
@@ -79,15 +78,15 @@ void main() {
       });
       
       test('should detect network anomalies', () async {
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
-        final anomalies = await analytics.detectNetworkAnomalies();
+        final anomalies = await analyticsSystem.detectNetworkAnomalies();
         
-        expect(anomalies, isA<List<NetworkAnomaly>>());
+        expect(anomalies, isA<List<analytics.NetworkAnomaly>>());
         // Anomalies list can be empty if no anomalies are detected
         for (final anomaly in anomalies) {
-          expect(anomaly.type, isA<AnomalyType>());
-          expect(anomaly.severity, isA<IssueSeverity>());
+          expect(anomaly.type, isA<analytics.AnomalyType>());
+          expect(anomaly.severity, isA<analytics.IssueSeverity>());
           expect(anomaly.description, isNotEmpty);
           expect(anomaly.detectedAt, isNotNull);
           expect(anomaly.metadata, isA<Map<String, dynamic>>());
@@ -95,9 +94,9 @@ void main() {
       });
       
       test('should analyze network optimization opportunities', () async {
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
-        final optimizationReport = await analytics.analyzeNetworkOptimization();
+        final optimizationReport = await analyticsSystem.analyzeNetworkOptimization();
         
         expect(optimizationReport.connectionEfficiency, isNotNull);
         expect(optimizationReport.learningBottlenecks, isA<List>());
@@ -115,13 +114,13 @@ void main() {
     
     group('Connection Monitor System', () {
       test('should create ConnectionMonitor successfully', () {
-        final connectionMonitor = monitor.ConnectionMonitor(prefs: mockPrefs);
+        final connectionMonitor = ConnectionMonitor(prefs: mockPrefs);
         
         expect(connectionMonitor, isNotNull);
       });
       
       test('should start monitoring a connection', () async {
-        final connectionMonitor = monitor.ConnectionMonitor(prefs: mockPrefs);
+        final connectionMonitor = ConnectionMonitor(prefs: mockPrefs);
         
         final testMetrics = ConnectionMetrics(
           connectionId: 'test_connection_001',
@@ -149,7 +148,7 @@ void main() {
          expect(session.qualityHistory, hasLength(1));
          expect(session.learningProgressHistory, hasLength(1));
          expect(session.alertsGenerated, isEmpty);
-         expect(session.monitoringStatus, equals(monitor.MonitoringStatus.active));
+         expect(session.monitoringStatus, equals(MonitoringStatus.active));
         expect(session.startTime, isNotNull);
       });
       
@@ -364,19 +363,19 @@ void main() {
     group('Integration Validation', () {
       test('should validate Phase 4 component integration', () async {
         // Create both Phase 4 components
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         final monitor = ConnectionMonitor(prefs: mockPrefs);
         
         // Validate component creation
-        expect(analytics, isNotNull);
+        expect(analyticsSystem, isNotNull);
         expect(monitor, isNotNull);
         
         // Test that both components work independently
-        expect(analytics.runtimeType, equals(NetworkAnalytics));
+        expect(analyticsSystem.runtimeType, equals(analytics.NetworkAnalytics));
         expect(monitor.runtimeType, equals(ConnectionMonitor));
         
         // Test basic functionality
-        final healthReport = await analytics.analyzeNetworkHealth();
+        final healthReport = await analyticsSystem.analyzeNetworkHealth();
         expect(healthReport.overallHealthScore, greaterThanOrEqualTo(0.0));
         
         final overview = await monitor.getActiveConnectionsOverview();
@@ -413,7 +412,7 @@ void main() {
       
       test('should validate Phase 4 monitoring capabilities', () async {
         final monitor = ConnectionMonitor(prefs: mockPrefs);
-        final analytics = NetworkAnalytics(prefs: mockPrefs);
+        final analyticsSystem = analytics.NetworkAnalytics(prefs: mockPrefs);
         
         // Test monitoring lifecycle
         final testMetrics = ConnectionMetrics(
@@ -437,7 +436,7 @@ void main() {
         expect(session.monitoringStatus, equals(MonitoringStatus.active));
         
         // Check network analytics can run while monitoring is active
-        final healthReport = await analytics.analyzeNetworkHealth();
+        final healthReport = await analyticsSystem.analyzeNetworkHealth();
         expect(healthReport, isNotNull);
         
         // Get connection status

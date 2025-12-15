@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:convert';
 import 'dart:math';
 import 'package:spots/core/constants/vibe_constants.dart';
 import 'package:spots/core/models/personality_profile.dart';
@@ -12,7 +13,9 @@ class CloudLearningInterface {
   static const String _logName = 'CloudLearningInterface';
   
   // Storage keys for cloud learning data
+  // ignore: unused_field
   static const String _cloudPatternsKey = 'cloud_patterns';
+  // ignore: unused_field
   static const String _sharedInsightsKey = 'shared_insights';
   static const String _learningContributionsKey = 'learning_contributions';
   
@@ -20,8 +23,10 @@ class CloudLearningInterface {
   final PersonalityLearning _personalityLearning;
   
   // Cloud learning state
+  // ignore: unused_field
   final Map<String, List<AnonymousPattern>> _cloudPatterns = {};
   final Map<String, CloudLearningContribution> _userContributions = {};
+  // ignore: unused_field
   final Set<String> _processedPatternIds = {};
   
   CloudLearningInterface({
@@ -393,13 +398,23 @@ class CloudLearningInterface {
     String userId,
     List<ShareablePattern> patterns,
   ) async {
-         return ContributionMetadata(
-       hashedUserId: await PrivacyProtection.createSecureHash(userId + DateTime.now().toString(), 'cloud_contribution'),
-       patternCount: patterns.length,
-       averageStrength: patterns.fold(0.0, (sum, p) => sum + p.strength) / patterns.length,
-       averageReliability: patterns.fold(0.0, (sum, p) => sum + p.reliability) / patterns.length,
-       contributionTimestamp: DateTime.now(),
-     );
+    final avgStrength = patterns.isEmpty
+        ? 0.0
+        : patterns.fold(0.0, (sum, p) => sum + p.strength) / patterns.length;
+    final avgReliability = patterns.isEmpty
+        ? 0.0
+        : patterns.fold(0.0, (sum, p) => sum + p.reliability) / patterns.length;
+
+    return ContributionMetadata(
+      hashedUserId: await PrivacyProtection.createSecureHash(
+        userId + DateTime.now().toString(),
+        'cloud_contribution',
+      ),
+      patternCount: patterns.length,
+      averageStrength: avgStrength,
+      averageReliability: avgReliability,
+      contributionTimestamp: DateTime.now(),
+    );
   }
   
   // Simulation methods (in real implementation would use HTTP client)
@@ -476,6 +491,19 @@ class CloudLearningInterface {
     );
     
     _userContributions[userId] = contribution;
+    // Persist contribution summary so we can track contributions across app restarts
+    // (and so tests can simulate storage failure via SharedPreferences).
+    final existing = _prefs.getString(_learningContributionsKey);
+    final Map<String, dynamic> decoded = existing != null && existing.isNotEmpty
+        ? (jsonDecode(existing) as Map<String, dynamic>)
+        : <String, dynamic>{};
+    decoded[userId] = {
+      'contributionId': contribution.contributionId,
+      'patternsContributed': contribution.patternsContributed,
+      'qualityScore': contribution.qualityScore,
+      'contributedAt': contribution.contributedAt.toIso8601String(),
+    };
+    await _prefs.setString(_learningContributionsKey, jsonEncode(decoded));
     developer.log('Recorded contribution for user: $userId', name: _logName);
   }
   

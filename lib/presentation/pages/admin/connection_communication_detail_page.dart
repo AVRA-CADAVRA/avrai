@@ -5,7 +5,7 @@ import 'package:spots/core/theme/app_theme.dart';
 import 'package:spots/core/theme/colors.dart';
 import 'package:spots/core/ai/ai2ai_learning.dart';
 import 'package:spots/core/models/connection_metrics.dart' hide ChatMessage;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 
@@ -37,7 +37,7 @@ class _ConnectionCommunicationDetailPageState extends State<ConnectionCommunicat
 
   Future<void> _initializeService() async {
     try {
-      final prefs = GetIt.instance<SharedPreferences>();
+      final prefs = GetIt.instance<SharedPreferencesCompat>();
       final connectionMonitor = ConnectionMonitor(prefs: prefs);
       // Try to get AI2AIChatAnalyzer from GetIt if available
       AI2AIChatAnalyzer? chatAnalyzer;

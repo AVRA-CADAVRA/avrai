@@ -1,9 +1,8 @@
 import 'dart:developer' as developer;
 import 'dart:async';
 import 'dart:io';
-import 'package:spots/core/services/storage_service.dart' hide SharedPreferences;
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat, StorageService;
 import 'package:spots/core/services/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
 
 /// OUR_GUTS.md: "Effortless, Seamless Discovery" - Performance monitoring for seamless UX
 /// Service for monitoring application performance metrics
@@ -16,7 +15,7 @@ class PerformanceMonitor {
   static const String _alertsKey = 'performance_alerts';
   
   final StorageService _storageService;
-  final SharedPreferences _prefs;
+  final SharedPreferencesCompat _prefs;
   
   // Monitoring state
   bool _isMonitoring = false;
@@ -34,7 +33,7 @@ class PerformanceMonitor {
   
   PerformanceMonitor({
     required StorageService storageService,
-    required SharedPreferences prefs,
+    required SharedPreferencesCompat prefs,
   }) : _storageService = storageService,
        _prefs = prefs;
   

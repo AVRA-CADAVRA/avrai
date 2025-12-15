@@ -1,22 +1,30 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spots/core/ai/vibe_analysis_engine.dart' show UserVibeAnalyzer, VibeCompatibilityResult;
 import 'package:spots/core/models/personality_profile.dart';
 import 'package:spots/core/models/user_vibe.dart';
+import 'package:spots/core/services/storage_service.dart' show SharedPreferencesCompat;
 
-import 'vibe_analysis_engine_test.mocks.dart';
+import '../../helpers/platform_channel_helper.dart';
 
-@GenerateMocks([SharedPreferences])
 void main() {
   group('UserVibeAnalyzer', () {
     late UserVibeAnalyzer analyzer;
-    late MockSharedPreferences mockPrefs;
+    late SharedPreferencesCompat prefs;
 
-    setUp(() {
-      mockPrefs = MockSharedPreferences();
-      analyzer = UserVibeAnalyzer(prefs: mockPrefs);
+    setUpAll(() async {
+      await setupTestStorage();
+    });
+
+    tearDownAll(() async {
+      await cleanupTestStorage();
+    });
+
+    setUp(() async {
+      // Use in-memory storage-backed SharedPreferencesCompat for unit tests.
+      prefs = await SharedPreferencesCompat.getInstance(
+        storage: getTestStorage(boxName: 'vibe_analysis_engine_test'),
+      );
+      analyzer = UserVibeAnalyzer(prefs: prefs);
     });
 
     group('Vibe Compilation', () {
@@ -24,13 +32,11 @@ void main() {
         const userId = 'test-user-123';
         final profile = PersonalityProfile.initial(userId);
 
-        when(mockPrefs.getString(any)).thenReturn(null);
-        when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
-
         final vibe = await analyzer.compileUserVibe(userId, profile);
 
         expect(vibe, isA<UserVibe>());
-        expect(vibe.userId, equals(userId));
+        // Privacy-preserving: UserVibe should not expose raw userId.
+        expect(vibe.hashedSignature, isNotEmpty);
       });
 
       test('should handle different personality profiles', () async {
@@ -41,9 +47,6 @@ void main() {
           newConfidence: {'exploration_eagerness': 0.8},
           newAuthenticity: 0.8,
         );
-
-        when(mockPrefs.getString(any)).thenReturn(null);
-        when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
         final vibe1 = await analyzer.compileUserVibe(userId, profile1);
         final vibe2 = await analyzer.compileUserVibe(userId, profile2);
@@ -67,8 +70,8 @@ void main() {
         final result = await analyzer.analyzeVibeCompatibility(vibe1, vibe2);
 
         expect(result, isA<VibeCompatibilityResult>());
-        expect(result.compatibilityScore, greaterThanOrEqualTo(0.0));
-        expect(result.compatibilityScore, lessThanOrEqualTo(1.0));
+        expect(result.basicCompatibility, greaterThanOrEqualTo(0.0));
+        expect(result.basicCompatibility, lessThanOrEqualTo(1.0));
       });
 
       test('should calculate AI pleasure potential', () async {
@@ -93,15 +96,12 @@ void main() {
         const userId = 'test-user-123';
         final profile = PersonalityProfile.initial(userId);
 
-        when(mockPrefs.getString(any)).thenReturn(null);
-        when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
-
         final vibe = await analyzer.compileUserVibe(userId, profile);
 
         // OUR_GUTS.md: "Privacy and Control Are Non-Negotiable"
         // Vibe should be compiled in a privacy-preserving way
         expect(vibe, isA<UserVibe>());
-        expect(vibe.userId, equals(userId)); // User ID is needed for the vibe object itself
+        expect(vibe.hashedSignature, isNotEmpty);
       });
     });
   });

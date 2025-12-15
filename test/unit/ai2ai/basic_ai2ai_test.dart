@@ -86,7 +86,8 @@ void main() {
       
       final userVibe = UserVibe.fromPersonalityProfile('test_user', testDimensions);
       
-      expect(userVibe.anonymizedDimensions.length, equals(testDimensions.length));
+      // UserVibe normalizes to the full core dimension set (missing dimensions get defaults).
+      expect(userVibe.anonymizedDimensions.length, equals(VibeConstants.coreDimensions.length));
       expect(userVibe.overallEnergy, greaterThan(0.0));
       expect(userVibe.overallEnergy, lessThanOrEqualTo(1.0));
       expect(userVibe.socialPreference, greaterThan(0.0));
@@ -190,7 +191,7 @@ void main() {
     
     test('should validate vibe constants are properly defined', () {
       // Verify core constants exist and are reasonable
-      expect(VibeConstants.coreDimensions.length, equals(8));
+      expect(VibeConstants.coreDimensions.length, equals(12));
       expect(VibeConstants.highCompatibilityThreshold, greaterThan(0.7));
       expect(VibeConstants.mediumCompatibilityThreshold, greaterThan(0.4));
       expect(VibeConstants.personalityLearningRate, greaterThan(0.0));

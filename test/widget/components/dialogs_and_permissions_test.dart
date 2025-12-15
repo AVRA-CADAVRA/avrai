@@ -375,10 +375,10 @@ void main() {
         expect(find.text('Age Verification'), findsOneWidget);
         
         // Buttons should meet minimum size requirements
-        final yesButton = tester.getSize(find.text('Yes'));
+        final yesButton = tester.getSize(find.widgetWithText(TextButton, 'Yes'));
         expect(yesButton.height, greaterThanOrEqualTo(48.0));
         
-        final noButton = tester.getSize(find.text('No'));
+        final noButton = tester.getSize(find.widgetWithText(TextButton, 'No'));
         expect(noButton.height, greaterThanOrEqualTo(48.0));
       });
 
@@ -388,13 +388,13 @@ void main() {
           child: Builder(
             builder: (context) => ElevatedButton(
               onPressed: () => _showDeleteConfirmationDialog(context),
-              child: const Text('Delete'),
+              child: const Text('Show Delete Dialog'),
             ),
           ),
         );
 
         await WidgetTestHelpers.pumpAndSettle(tester, widget);
-        await tester.tap(find.text('Delete'));
+        await tester.tap(find.text('Show Delete Dialog'));
         await tester.pumpAndSettle();
 
         // Assert - Dialog should have proper semantic structure
@@ -465,10 +465,12 @@ void _showAgeVerificationDialog(BuildContext context, {Function(bool)? onResult}
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: const Text('Age Verification'),
       content: const Text('Are you 18 or older?'),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
           onPressed: () {
             Navigator.of(context).pop();
             onResult?.call(false);
@@ -476,6 +478,7 @@ void _showAgeVerificationDialog(BuildContext context, {Function(bool)? onResult}
           child: const Text('No'),
         ),
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
           onPressed: () {
             Navigator.of(context).pop();
             onResult?.call(true);
@@ -537,6 +540,7 @@ void _showDeleteConfirmationDialog(BuildContext context, {VoidCallback? onConfir
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: const Text('Confirm Delete'),
       content: const Text('This action cannot be undone. Are you sure you want to permanently delete this item?'),
       actions: [

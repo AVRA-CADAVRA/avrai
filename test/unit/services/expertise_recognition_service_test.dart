@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/expertise_recognition_service.dart';
 import 'package:spots/core/models/unified_user.dart';
 import '../../fixtures/model_factories.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Expertise Recognition Service Tests
 /// Tests community recognition and appreciation functionality
@@ -24,8 +25,14 @@ void main() {
       );
     });
 
+    // Removed: Property assignment tests
+    // Recognition tests focus on business logic (validation, filtering, sorting), not property assignment
+
     group('recognizeExpert', () {
-      test('should recognize expert successfully', () async {
+      test(
+          'should recognize expert successfully with different types, and throw exception when recognizing yourself',
+          () async {
+        // Test business logic: expert recognition with validation and multiple types
         await service.recognizeExpert(
           expert: expert,
           recognizer: recognizer,
@@ -35,21 +42,8 @@ void main() {
 
         // Verify recognition was created (in production, would fetch from database)
         expect(expert.id, isNot(equals(recognizer.id)));
-      });
 
-      test('should throw exception when recognizing yourself', () async {
-        expect(
-          () => service.recognizeExpert(
-            expert: expert,
-            recognizer: expert,
-            reason: 'I am great',
-            type: RecognitionType.exceptional,
-          ),
-          throwsException,
-        );
-      });
-
-      test('should accept different recognition types', () async {
+        // Test different recognition types
         await service.recognizeExpert(
           expert: expert,
           recognizer: recognizer,
@@ -66,79 +60,83 @@ void main() {
 
         // Verify both recognitions were created
         expect(expert.id, isNot(equals(recognizer.id)));
+
+        // Test self-recognition validation (business logic)
+        expect(
+          () => service.recognizeExpert(
+            expert: expert,
+            recognizer: expert,
+            reason: 'I am great',
+            type: RecognitionType.exceptional,
+          ),
+          throwsException,
+        );
       });
     });
 
     group('getRecognitionsForExpert', () {
-      test('should return recognitions for expert', () async {
+      test(
+          'should return recognitions for expert, or empty list when no recognitions',
+          () async {
+        // Test business logic: recognition retrieval with empty case handling
         final recognitions = await service.getRecognitionsForExpert(expert);
-
         expect(recognitions, isA<List<ExpertRecognition>>());
-      });
 
-      test('should return empty list when no recognitions', () async {
         final newExpert = ModelFactories.createTestUser(id: 'new-expert');
-        final recognitions = await service.getRecognitionsForExpert(newExpert);
-
+        final emptyRecognitions =
+            await service.getRecognitionsForExpert(newExpert);
         // In test environment, may be empty
-        expect(recognitions, isA<List<ExpertRecognition>>());
+        expect(emptyRecognitions, isA<List<ExpertRecognition>>());
       });
     });
 
     group('getFeaturedExperts', () {
-      test('should return featured experts', () async {
+      test(
+          'should return featured experts with filtering, maxResults, and sorted by recognition score',
+          () async {
+        // Test business logic: featured expert retrieval with filtering and sorting
         final featured = await service.getFeaturedExperts();
-
         expect(featured, isA<List<FeaturedExpert>>());
-      });
 
-      test('should filter by category when provided', () async {
-        final featured = await service.getFeaturedExperts(
+        // Test category filtering
+        final filtered = await service.getFeaturedExperts(
           category: 'food',
         );
+        expect(filtered, isA<List<FeaturedExpert>>());
 
-        expect(featured, isA<List<FeaturedExpert>>());
-      });
-
-      test('should respect maxResults parameter', () async {
-        final featured = await service.getFeaturedExperts(
+        // Test maxResults parameter
+        final limited = await service.getFeaturedExperts(
           maxResults: 5,
         );
+        expect(limited.length, lessThanOrEqualTo(5));
 
-        expect(featured.length, lessThanOrEqualTo(5));
-      });
-
-      test('should sort by recognition score', () async {
-        final featured = await service.getFeaturedExperts();
-
+        // Test sorting by recognition score (business logic)
+        final sorted = await service.getFeaturedExperts();
         // Featured experts should be sorted by score (highest first)
-        for (var i = 0; i < featured.length - 1; i++) {
+        for (var i = 0; i < sorted.length - 1; i++) {
           expect(
-            featured[i].recognitionScore,
-            greaterThanOrEqualTo(featured[i + 1].recognitionScore),
+            sorted[i].recognitionScore,
+            greaterThanOrEqualTo(sorted[i + 1].recognitionScore),
           );
         }
       });
     });
 
     group('getExpertSpotlight', () {
-      test('should return expert spotlight', () async {
+      test(
+          'should return expert spotlight with category filtering and top recognitions',
+          () async {
+        // Test business logic: expert spotlight retrieval with filtering and recognition limits
         final spotlight = await service.getExpertSpotlight();
-
         expect(spotlight, anyOf(isNull, isA<ExpertSpotlight>()));
-      });
 
-      test('should filter by category when provided', () async {
-        final spotlight = await service.getExpertSpotlight(
+        // Test category filtering
+        final filtered = await service.getExpertSpotlight(
           category: 'food',
         );
+        expect(filtered, anyOf(isNull, isA<ExpertSpotlight>()));
 
-        expect(spotlight, anyOf(isNull, isA<ExpertSpotlight>()));
-      });
-
-      test('should include top recognitions', () async {
-        final spotlight = await service.getExpertSpotlight();
-
+        // Test top recognitions limit (business logic)
         if (spotlight != null) {
           expect(spotlight.topRecognitions.length, lessThanOrEqualTo(3));
         }
@@ -146,20 +144,23 @@ void main() {
     });
 
     group('getCommunityAppreciation', () {
-      test('should return community appreciation for expert', () async {
+      test(
+          'should return community appreciation for expert, or empty list when no appreciation',
+          () async {
+        // Test business logic: community appreciation retrieval with empty case handling
         final appreciation = await service.getCommunityAppreciation(expert);
-
         expect(appreciation, isA<List<CommunityAppreciation>>());
-      });
 
-      test('should return empty list when no appreciation', () async {
         final newExpert = ModelFactories.createTestUser(id: 'new-expert');
-        final appreciation = await service.getCommunityAppreciation(newExpert);
-
+        final emptyAppreciation =
+            await service.getCommunityAppreciation(newExpert);
         // In test environment, may be empty
-        expect(appreciation, isA<List<CommunityAppreciation>>());
+        expect(emptyAppreciation, isA<List<CommunityAppreciation>>());
       });
     });
   });
-}
 
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+}

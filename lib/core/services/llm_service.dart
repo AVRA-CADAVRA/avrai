@@ -15,13 +15,24 @@ import 'package:http/http.dart' as http;
 /// LLM Service for Google Gemini integration
 /// Provides LLM-powered chat and text generation for SPOTS AI features
 /// Handles offline scenarios gracefully with connectivity checks
+/// Implements resilience patterns: timeouts, circuit breaker, error handling
 /// 
 /// TODO: Standardize error handling to use AppLogger (see week_42_error_handling_standard.md)
 class LLMService {
   static const String _logName = 'LLMService';
   
+  // Resilience configuration
+  static const Duration _defaultTimeout = Duration(seconds: 30);
+  static const Duration _circuitBreakerOpenDuration = Duration(minutes: 5);
+  static const int _circuitBreakerFailureThreshold = 5;
+  
   final SupabaseClient client;
   final Connectivity connectivity;
+  
+  // Circuit breaker state
+  int _consecutiveFailures = 0;
+  DateTime? _circuitBreakerOpenedAt;
+  bool _circuitBreakerOpen = false;
   
   LLMService(this.client, {Connectivity? connectivity}) 
       : connectivity = connectivity ?? Connectivity();
@@ -31,7 +42,6 @@ class LLMService {
     try {
       final result = await connectivity.checkConnectivity();
       return !result.contains(ConnectivityResult.none);
-          return result != ConnectivityResult.none;
     } catch (e) {
       developer.log('Connectivity check failed, assuming offline: $e', name: _logName);
       return false;
@@ -44,14 +54,34 @@ class LLMService {
   /// [context] - Optional context about user, location, preferences
   /// [temperature] - Controls randomness (0.0-1.0), default 0.7
   /// [maxTokens] - Maximum tokens in response, default 500
+  /// [timeout] - Request timeout, default 30 seconds
   /// 
   /// Throws [OfflineException] if device is offline
+  /// Throws [TimeoutException] if request times out
+  /// Throws [DataCenterFailureException] if data center is unavailable
   Future<String> chat({
     required List<ChatMessage> messages,
     LLMContext? context,
     double temperature = 0.7,
     int maxTokens = 500,
+    Duration? timeout,
   }) async {
+    // Check circuit breaker
+    if (_circuitBreakerOpen) {
+      final timeSinceOpen = DateTime.now().difference(_circuitBreakerOpenedAt!);
+      if (timeSinceOpen < _circuitBreakerOpenDuration) {
+        developer.log('Circuit breaker is open, rejecting request', name: _logName);
+        throw DataCenterFailureException(
+          'AI service temporarily unavailable. Please try again later.',
+        );
+      } else {
+        // Try to close circuit breaker (half-open state)
+        developer.log('Attempting to close circuit breaker', name: _logName);
+        _circuitBreakerOpen = false;
+        _consecutiveFailures = 0;
+      }
+    }
+    
     // Check connectivity before making request
     final isOnline = await _isOnline();
     if (!isOnline) {
@@ -65,21 +95,38 @@ class LLMService {
       final response = await client.functions.invoke(
         'llm-chat',
         body: jsonEncode({
-          'messages': messages.map((m) => {
-            'role': m.role,
-            'content': m.content,
-          }).toList(),
+          // IMPORTANT: role must be JSON-encodable (string), not the enum itself.
+          'messages': messages.map((m) => m.toJson()).toList(),
           'context': context?.toJson(),
           'temperature': temperature,
           'maxTokens': maxTokens,
         }),
+      ).timeout(
+        timeout ?? _defaultTimeout,
+        onTimeout: () {
+          developer.log('LLM request timed out after ${timeout ?? _defaultTimeout}', name: _logName);
+          _recordFailure();
+          throw TimeoutException('LLM request timed out. The AI service may be experiencing issues.');
+        },
       );
       
       if (response.status != 200) {
         final errorData = response.data is String 
             ? jsonDecode(response.data as String) 
             : response.data;
-        throw Exception('LLM request failed: ${response.status} - ${errorData['error'] ?? 'Unknown error'}');
+        final errorMessage = errorData['error'] ?? 'Unknown error';
+        
+        // Record failure for circuit breaker
+        _recordFailure();
+        
+        // Check if it's a data center failure (5xx errors)
+        if (response.status >= 500) {
+          throw DataCenterFailureException(
+            'AI data center is experiencing issues (${response.status}). Please try again later.',
+          );
+        }
+        
+        throw Exception('LLM request failed: ${response.status} - $errorMessage');
       }
       
       final data = response.data is String 
@@ -88,14 +135,61 @@ class LLMService {
       
       final responseText = data['response'] as String?;
       if (responseText == null || responseText.isEmpty) {
+        _recordFailure();
         throw Exception('Empty response from LLM');
       }
       
+      // Success - reset circuit breaker
+      _recordSuccess();
+      
       developer.log('Received LLM response: ${responseText.length} characters', name: _logName);
       return responseText;
+    } on TimeoutException {
+      rethrow;
+    } on DataCenterFailureException {
+      rethrow;
+    } on OfflineException {
+      rethrow;
     } catch (e) {
       developer.log('LLM service error: $e', name: _logName);
-      rethrow;
+      
+      // Record failure for circuit breaker
+      _recordFailure();
+      
+      // Check if it's a network/data center error
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('socket') || 
+          errorString.contains('connection') ||
+          errorString.contains('network') ||
+          errorString.contains('unreachable') ||
+          errorString.contains('refused')) {
+        throw DataCenterFailureException(
+          'Unable to reach AI service. The data center may be experiencing issues.',
+        );
+      }
+
+      // Ensure we throw an Exception type (some Dart errors are not Exception).
+      throw Exception(e.toString());
+    }
+  }
+  
+  /// Record a successful request (reset circuit breaker)
+  void _recordSuccess() {
+    _consecutiveFailures = 0;
+    _circuitBreakerOpen = false;
+    _circuitBreakerOpenedAt = null;
+  }
+  
+  /// Record a failed request (update circuit breaker)
+  void _recordFailure() {
+    _consecutiveFailures++;
+    if (_consecutiveFailures >= _circuitBreakerFailureThreshold) {
+      _circuitBreakerOpen = true;
+      _circuitBreakerOpenedAt = DateTime.now();
+      developer.log(
+        'Circuit breaker opened after $_consecutiveFailures consecutive failures',
+        name: _logName,
+      );
     }
   }
   
@@ -617,5 +711,15 @@ class OfflineException implements Exception {
   
   @override
   String toString() => 'OfflineException: $message';
+}
+
+/// Exception thrown when AI data center is unavailable or experiencing issues
+class DataCenterFailureException implements Exception {
+  final String message;
+  
+  DataCenterFailureException(this.message);
+  
+  @override
+  String toString() => 'DataCenterFailureException: $message';
 }
 

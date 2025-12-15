@@ -22,8 +22,27 @@ class SembastDatabase {
 
   // Allow tests to override DB factory to in-memory
   static DatabaseFactory? _overrideFactory;
+  static int _testDbCounter = 0;
+  static String? _overrideDbName;
   static void useInMemoryForTests() {
     _overrideFactory = sembast_memory.databaseFactoryMemory;
+    // Use a unique in-memory DB name per test to avoid cross-test contamination.
+    _overrideDbName = 'spots_test_${_testDbCounter++}.db';
+    _database = null;
+    _initializing = false;
+  }
+  
+  /// Test helper: reset the cached database instance so each test starts clean.
+  /// Note: Sembast's in-memory DB can be cached across tests; closing without clearing
+  /// `_database` may leave a closed instance that later calls reuse.
+  static Future<void> resetForTests() async {
+    try {
+      await _database?.close();
+    } catch (_) {
+      // ignore - best effort cleanup for tests
+    }
+    _database = null;
+    _initializing = false;
   }
 
   static Future<Database> get database async {
@@ -42,7 +61,7 @@ class SembastDatabase {
     try {
       // Database not initialized yet, initialize it
       if (_overrideFactory != null) {
-        _database = await _overrideFactory!.openDatabase('spots_test.db');
+        _database = await _overrideFactory!.openDatabase(_overrideDbName ?? 'spots_test.db');
       } else if (kIsWeb) {
         // Use web factory for web platform (IndexedDB)
         // On web, Sembast uses IndexedDB automatically via sembast_io

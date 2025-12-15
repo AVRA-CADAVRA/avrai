@@ -447,6 +447,7 @@ class GooglePlacesDataSourceNewImpl implements GooglePlacesDataSource {
         case 'restaurant':
         case 'meal_takeaway':
         case 'food':
+        case 'cafe':
           return 'Food';
         case 'tourist_attraction':
         case 'museum':
@@ -458,7 +459,6 @@ class GooglePlacesDataSourceNewImpl implements GooglePlacesDataSource {
           return 'Shopping';
         case 'night_club':
         case 'bar':
-        case 'cafe':
           return 'Nightlife';
         case 'lodging':
         case 'hotel':

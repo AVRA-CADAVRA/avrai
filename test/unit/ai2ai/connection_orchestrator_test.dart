@@ -591,12 +591,36 @@ AIPersonalityNode _createIncompatibleAINode() {
   );
 }
 
-dynamic _createHighCompatibilityResult() {
-  return MockCompatibilityResult(basicCompatibility: 0.9);
+VibeCompatibilityResult _createHighCompatibilityResult() {
+  return VibeCompatibilityResult(
+    basicCompatibility: 0.9,
+    aiPleasurePotential: (VibeConstants.minAIPleasureScore + 0.1).clamp(0.0, 1.0),
+    learningOpportunities: [
+      LearningOpportunity(
+        dimension: 'exploration_eagerness',
+        learningPotential: 0.8,
+        learningType: LearningType.expansion,
+      ),
+    ],
+    connectionStrength: 0.9,
+    interactionStyle: AI2AIInteractionStyle.deepLearning,
+    trustBuildingPotential: 0.8,
+    recommendedConnectionDuration: const Duration(seconds: 60),
+    connectionPriority: ConnectionPriority.high,
+  );
 }
 
-dynamic _createLowCompatibilityResult() {
-  return MockCompatibilityResult(basicCompatibility: 0.2);
+VibeCompatibilityResult _createLowCompatibilityResult() {
+  return VibeCompatibilityResult(
+    basicCompatibility: 0.2,
+    aiPleasurePotential: 0.0,
+    learningOpportunities: const [],
+    connectionStrength: 0.1,
+    interactionStyle: AI2AIInteractionStyle.lightInteraction,
+    trustBuildingPotential: 0.1,
+    recommendedConnectionDuration: const Duration(seconds: 30),
+    connectionPriority: ConnectionPriority.low,
+  );
 }
 
 ConnectionMetrics _createTestConnectionMetrics() {
@@ -607,8 +631,9 @@ ConnectionMetrics _createTestConnectionMetrics() {
   );
 }
 
+// NOTE: Keep legacy helper type (unused) as prior generated code may still refer to it in older test docs.
 class MockCompatibilityResult {
   final double basicCompatibility;
-  
+
   MockCompatibilityResult({required this.basicCompatibility});
 }

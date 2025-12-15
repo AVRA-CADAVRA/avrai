@@ -615,7 +615,8 @@ class AISelfImprovementSystem {
       // Share with AI2AI network
       // This would integrate with the advanced communication system
       
-      developer.log('Shared improvements with AI network', name: _logName);
+      final improvementCount = (improvements['improvement_state'] as Map<String, double>).length;
+      developer.log('Shared improvements with AI network ($improvementCount dimensions)', name: _logName);
     } catch (e) {
       developer.log('Error sharing improvements: $e', name: _logName);
     }

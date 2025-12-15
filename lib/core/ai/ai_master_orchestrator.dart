@@ -25,7 +25,6 @@ class AIMasterOrchestrator {
   late AdvancedAICommunication _aiCommunication;
   late pl.PersonalityLearning _personalityLearning;
   late collab.CollaborationNetworks _collaborationNetworks;
-  late AIListGeneratorService _listGeneratorService;
   
   // Orchestration state
   bool _isOrchestrating = false;
@@ -46,7 +45,7 @@ class AIMasterOrchestrator {
       // Use in-memory preferences to avoid SharedPreferencesCompat mismatch in tests
       _personalityLearning = pl.PersonalityLearning();
       _collaborationNetworks = collab.CollaborationNetworks();
-      _listGeneratorService = AIListGeneratorService();
+      // AIListGeneratorService is static - no instantiation needed
       
       // Initialize system performance tracking
       await _initializeSystemPerformance();
@@ -194,7 +193,6 @@ class AIMasterOrchestrator {
       // PersonalityLearning no longer recognizes patterns directly; skip
       
       // Predict future preferences
-      final user = _createUserFromData(data);
       final preferencePrediction = await _personalityLearning.predictFuturePreferences();
       
       // Anonymize for AI2AI sharing
@@ -209,6 +207,7 @@ class AIMasterOrchestrator {
           'anonymized_personality': anonymizedPersonality,
           'behavioral_patterns': behavioralPatterns,
           'preference_prediction': preferencePrediction,
+          'evolution_generation': evolvedPersonality.evolutionGeneration,
         },
       );
       
@@ -253,7 +252,6 @@ class AIMasterOrchestrator {
   Future<void> _coordinatePredictiveAnalytics(ComprehensiveData data) async {
     try {
       // Predict user journey
-      final user = _createUserFromData(data);
       // This would integrate with the predictive analytics system
       
       // Predict seasonal trends
@@ -353,6 +351,10 @@ class AIMasterOrchestrator {
       // Process collaboration insights
       await _processCollaborationInsights(receivedMessages);
       
+      final networkStatusStr = networkStatus.toString();
+      final secureChannelStr = secureChannel.toString();
+      developer.log('AI collaboration optimized (network: ${networkStatusStr.length > 20 ? networkStatusStr.substring(0, 20) + '...' : networkStatusStr}, channel: ${secureChannelStr.length > 20 ? secureChannelStr.substring(0, 20) + '...' : secureChannelStr})', name: _logName);
+      
     } catch (e) {
       developer.log('Error optimizing AI collaboration: $e', name: _logName);
     }
@@ -422,6 +424,8 @@ class AIMasterOrchestrator {
       // Improve user satisfaction
       await _improveUserSatisfaction(data);
       
+      developer.log('User experience enhanced (${personalizedLists.length} personalized lists generated)', name: _logName);
+      
     } catch (e) {
       developer.log('Error enhancing user experience: $e', name: _logName);
     }
@@ -434,17 +438,37 @@ class AIMasterOrchestrator {
       final homebase = _extractHomebase(data);
       final favoritePlaces = _extractFavoritePlaces(data);
       final preferences = _extractPreferences(data);
+      final age = _extractAge(data);
+      
+      // #region agent log
+      developer.log('Generating personalized lists via AIListGeneratorService: user=$userName, age=$age, homebase=$homebase', name: _logName);
+      // #endregion
       
       return await AIListGeneratorService.generatePersonalizedLists(
         userName: userName,
+        age: age,
         homebase: homebase,
         favoritePlaces: favoritePlaces,
         preferences: preferences,
       );
     } catch (e) {
+      // #region agent log
       developer.log('Error generating personalized lists: $e', name: _logName);
+      // #endregion
       return [];
     }
+  }
+  
+  /// Extracts user age from comprehensive data
+  int? _extractAge(ComprehensiveData data) {
+    // Try to extract age from user metadata
+    if (data.userActions.isNotEmpty) {
+      final ageMetadata = data.userActions.first.metadata['age'] as int?;
+      if (ageMetadata != null) {
+        return ageMetadata;
+      }
+    }
+    return null;
   }
   
   /// Optimizes user interface based on data
@@ -693,6 +717,7 @@ class AIMasterOrchestrator {
     );
   }
   
+  // ignore: unused_element
   List<UnifiedUserAction> _extractUserActions(ComprehensiveData data) {
     return data.userActions.map((actionData) => UnifiedUserAction(
       type: actionData.type,
@@ -706,6 +731,7 @@ class AIMasterOrchestrator {
     )).toList();
   }
   
+  // ignore: unused_element
   UnifiedUser _createUserFromData(ComprehensiveData data) {
     return UnifiedUser(
       id: 'user_${DateTime.now().millisecondsSinceEpoch}',
@@ -767,10 +793,12 @@ class AIMasterOrchestrator {
     );
   }
   
+  // ignore: unused_element
   List<pattern_recognition.UserActionData> _convertToPatternRecognitionUserActions(List<UnifiedUserAction> unifiedActions) {
     return unifiedActions.map(_convertToPatternRecognitionUserAction).toList();
   }
   
+  // ignore: unused_element
   user_model.User _convertToModelUser(UnifiedUser unifiedUser) {
     return user_model.User(
       id: unifiedUser.id,

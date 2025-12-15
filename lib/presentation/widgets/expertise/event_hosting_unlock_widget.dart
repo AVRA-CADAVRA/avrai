@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:spots/core/models/expertise_level.dart';
 import 'package:spots/core/models/expertise_progress.dart';
@@ -52,6 +54,28 @@ class _EventHostingUnlockWidgetState extends State<EventHostingUnlockWidget>
   @override
   void initState() {
     super.initState();
+    // #region agent log
+    // Debug mode: log widget initialization (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H1',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-init',
+        'hypothesisId': 'H1',
+        'location': 'lib/presentation/widgets/expertise/event_hosting_unlock_widget.dart:initState',
+        'message': 'EventHostingUnlockWidget initialized',
+        'data': {
+          'userId': widget.user.id,
+          'hasOnUnlockTap': widget.onUnlockTap != null,
+          'hasOnProgressTap': widget.onProgressTap != null,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+    
     _initAnimations();
     _checkUnlockStatus();
   }
@@ -90,6 +114,27 @@ class _EventHostingUnlockWidgetState extends State<EventHostingUnlockWidget>
   @override
   void didUpdateWidget(EventHostingUnlockWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    
+    // #region agent log
+    // Debug mode: log widget update (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H4',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-did-update',
+        'hypothesisId': 'H4',
+        'location': 'lib/presentation/widgets/expertise/event_hosting_unlock_widget.dart:didUpdateWidget',
+        'message': 'Widget updated',
+        'data': {
+          'userIdChanged': oldWidget.user.id != widget.user.id,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+    
     if (oldWidget.user.id != widget.user.id) {
       _checkUnlockStatus();
     }
@@ -100,15 +145,65 @@ class _EventHostingUnlockWidgetState extends State<EventHostingUnlockWidget>
     final wasUnlocked = _isUnlocked;
     _isUnlocked = widget.user.canHostEvents();
     
-    // Trigger unlock animation if just unlocked
-    if (!wasUnlocked && _isUnlocked) {
-      _wasUnlockedBefore = false;
+    // #region agent log
+    // Debug mode: log unlock status check (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H2',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-unlock-check',
+        'hypothesisId': 'H2',
+        'location': 'lib/presentation/widgets/expertise/event_hosting_unlock_widget.dart:_checkUnlockStatus',
+        'message': 'Unlock status checked',
+        'data': {
+          'wasUnlocked': wasUnlocked,
+          'isUnlocked': _isUnlocked,
+          'wasUnlockedBefore': _wasUnlockedBefore,
+          'justUnlocked': !wasUnlocked && _isUnlocked,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+    
+    // Track if user was unlocked before widget initialization
+    // This prevents showing animation on first load if already unlocked
+    if (!_wasUnlockedBefore) {
+      _wasUnlockedBefore = wasUnlocked || _isUnlocked;
+    }
+    
+    // Trigger unlock animation if just unlocked (and wasn't already unlocked before init)
+    if (!wasUnlocked && _isUnlocked && !_wasUnlockedBefore) {
       _unlockAnimationController.reset();
       _unlockAnimationController.forward();
     }
 
     // Get highest expertise level
     final pins = _expertiseService.getUserPins(widget.user);
+    
+    // #region agent log
+    // Debug mode: log expertise level calculation (no PII values)
+    try {
+      final payload = <String, dynamic>{
+        'id': 'log_${DateTime.now().millisecondsSinceEpoch}_H3',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'sessionId': 'debug-session',
+        'runId': 'pre-fix-expertise-level',
+        'hypothesisId': 'H3',
+        'location': 'lib/presentation/widgets/expertise/event_hosting_unlock_widget.dart:_checkUnlockStatus',
+        'message': 'Expertise level calculated',
+        'data': {
+          'pinsCount': pins.length,
+          'isUnlocked': _isUnlocked,
+        },
+      };
+      File('/Users/reisgordon/SPOTS/.cursor/debug.log')
+          .writeAsStringSync('${jsonEncode(payload)}\n', mode: FileMode.append);
+    } catch (_) {}
+    // #endregion
+    
     if (pins.isNotEmpty) {
       pins.sort((a, b) => b.level.index.compareTo(a.level.index));
       _currentHighestLevel = pins.first.level;
@@ -196,63 +291,63 @@ class _EventHostingUnlockWidgetState extends State<EventHostingUnlockWidget>
                     size: 32,
                   ),
                 ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Event Hosting Unlocked!',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'You can now create and host events',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Current Level Display
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.grey200),
-          ),
-          child: Row(
-            children: [
-              if (_currentHighestLevel != null) ...[
-                Text(
-                  _currentHighestLevel!.emoji,
-                  style: const TextStyle(fontSize: 20),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${_currentHighestLevel!.displayName} Level',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Event Hosting Unlocked!',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'You can now create and host events',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 16),
+
+            // Current Level Display
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.grey200),
+              ),
+              child: Row(
+                children: [
+                  if (_currentHighestLevel != null) ...[
+                    Text(
+                      _currentHighestLevel!.emoji,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_currentHighestLevel!.displayName} Level',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
             // Action Button
             SizedBox(

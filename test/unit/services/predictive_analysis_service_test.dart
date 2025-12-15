@@ -1,9 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spots/core/services/predictive_analysis_service.dart';
+import '../../helpers/platform_channel_helper.dart';
 
 /// Predictive Analysis Service Tests
 /// Tests predictive analysis functionality
 void main() {
+
+  setUpAll(() async {
+    await setupTestStorage();
+  });
+
+  tearDownAll(() async {
+    await cleanupTestStorage();
+  });
+
   group('PredictiveAnalysisService Tests', () {
     group('predictUserBehavior', () {
       test('should predict user behavior and return analysis map', () {

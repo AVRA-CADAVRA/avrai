@@ -12,9 +12,46 @@ import 'package:spots/presentation/blocs/spots/spots_bloc.dart';
 import 'package:spots/presentation/blocs/search/hybrid_search_bloc.dart';
 import 'package:spots/core/theme/app_theme.dart';
 import '../mocks/mock_blocs.dart';
+import '../../helpers/platform_channel_helper.dart';
+import 'package:get_it/get_it.dart';
+import 'package:spots/core/services/storage_service.dart';
 
 /// Helper utilities for widget testing to ensure consistent test setup
 class WidgetTestHelpers {
+  /// Global setup for widget tests - call this in setUpAll
+  /// Initializes StorageService and registers SharedPreferencesCompat in GetIt
+  static Future<void> setupWidgetTestEnvironment() async {
+    try {
+      // Initialize StorageService for tests
+      await setupTestStorage();
+      
+      // Register SharedPreferencesCompat in GetIt if not already registered
+      if (!GetIt.instance.isRegistered<SharedPreferencesCompat>()) {
+        final mockStorage = getTestStorage();
+        final prefs = await SharedPreferencesCompat.getInstance(storage: mockStorage);
+        GetIt.instance.registerSingleton<SharedPreferencesCompat>(prefs);
+      }
+    } catch (e) {
+      // If initialization fails, log but don't throw
+      // Some tests may handle storage setup individually
+      print('Warning: Failed to setup widget test environment: $e');
+    }
+  }
+
+  /// Cleanup for widget tests - call this in tearDownAll
+  static Future<void> cleanupWidgetTestEnvironment() async {
+    try {
+      // Clean up GetIt registrations
+      if (GetIt.instance.isRegistered<SharedPreferencesCompat>()) {
+        await GetIt.instance.unregister<SharedPreferencesCompat>();
+      }
+      await cleanupTestStorage();
+    } catch (e) {
+      // Ignore cleanup errors
+      print('Warning: Failed to cleanup widget test environment: $e');
+    }
+  }
+
   /// Creates a testable widget wrapped with necessary providers and theme
   static Widget createTestableWidget({
     required Widget child,

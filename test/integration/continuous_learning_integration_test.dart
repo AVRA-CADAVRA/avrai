@@ -45,6 +45,10 @@ void main() {
       if (learningSystem.isLearningActive) {
         await learningSystem.stopContinuousLearning();
       }
+      // Ensure all timers are cancelled
+      await learningSystem.stopContinuousLearning(); // Safe to call even if not active
+      // Wait for any pending timers to complete
+      await Future.delayed(const Duration(milliseconds: 100));
     });
     
     group('Page Load with Authenticated User', () {
@@ -299,6 +303,12 @@ void main() {
         // Assert
         expect(find.byType(ContinuousLearningPage), findsOneWidget);
         // Navigation should work
+        
+        // Clean up widget tree and wait for all pending timers
+        await tester.pumpWidget(const SizedBox.shrink());
+        // Wait for any pending Future.delayed timers (5 seconds max)
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pumpAndSettle();
       });
     });
   });

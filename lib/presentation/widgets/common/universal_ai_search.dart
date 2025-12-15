@@ -111,37 +111,49 @@ class _UniversalAISearchState extends State<UniversalAISearch> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    enabled: widget.enabled && !widget.isLoading,
-                    onChanged: (value) {
-                      _updateSuggestions(value);
-                      setState(() {
-                        _showSuggestions = true;
-                      });
-                    },
-                    onSubmitted: (_) => _handleSubmit(),
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: widget.hintText ??
-                          'Ask me anything... (create lists, find spots, etc.)',
-                      hintStyle: const TextStyle(
-                        color: AppColors.textHint,
-                        fontSize: 16,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.auto_awesome,
-                        color: _hasFocus
-                            ? AppTheme.primaryColor
-                            : AppColors.grey600,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: SizedBox(
+                      height: 48,
+                      child: TextField(
+                        controller: _controller,
+                        enabled: widget.enabled && !widget.isLoading,
+                        onTap: () {
+                          widget.onTap?.call();
+                          setState(() {
+                            _showSuggestions = true;
+                          });
+                        },
+                        onChanged: (value) {
+                          _updateSuggestions(value);
+                          setState(() {
+                            _showSuggestions = true;
+                          });
+                        },
+                        onSubmitted: (_) => _handleSubmit(),
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          hintText: widget.hintText ??
+                              'Ask me anything... (create lists, find spots, etc.)',
+                          hintStyle: const TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 16,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.auto_awesome,
+                            color: _hasFocus
+                                ? AppTheme.primaryColor
+                                : AppColors.grey600,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        style: const TextStyle(fontSize: 16),
                       ),
                     ),
-                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
                 if (widget.isLoading)
@@ -175,44 +187,47 @@ class _UniversalAISearchState extends State<UniversalAISearch> {
         ),
         // Suggestions
         if (_showSuggestions && _suggestions.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? AppColors.white
-                  : AppColors.grey900,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _suggestions.length,
-              itemBuilder: (context, index) {
-                final suggestion = _suggestions[index];
-                return ListTile(
-                  dense: true,
-                  leading: Icon(
-                    _getSuggestionIcon(suggestion),
-                    size: 20,
-                    color: AppTheme.primaryColor,
+          Material(
+            type: MaterialType.transparency,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.light
+                    ? AppColors.white
+                    : AppColors.grey900,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
-                  title: Text(
-                    suggestion,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  onTap: () {
-                    _controller.text = suggestion;
-                    _handleSubmit();
-                  },
-                );
-              },
+                ],
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: _suggestions.length,
+                itemBuilder: (context, index) {
+                  final suggestion = _suggestions[index];
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(
+                      _getSuggestionIcon(suggestion),
+                      size: 20,
+                      color: AppTheme.primaryColor,
+                    ),
+                    title: Text(
+                      suggestion,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    onTap: () {
+                      _controller.text = suggestion;
+                      _handleSubmit();
+                    },
+                  );
+                },
+              ),
             ),
           ),
       ],
