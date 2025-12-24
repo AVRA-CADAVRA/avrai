@@ -268,6 +268,7 @@ dart run scripts/check_test_quality.dart [file]
 - [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) - Master execution plan
 - [`docs/plans/methodology/DEVELOPMENT_METHODOLOGY.md`](docs/plans/methodology/DEVELOPMENT_METHODOLOGY.md) - Development methodology
 - [`README_DEVELOPMENT.md`](README_DEVELOPMENT.md) - Development guide
+- [`docs/CURSOR_RULES_SETUP.md`](docs/CURSOR_RULES_SETUP.md) - Cursor AI rules setup guide
 
 ### Patents
 - [`docs/patents/PATENT_PORTFOLIO_INDEX.md`](docs/patents/PATENT_PORTFOLIO_INDEX.md) - Complete patent portfolio
