@@ -1,0 +1,3 @@
+[submodule "native/signal_ffi/libsignal"]
+	path = native/signal_ffi/libsignal
+	url = https://github.com/signalapp/libsignal.git
