@@ -1,0 +1,44 @@
+======================================================================
+Comprehensive ML Prediction Comparison Experiment
+======================================================================
+
+Loading personality profiles...
+📊 Loading raw Big Five OCEAN data from CSV: /Users/reisgordon/AVRAI/data/raw/big_five.csv
+✅ Converted 100 profiles from CSV to SPOTS 12 dimensions
+  ✅ Loaded 100 profiles
+Creating interaction timeline...
+  ✅ Created 10 time steps
+
+Training models...
+  Training Matrix Factorization (SVD)...
+  Training Matrix Factorization (NMF)...
+  Training Graph Neural Network...
+
+Testing prediction accuracy...
+  Testing 862 predictions...
+
+======================================================================
+Prediction Accuracy Results
+======================================================================
+
+Prediction Error (RMSE - Lower is Better):
+----------------------------------------------------------------------
+   Collaborative Filtering                  RMSE: 0.1693, R²: -0.2903
+   Quantum-Based (Simple)                   RMSE: 0.2528, R²: -1.8779
+✅ AVRAI Quantum + Knot                     RMSE: 0.3297, R²: -3.8960
+   Graph Neural Network                     RMSE: 0.4350, R²: -7.5204
+   Matrix Factorization (NMF)               RMSE: 0.5120, R²: -10.8049
+   Matrix Factorization (SVD)               RMSE: 0.5132, R²: -10.8613
+
+AVRAI Improvements (RMSE Reduction):
+----------------------------------------------------------------------
+  vs Matrix Factorization (SVD)               +35.75%
+  vs Matrix Factorization (NMF)               +35.60%
+  vs Graph Neural Network                     +24.20%
+  vs Quantum-Based (Simple)                   -30.43%
+  vs Collaborative Filtering                  -94.79%
+
+✅ Results saved to /Users/reisgordon/AVRAI/docs/patents/experiments/results/modern_ml_comparison
+======================================================================
+✅ SUCCESS: Prediction comparison complete
+======================================================================

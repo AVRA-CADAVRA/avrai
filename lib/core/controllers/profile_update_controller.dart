@@ -11,7 +11,13 @@ import 'package:avrai/domain/repositories/auth_repository.dart';
 import 'package:avrai/core/ai/personality_learning.dart';
 import 'package:avrai/core/services/preferences_profile_service.dart';
 import 'package:avrai/core/services/personality_sync_service.dart';
+import 'package:avrai/core/services/agent_id_service.dart';
 import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_knot/services/knot/personality_knot_service.dart';
+import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_knot/services/knot/knot_evolution_string_service.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 
 /// Profile Update Controller
 ///
@@ -61,6 +67,14 @@ class ProfileUpdateController
   final PreferencesProfileService? _preferencesService;
   final PersonalitySyncService? _syncService;
   final AtomicClockService _atomicClock;
+  final AgentIdService? _agentIdService;
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final PersonalityKnotService? _personalityKnotService;
+  final KnotStorageService? _knotStorageService;
+  final KnotEvolutionStringService? _knotStringService;
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumMatchingAILearningService? _aiLearningService;
 
   ProfileUpdateController({
     AuthRepository? authRepository,
@@ -68,6 +82,12 @@ class ProfileUpdateController
     PreferencesProfileService? preferencesService,
     PersonalitySyncService? syncService,
     AtomicClockService? atomicClock,
+    AgentIdService? agentIdService,
+    PersonalityKnotService? personalityKnotService,
+    KnotStorageService? knotStorageService,
+    KnotEvolutionStringService? knotStringService,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _authRepository = authRepository ?? GetIt.instance<AuthRepository>(),
         _personalityLearning = personalityLearning ??
             (GetIt.instance.isRegistered<PersonalityLearning>()
@@ -81,7 +101,31 @@ class ProfileUpdateController
             (GetIt.instance.isRegistered<PersonalitySyncService>()
                 ? GetIt.instance<PersonalitySyncService>()
                 : null),
-        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>();
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _agentIdService = agentIdService ??
+            (GetIt.instance.isRegistered<AgentIdService>()
+                ? GetIt.instance<AgentIdService>()
+                : null),
+        _personalityKnotService = personalityKnotService ??
+            (GetIt.instance.isRegistered<PersonalityKnotService>()
+                ? GetIt.instance<PersonalityKnotService>()
+                : null),
+        _knotStorageService = knotStorageService ??
+            (GetIt.instance.isRegistered<KnotStorageService>()
+                ? GetIt.instance<KnotStorageService>()
+                : null),
+        _knotStringService = knotStringService ??
+            (GetIt.instance.isRegistered<KnotEvolutionStringService>()
+                ? GetIt.instance<KnotEvolutionStringService>()
+                : null),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
+                : null);
 
   /// Update user profile
   ///
@@ -203,7 +247,115 @@ class ProfileUpdateController
         }
       }
 
-      // Step 6: Sync to cloud (if sync enabled)
+      // Step 6: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 6.1: Regenerate personality knot if personality profile changed
+      if (updatedPersonality != null && 
+          _personalityKnotService != null && 
+          _knotStorageService != null &&
+          _agentIdService != null) {
+        try {
+          developer.log(
+            '🎯 Regenerating personality knot after profile update',
+            name: _logName,
+          );
+          
+          final agentId = await _agentIdService!.getUserAgentId(userId);
+          
+          // Generate new knot from updated personality profile
+          final updatedKnot = await _personalityKnotService!.generateKnot(updatedPersonality);
+          
+          // Store updated knot
+          await _knotStorageService!.saveKnot(agentId, updatedKnot);
+          // agentId is used above
+          
+          developer.log(
+            '✅ Personality knot regenerated and stored (crossings: ${updatedKnot.invariants.crossingNumber})',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Knot regeneration failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - knot regeneration is optional
+        }
+      }
+      
+      // 6.2: Update knot evolution string to track personality changes
+      if (updatedPersonality != null && 
+          _knotStringService != null &&
+          _agentIdService != null) {
+        try {
+          developer.log(
+            '🧵 Updating knot evolution string after profile update',
+            name: _logName,
+          );
+          
+          // Get agentId and knot history (if available)
+          // Note: Full implementation would retrieve knot history and update evolution string
+          // This is a placeholder for future string evolution tracking
+          await _agentIdService!.getUserAgentId(userId);
+          developer.log(
+            'ℹ️ String evolution update deferred (requires knot history)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ String evolution update failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - string evolution is optional
+        }
+      }
+      
+      // 6.3: Update 4D quantum location state if location changed
+      if (data.location != null && 
+          _locationTimingService != null &&
+          data.location != savedUser.displayName) {
+        try {
+          developer.log(
+            '🌐 Updating 4D quantum location state after location change',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would parse location and create quantum state
+          // This is a placeholder for future location quantum state updates
+          developer.log(
+            'ℹ️ Location quantum state update deferred (requires location parsing)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Location quantum state update failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - location quantum state update is optional
+        }
+      }
+      
+      // 6.4: Learn from profile update via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null) {
+        try {
+          developer.log(
+            '🤖 AI2AI learning service available (learning deferred to matching)',
+            name: _logName,
+          );
+          // Note: Actual learning happens when matches occur, not during profile update
+        } catch (e) {
+          developer.log(
+            '⚠️ AI2AI learning failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+      
+      // Step 7: Sync to cloud (if sync enabled)
       if (_syncService != null) {
         try {
           final syncEnabled = await _syncService!.isCloudSyncEnabled(userId);

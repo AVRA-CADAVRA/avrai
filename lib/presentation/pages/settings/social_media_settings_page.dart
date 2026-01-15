@@ -66,7 +66,7 @@ class _SocialMediaSettingsPageState extends State<SocialMediaSettingsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Connect your social accounts to enhance your AI personality and discover friends who use SPOTS.',
+              'Connect your social accounts to enhance your AI personality and discover friends who use avrai.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.grey600,
                   ),
@@ -88,7 +88,7 @@ class _SocialMediaSettingsPageState extends State<SocialMediaSettingsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Find Friends on SPOTS',
+                              'Find Friends on avrai',
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -99,7 +99,7 @@ class _SocialMediaSettingsPageState extends State<SocialMediaSettingsPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Discover friends who use SPOTS from your social connections',
+                              'Discover friends who use avrai from your social connections',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall

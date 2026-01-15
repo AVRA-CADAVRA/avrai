@@ -11,15 +11,15 @@ import 'package:avrai/core/services/expertise_event_service.dart';
 import 'package:avrai/core/services/logger.dart';
 
 /// Partnership Profile Service
-/// 
+///
 /// Service for managing partnership visibility on user profiles and calculating
 /// expertise boosts from partnerships.
-/// 
+///
 /// **Philosophy Alignment:**
 /// - Opens doors to showcasing professional collaborations
 /// - Enables visibility of authentic partnerships
 /// - Supports expertise recognition through partnerships
-/// 
+///
 /// **Responsibilities:**
 /// - Get user partnerships (all, active, completed, by type)
 /// - Calculate partnership expertise boost
@@ -48,16 +48,16 @@ class PartnershipProfileService {
         _eventService = eventService;
 
   /// Get all partnerships for a user
-  /// 
+  ///
   /// **Flow:**
   /// 1. Get all EventPartnerships for user
   /// 2. Get all Sponsorships for user's events
   /// 3. Convert to UserPartnership models
   /// 4. Apply privacy/visibility filters
-  /// 
+  ///
   /// **Parameters:**
   /// - `userId`: User ID
-  /// 
+  ///
   /// **Returns:**
   /// List of UserPartnership records
   Future<List<UserPartnership>> getUserPartnerships(String userId) async {
@@ -92,20 +92,19 @@ class PartnershipProfileService {
   }
 
   /// Get active partnerships only
-  /// 
+  ///
   /// **Parameters:**
   /// - `userId`: User ID
-  /// 
+  ///
   /// **Returns:**
   /// List of active UserPartnership records
   Future<List<UserPartnership>> getActivePartnerships(String userId) async {
     try {
-      _logger.info('Getting active partnerships for user: $userId', tag: _logName);
+      _logger.info('Getting active partnerships for user: $userId',
+          tag: _logName);
 
       final allPartnerships = await getUserPartnerships(userId);
-      final active = allPartnerships
-          .where((p) => p.isActive)
-          .toList()
+      final active = allPartnerships.where((p) => p.isActive).toList()
         ..sort((a, b) {
           // Sort by start date (most recent first)
           if (a.startDate != null && b.startDate != null) {
@@ -131,10 +130,10 @@ class PartnershipProfileService {
   }
 
   /// Get completed partnerships only
-  /// 
+  ///
   /// **Parameters:**
   /// - `userId`: User ID
-  /// 
+  ///
   /// **Returns:**
   /// List of completed UserPartnership records
   Future<List<UserPartnership>> getCompletedPartnerships(String userId) async {
@@ -145,9 +144,7 @@ class PartnershipProfileService {
       );
 
       final allPartnerships = await getUserPartnerships(userId);
-      final completed = allPartnerships
-          .where((p) => p.isCompleted)
-          .toList()
+      final completed = allPartnerships.where((p) => p.isCompleted).toList()
         ..sort((a, b) {
           // Sort by end date (most recent first)
           if (a.endDate != null && b.endDate != null) {
@@ -173,11 +170,11 @@ class PartnershipProfileService {
   }
 
   /// Get partnerships by type
-  /// 
+  ///
   /// **Parameters:**
   /// - `userId`: User ID
   /// - `type`: Partnership type (business, brand, company)
-  /// 
+  ///
   /// **Returns:**
   /// List of UserPartnership records of specified type
   Future<List<UserPartnership>> getPartnershipsByType(
@@ -191,9 +188,7 @@ class PartnershipProfileService {
       );
 
       final allPartnerships = await getUserPartnerships(userId);
-      final filtered = allPartnerships
-          .where((p) => p.type == type)
-          .toList()
+      final filtered = allPartnerships.where((p) => p.type == type).toList()
         ..sort((a, b) {
           // Sort by start date (most recent first)
           if (a.startDate != null && b.startDate != null) {
@@ -219,7 +214,7 @@ class PartnershipProfileService {
   }
 
   /// Calculate partnership expertise boost for a category
-  /// 
+  ///
   /// **Flow:**
   /// 1. Get all partnerships for user
   /// 2. Filter by category alignment
@@ -228,11 +223,11 @@ class PartnershipProfileService {
   /// 5. Apply category alignment multiplier
   /// 6. Apply count multiplier
   /// 7. Cap at 0.50 (50% max)
-  /// 
+  ///
   /// **Parameters:**
   /// - `userId`: User ID
   /// - `category`: Category to calculate boost for
-  /// 
+  ///
   /// **Returns:**
   /// PartnershipExpertiseBoost with breakdown
   Future<PartnershipExpertiseBoost> getPartnershipExpertiseBoost(
@@ -308,9 +303,8 @@ class PartnershipProfileService {
       }
 
       // Calculate total boost before multiplier
-      double totalBoost = sameCategoryBoost +
-          relatedCategoryBoost +
-          unrelatedCategoryBoost;
+      double totalBoost =
+          sameCategoryBoost + relatedCategoryBoost + unrelatedCategoryBoost;
 
       // Apply count multiplier
       int partnershipCount = allPartnerships.length;
@@ -368,7 +362,8 @@ class PartnershipProfileService {
       // Note: PartnershipService doesn't have getUserPartnerships method,
       // so we need to get all partnerships and filter by userId
       // In production, this would be a direct database query
-      final allEventPartnerships = await _getAllEventPartnershipsForUser(userId);
+      final allEventPartnerships =
+          await _getAllEventPartnershipsForUser(userId);
 
       for (final eventPartnership in allEventPartnerships) {
         // Get business details
@@ -379,7 +374,8 @@ class PartnershipProfileService {
         if (business == null) continue;
 
         // Get event to determine category
-        final event = await _eventService.getEventById(eventPartnership.eventId);
+        final event =
+            await _eventService.getEventById(eventPartnership.eventId);
         final category = event?.category;
 
         // Count events in this partnership
@@ -467,7 +463,8 @@ class PartnershipProfileService {
             startDate: sponsorship.createdAt,
             endDate: null, // Sponsorships don't have end dates yet
             category: event.category,
-            vibeCompatibility: null, // Sponsorships don't have vibe compatibility yet
+            vibeCompatibility:
+                null, // Sponsorships don't have vibe compatibility yet
             eventCount: 1, // One event per sponsorship
             isPublic: true, // Default to public
           );
@@ -488,7 +485,7 @@ class PartnershipProfileService {
   }
 
   /// Get all EventPartnerships for a user
-  /// 
+  ///
   /// Note: This is a workaround since PartnershipService doesn't have
   /// getUserPartnerships method. In production, this would be a direct query.
   Future<List<EventPartnership>> _getAllEventPartnershipsForUser(
@@ -526,7 +523,7 @@ class PartnershipProfileService {
   }
 
   /// Get user's events
-  /// 
+  ///
   /// Note: This creates a minimal UnifiedUser from userId.
   /// In production, this would get UnifiedUser from UserService.
   Future<List<ExpertiseEvent>> _getUserEvents(String userId) async {
@@ -535,7 +532,7 @@ class PartnershipProfileService {
       // In production, this would come from UserService
       final user = UnifiedUser(
         id: userId,
-        email: '$userId@spots.local', // Placeholder email
+        email: '$userId@avrai.local', // Placeholder email
         displayName: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -550,7 +547,7 @@ class PartnershipProfileService {
   }
 
   /// Check if two categories are related
-  /// 
+  ///
   /// **Logic:**
   /// - Same category: 100% alignment
   /// - Related categories: 50% alignment (share common words or are in related list)
@@ -600,4 +597,3 @@ class PartnershipProfileService {
     return false;
   }
 }
-

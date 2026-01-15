@@ -61,7 +61,8 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
     _logger.debug('HomebaseSelectionPage: initState called');
 
     // Respect a pre-selected homebase (e.g., when navigating back in onboarding).
-    if (widget.selectedHomebase != null && widget.selectedHomebase!.isNotEmpty) {
+    if (widget.selectedHomebase != null &&
+        widget.selectedHomebase!.isNotEmpty) {
       _selectedNeighborhood = widget.selectedHomebase;
     }
 
@@ -244,7 +245,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
 
         // Center map on user's location
         try {
-        _mapController.move(_currentLocation!, 15);
+          _mapController.move(_currentLocation!, 15);
         } catch (e) {
           _logger.debug('HomebaseSelectionPage: Map not ready for move(): $e');
         }
@@ -260,7 +261,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
             'HomebaseSelectionPage: Location permission denied, using default location');
         // Default to a central location if no permission
         try {
-        _mapController.move(const LatLng(40.7128, -74.0060), 15); // NYC
+          _mapController.move(const LatLng(40.7128, -74.0060), 15); // NYC
         } catch (e) {
           _logger.debug('HomebaseSelectionPage: Map not ready for move(): $e');
         }
@@ -272,7 +273,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
       _logger.error('HomebaseSelectionPage: Error getting location', error: e);
       // Default to a central location on error
       try {
-      _mapController.move(const LatLng(40.7128, -74.0060), 15); // NYC
+        _mapController.move(const LatLng(40.7128, -74.0060), 15); // NYC
       } catch (moveError) {
         _logger.debug(
             'HomebaseSelectionPage: Map not ready for move() after error: $moveError');
@@ -671,15 +672,15 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                             }
                           },
                           onMapReady: () {
-                            _logger.debug(
-                                'HomebaseSelectionPage: Map is ready');
+                            _logger
+                                .debug('HomebaseSelectionPage: Map is ready');
                           },
                         ),
                         children: [
                           TileLayer(
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.spots.app',
+                            userAgentPackageName: 'com.avrai.app',
                             maxZoom: 18,
                           ),
                           if (_geoPolygons.isNotEmpty)

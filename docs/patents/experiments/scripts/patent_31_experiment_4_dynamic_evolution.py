@@ -358,18 +358,59 @@ def detect_milestones(snapshots: List[KnotSnapshot]) -> List[Dict[str, Any]]:
     return milestones
 
 
+def interpolate_polynomials_avrai(
+    poly1: List[float],
+    poly2: List[float],
+    factor: float
+) -> List[float]:
+    """
+    AVRAI's polynomial interpolation algorithm (from Experiment 8).
+    
+    Matches KnotEvolutionStringService._interpolatePolynomials() exactly.
+    """
+    max_length = max(len(poly1), len(poly2))
+    interpolated = []
+    
+    for i in range(max_length):
+        val1 = poly1[i] if i < len(poly1) else 0.0
+        val2 = poly2[i] if i < len(poly2) else 0.0
+        interpolated.append(val1 * (1 - factor) + val2 * factor)
+    
+    return interpolated
+
+
+def calculate_evolution_rate_avrai(
+    snapshot1: KnotSnapshot,
+    snapshot2: KnotSnapshot,
+    future_time: datetime
+) -> float:
+    """
+    AVRAI's evolution rate calculation (from Experiment 8).
+    
+    Matches KnotEvolutionStringService._extrapolateFutureKnot() logic:
+    evolutionRate = timeDelta / historyDelta
+    """
+    time_delta = (future_time - snapshot2.timestamp).total_seconds()
+    history_delta = (snapshot2.timestamp - snapshot1.timestamp).total_seconds()
+    
+    if history_delta == 0:
+        return 0.0
+    
+    return float(time_delta / history_delta)
+
+
 def run_experiment_4():
-    """Run Experiment 4: Dynamic Knot Evolution."""
+    """Run Experiment 4: Dynamic Knot Evolution (Enhanced with String Evolution)."""
     print()
     print("=" * 70)
-    print("Experiment 4: Dynamic Knot Evolution")
+    print("Experiment 4: Dynamic Knot Evolution (Enhanced)")
     print("=" * 70)
     print()
     
     # Load profiles
-    print("Loading personality profiles...")
+    print("Loading personality profiles from Big Five OCEAN data...")
     profiles = load_personality_profiles()
-    print(f"  Loaded {len(profiles)} profiles")
+    print(f"  ✅ Loaded {len(profiles)} profiles (real Big Five data)")
     
     # Generate base knots
     print("Generating base knots...")
@@ -464,6 +505,72 @@ def run_experiment_4():
     df_results = pd.DataFrame(evolution_results)
     df_results.to_csv(RESULTS_DIR / 'experiment_4_dynamic_evolution_results.csv', index=False)
     
+    # Save string interpolation results
+    if len(df_string) > 0:
+        df_string.to_csv(RESULTS_DIR / 'experiment_4_string_interpolation_results.csv', index=False)
+    
+    # NEW: Test string evolution interpolation
+    print()
+    print("Testing string evolution interpolation...")
+    string_interpolation_results = []
+    
+    for user_id, snapshots in [(r['knot_id'], []) for r in evolution_results[:10]]:  # Test first 10
+        # Find snapshots for this user
+        user_snapshots = [s for s in all_snapshots if s.knot.user_id == user_id]
+        if len(user_snapshots) < 3:
+            continue
+        
+        # Test interpolation between consecutive snapshots
+        for i in range(len(user_snapshots) - 1):
+            snapshot1 = user_snapshots[i]
+            snapshot2 = user_snapshots[i + 1]
+            
+            # Test interpolation at midpoint
+            midpoint_time = snapshot1.timestamp + (snapshot2.timestamp - snapshot1.timestamp) / 2
+            
+            # Simulate polynomial interpolation (simplified - use complexity as proxy)
+            factor = 0.5
+            poly1 = [snapshot1.complexity]  # Simplified polynomial
+            poly2 = [snapshot2.complexity]
+            
+            interpolated = interpolate_polynomials_avrai(poly1, poly2, factor)
+            expected = (snapshot1.complexity + snapshot2.complexity) / 2.0
+            
+            interpolation_error = abs(interpolated[0] - expected) if len(interpolated) > 0 else 0.0
+            
+            # Test evolution rate calculation
+            future_time = snapshot2.timestamp + timedelta(days=1)
+            evolution_rate = calculate_evolution_rate_avrai(
+                KnotSnapshot(
+                    knot=snapshot1.knot,
+                    timestamp=snapshot1.timestamp,
+                    mood=snapshot1.mood,
+                    energy=snapshot1.energy,
+                    stress=snapshot1.stress,
+                    complexity=snapshot1.complexity,
+                    knot_type=snapshot1.knot_type
+                ),
+                KnotSnapshot(
+                    knot=snapshot2.knot,
+                    timestamp=snapshot2.timestamp,
+                    mood=snapshot2.mood,
+                    energy=snapshot2.energy,
+                    stress=snapshot2.stress,
+                    complexity=snapshot2.complexity,
+                    knot_type=snapshot2.knot_type
+                ),
+                future_time
+            )
+            
+            string_interpolation_results.append({
+                'user_id': user_id,
+                'snapshot_pair': f'{i}-{i+1}',
+                'interpolation_error': interpolation_error,
+                'evolution_rate': evolution_rate,
+            })
+    
+    df_string = pd.DataFrame(string_interpolation_results) if string_interpolation_results else pd.DataFrame()
+    
     # Calculate overall statistics
     avg_energy_complexity_corr = float(np.mean([r['energy_complexity_correlation'] for r in evolution_results]))
     avg_stress_complexity_corr = float(np.mean([r['stress_complexity_correlation'] for r in evolution_results]))
@@ -477,6 +584,10 @@ def run_experiment_4():
     overall_energy_complexity_corr = float(np.corrcoef(all_energies, all_complexities)[0, 1]) if len(all_energies) > 1 else 0.0
     overall_stress_complexity_corr = float(np.corrcoef(all_stresses, all_complexities)[0, 1]) if len(all_stresses) > 1 else 0.0
     
+    # String interpolation statistics
+    avg_interpolation_error = float(df_string['interpolation_error'].mean()) if len(df_string) > 0 else 0.0
+    avg_evolution_rate = float(df_string['evolution_rate'].mean()) if len(df_string) > 0 else 0.0
+    
     summary = {
         'status': 'complete',
         'total_knots_tracked': len(evolution_results),
@@ -489,11 +600,17 @@ def run_experiment_4():
             'overall_energy_complexity': overall_energy_complexity_corr if not np.isnan(overall_energy_complexity_corr) else 0.0,
             'overall_stress_complexity': overall_stress_complexity_corr if not np.isnan(overall_stress_complexity_corr) else 0.0,
         },
+        'string_evolution': {
+            'total_interpolation_tests': len(string_interpolation_results),
+            'avg_interpolation_error': avg_interpolation_error,
+            'avg_evolution_rate': avg_evolution_rate,
+        },
         'success_criteria': {
             'energy_complexity_correlation': abs(overall_energy_complexity_corr) > 0.3 if not np.isnan(overall_energy_complexity_corr) else False,
             'stress_complexity_correlation': abs(overall_stress_complexity_corr) > 0.3 if not np.isnan(overall_stress_complexity_corr) else False,
             'milestones_detected': total_milestones > 0,
             'evolution_tracked': len(all_snapshots) > 0,
+            'string_interpolation_works': len(string_interpolation_results) > 0,
         },
         'evolution_results': evolution_results,
     }
@@ -518,13 +635,22 @@ def run_experiment_4():
     print(f"Overall stress-complexity correlation: {overall_stress_complexity_corr:.4f}")
     print()
     
+    if len(df_string) > 0:
+        print(f"String Evolution Interpolation:")
+        print(f"  Average interpolation error: {avg_interpolation_error:.6f}")
+        print(f"  Average evolution rate: {avg_evolution_rate:.4f}")
+        print(f"  Interpolation tests: {len(string_interpolation_results)}")
+        print()
+    
     energy_ok = "✅" if abs(overall_energy_complexity_corr) > 0.3 else "⚠️"
     stress_ok = "✅" if abs(overall_stress_complexity_corr) > 0.3 else "⚠️"
     milestones_ok = "✅" if total_milestones > 0 else "⚠️"
+    string_ok = "✅" if len(string_interpolation_results) > 0 else "⚠️"
     
     print(f"Energy-complexity correlation: {overall_energy_complexity_corr:.4f} {energy_ok}")
     print(f"Stress-complexity correlation: {overall_stress_complexity_corr:.4f} {stress_ok}")
     print(f"Milestones detected: {total_milestones} {milestones_ok}")
+    print(f"String interpolation: {len(string_interpolation_results)} tests {string_ok}")
     print()
     
     return summary

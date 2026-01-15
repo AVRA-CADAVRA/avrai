@@ -473,7 +473,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
 
             _buildSwitchTile(
               'Usage Analytics',
-              'Help improve SPOTS with anonymous usage data',
+              'Help improve avrai with anonymous usage data',
               _analyticsOptIn,
               (value) => setState(() => _analyticsOptIn = value),
               Icons.analytics,
@@ -505,7 +505,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                     leading: const Icon(Icons.download,
                         color: AppTheme.primaryColor),
                     title: const Text('Export My Data'),
-                    subtitle: const Text('Download all your SPOTS data'),
+                    subtitle: const Text('Download all your avrai data'),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: _exportData,
                   ),

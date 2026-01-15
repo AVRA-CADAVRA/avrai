@@ -21,6 +21,7 @@ class _HybridSearchPageState extends State<HybridSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _showFilters = false;
   bool _includeExternal = true;
+  bool _reservationAvailable = false; // Reservation filter
   int _maxResults = 50;
   int _searchRadius = 5000;
   late EventLogger _eventLogger;
@@ -69,11 +70,17 @@ class _HybridSearchPageState extends State<HybridSearchPage> {
       );
     }
 
+    // Build filters if reservation filter is enabled
+    final filters = _reservationAvailable
+        ? const SearchFilters(reservationAvailable: true)
+        : null;
+
     context.read<HybridSearchBloc>().add(
           SearchHybridSpots(
             query: trimmedQuery,
             includeExternal: _includeExternal,
             maxResults: _maxResults,
+            filters: filters,
           ),
         );
   }
@@ -312,6 +319,30 @@ class _HybridSearchPageState extends State<HybridSearchPage> {
             secondary: Icon(
               _includeExternal ? Icons.public : Icons.people,
               color: AppTheme.primaryColor,
+            ),
+          ),
+
+          // Reservation Available Filter
+          SwitchListTile(
+            title: const Text('Reservations Available'),
+            subtitle: const Text(
+              'Show only spots that accept reservations',
+            ),
+            value: _reservationAvailable,
+            onChanged: (value) {
+              setState(() {
+                _reservationAvailable = value;
+              });
+              // Re-search with new filter if there's a current query
+              if (_searchController.text.trim().isNotEmpty) {
+                _performSearch(_searchController.text);
+              }
+            },
+            secondary: Icon(
+              Icons.event_available,
+              color: _reservationAvailable
+                  ? AppTheme.primaryColor
+                  : AppColors.textSecondary,
             ),
           ),
 

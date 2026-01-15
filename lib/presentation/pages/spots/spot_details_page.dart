@@ -18,6 +18,11 @@ import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
 import 'package:avrai/injection_container.dart' as di;
 import 'package:avrai/core/ai/event_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:avrai/core/models/reservation.dart';
+import 'package:avrai/core/services/reservation_service.dart';
+import 'package:avrai/core/services/reservation_availability_service.dart';
+import 'package:avrai/presentation/pages/reservations/create_reservation_page.dart';
+import 'package:avrai/presentation/widgets/reservations/spot_reservation_badge_widget.dart';
 
 class SpotDetailsPage extends StatefulWidget {
   final Spot spot;
@@ -33,11 +38,18 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
   DateTime? _viewStartTime;
   bool _isInitialized = false;
 
+  // Reservation state
+  bool _isCheckingReservation = false;
+  bool _hasExistingReservation = false;
+  bool _isReservationAvailable = true;
+  int? _availableCapacity;
+
   @override
   void initState() {
     super.initState();
     _initializeEventLogger();
     _viewStartTime = DateTime.now();
+    _checkReservationStatus();
   }
 
   Future<void> _initializeEventLogger() async {
@@ -58,6 +70,94 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
       // Event logging is non-critical, continue without it
       _isInitialized = false;
     }
+  }
+
+  Future<void> _checkReservationStatus() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! Authenticated) {
+      return; // No user, can't check reservations
+    }
+
+    setState(() {
+      _isCheckingReservation = true;
+    });
+
+    try {
+      final reservationService = di.sl<ReservationService>();
+      final availabilityService =
+          di.sl.isRegistered<ReservationAvailabilityService>()
+              ? di.sl<ReservationAvailabilityService>()
+              : null;
+
+      final userId = authState.user.id;
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+
+      // Check for existing reservation
+      final userReservations =
+          await reservationService.getUserReservationsForTarget(
+        userId: userId,
+        type: ReservationType.spot,
+        targetId: widget.spot.id,
+      );
+
+      final hasActiveReservation = userReservations.any((r) =>
+          r.status != ReservationStatus.cancelled &&
+          r.reservationTime.isAfter(DateTime.now()));
+
+      // Check availability
+      bool isAvailable = true;
+      int? availableCapacity;
+
+      if (availabilityService != null) {
+        try {
+          final availability = await availabilityService.checkAvailability(
+            type: ReservationType.spot,
+            targetId: widget.spot.id,
+            reservationTime: tomorrow,
+            partySize: 1,
+          );
+
+          isAvailable = availability.isAvailable;
+          availableCapacity = availability.availableCapacity;
+        } catch (e) {
+          // If availability check fails, assume available
+          isAvailable = true;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _hasExistingReservation = hasActiveReservation;
+          _isReservationAvailable = isAvailable;
+          _availableCapacity = availableCapacity;
+          _isCheckingReservation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isReservationAvailable = true; // Default to available on error
+          _isCheckingReservation = false;
+        });
+      }
+    }
+  }
+
+  void _navigateToCreateReservation() {
+    Navigator.of(context)
+        .push(
+      MaterialPageRoute(
+        builder: (context) => CreateReservationPage(
+          type: ReservationType.spot,
+          targetId: widget.spot.id,
+          targetTitle: widget.spot.name,
+        ),
+      ),
+    )
+        .then((_) {
+      // Refresh reservation status after returning
+      _checkReservationStatus();
+    });
   }
 
   @override
@@ -165,6 +265,24 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
                       showWarning: true,
                       compact: false,
                     ),
+                    const SizedBox(height: 12),
+                    // Reservation Availability Badge
+                    if (!_isCheckingReservation)
+                      SpotReservationBadgeWidget(
+                        isAvailable: _isReservationAvailable,
+                        hasExistingReservation: _hasExistingReservation,
+                        availableCapacity: _availableCapacity,
+                        compact: false,
+                        onTap: _hasExistingReservation
+                            ? null
+                            : _navigateToCreateReservation,
+                      )
+                    else
+                      const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                   ],
                 ),
               ),
@@ -180,8 +298,7 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.location_on,
-                            color: AppTheme.primaryColor),
+                        Icon(Icons.location_on, color: AppTheme.primaryColor),
                         SizedBox(width: 8),
                         Text(
                           'Location',
@@ -264,27 +381,52 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
             const SizedBox(height: 16),
 
             // Actions
-            Row(
+            Column(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      _showAddToListDialog(context);
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add to List'),
-                    // Use global ElevatedButtonTheme
+                // Make Reservation Button (prominent if available)
+                if (_isReservationAvailable && !_hasExistingReservation)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _navigateToCreateReservation,
+                      icon: const Icon(Icons.event_available),
+                      label: const Text('Make Reservation'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _showShareDialog(context);
-                    },
-                    icon: const Icon(Icons.share),
-                    label: const Text('Share'),
-                  ),
+                if (_isReservationAvailable && !_hasExistingReservation)
+                  const SizedBox(height: 12),
+                // Other Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _showAddToListDialog(context);
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add to List'),
+                        // Use global ElevatedButtonTheme
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          _showShareDialog(context);
+                        },
+                        icon: const Icon(Icons.share),
+                        label: const Text('Share'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -297,8 +439,8 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
                 // Optionally refresh spot data or show confirmation
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                        'Thank you for helping validate community data!'),
+                    content:
+                        Text('Thank you for helping validate community data!'),
                     backgroundColor: AppTheme.successColor,
                   ),
                 );
@@ -516,7 +658,7 @@ class _SpotDetailsPageState extends State<SpotDetailsPage> {
 ${widget.spot.description.isNotEmpty ? '${widget.spot.description}\n' : ''}${widget.spot.address != null ? 'Address: ${widget.spot.address}\n' : ''}Category: ${widget.spot.category}
 Location: ${widget.spot.latitude.toStringAsFixed(6)}, ${widget.spot.longitude.toStringAsFixed(6)}
 
-Shared from SPOTS - know you belong.''';
+Shared from avrai - know you belong.''';
 
     SharePlus.instance.share(ShareParams(
       text: shareText,
@@ -527,7 +669,7 @@ Shared from SPOTS - know you belong.''';
   void _copySpotLink(BuildContext context) {
     // Generate a shareable link (this would normally be a deep link to the app)
     final spotLink =
-        'https://spots.app/spot/${widget.spot.id}?lat=${widget.spot.latitude}&lng=${widget.spot.longitude}';
+        'https://avrai.app/spot/${widget.spot.id}?lat=${widget.spot.latitude}&lng=${widget.spot.longitude}';
 
     Clipboard.setData(ClipboardData(text: spotLink));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -542,7 +684,7 @@ Shared from SPOTS - know you belong.''';
     final locationText = '''📍 ${widget.spot.name}
 ${widget.spot.address ?? 'Coordinates: ${widget.spot.latitude.toStringAsFixed(6)}, ${widget.spot.longitude.toStringAsFixed(6)}'}
 
-Shared from SPOTS''';
+Shared from avrai''';
 
     SharePlus.instance.share(ShareParams(text: locationText));
   }

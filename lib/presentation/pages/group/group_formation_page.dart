@@ -119,7 +119,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                   children: [
                     // Selected Members Section
                     _buildSelectedMembersSection(context, state),
-                    
+
                     // Tab View
                     Expanded(
                       child: TabBarView(
@@ -127,7 +127,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                         children: [
                           // Nearby Users Tab
                           _buildNearbyUsersTab(context, state, currentUserId),
-                          
+
                           // Friends Tab
                           _buildFriendsTab(context, state, currentUserId),
                         ],
@@ -162,7 +162,8 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                       ElevatedButton(
                         onPressed: () {
                           context.read<GroupMatchingBloc>().add(
-                                StartGroupFormation(currentUserId: currentUserId),
+                                StartGroupFormation(
+                                    currentUserId: currentUserId),
                               );
                         },
                         style: ElevatedButton.styleFrom(
@@ -224,10 +225,12 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                             FormGroup(
                               currentUserId: authState.user.id,
                               nearbyUsers: state.nearbyUsers
-                                  .where((u) => state.selectedMemberAgentIds.contains(u.agentId))
+                                  .where((u) => state.selectedMemberAgentIds
+                                      .contains(u.agentId))
                                   .toList(),
                               friendAgentIds: state.selectedMemberAgentIds
-                                  .where((id) => state.friendAgentIds.contains(id))
+                                  .where(
+                                      (id) => state.friendAgentIds.contains(id))
                                   .toList(),
                             ),
                           );
@@ -270,7 +273,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                       orElse: () => state.nearbyUsers.first,
                     );
                     final displayName = nearbyUser.deviceName;
-                    
+
                     return _buildMemberChip(
                       context,
                       label: displayName,
@@ -349,7 +352,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
             ),
             const SizedBox(height: 8),
             Text(
-              'Make sure Bluetooth is enabled and other users have SPOTS open',
+              'Make sure Bluetooth is enabled and other users have avrai open',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -540,9 +543,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.grey300,
+          color: isSelected ? AppColors.primary : AppColors.grey300,
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -563,7 +564,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // User info
               Expanded(
                 child: Column(
@@ -575,7 +576,8 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                             fontWeight: FontWeight.bold,
                           ),
                     ),
-                    if (showCompatibility && user.compatibilityScore != null) ...[
+                    if (showCompatibility &&
+                        user.compatibilityScore != null) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -587,9 +589,10 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                           const SizedBox(width: 4),
                           Text(
                             '${(user.compatibilityScore! * 100).toStringAsFixed(0)}% match',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.primary,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.primary,
+                                    ),
                           ),
                         ],
                       ),
@@ -606,9 +609,10 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                           const SizedBox(width: 4),
                           Text(
                             'Nearby',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
                           ),
                         ],
                       ),
@@ -643,9 +647,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.grey300,
+          color: isSelected ? AppColors.primary : AppColors.grey300,
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -666,7 +668,7 @@ class _GroupFormationPageState extends State<GroupFormationPage>
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Friend info
               Expanded(
                 child: Column(

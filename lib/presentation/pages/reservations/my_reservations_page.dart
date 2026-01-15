@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:avrai/core/models/reservation.dart';
@@ -7,7 +9,9 @@ import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/app_theme.dart';
 import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
 import 'package:avrai/presentation/pages/reservations/reservation_detail_page.dart';
+import 'package:avrai/presentation/widgets/reservations/reservation_card_widget.dart';
 import 'package:avrai/injection_container.dart' as di;
+import 'package:go_router/go_router.dart';
 
 /// My Reservations Page
 /// Phase 15: Reservation System Implementation
@@ -117,9 +121,15 @@ class _MyReservationsPageState extends State<MyReservationsPage> with SingleTick
         _pastReservations = past;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error loading reservations: $e',
+        name: 'MyReservationsPage',
+        error: e,
+        stackTrace: stackTrace,
+      );
       setState(() {
-        _error = 'Failed to load reservations: $e';
+        _error = _getUserFriendlyErrorMessage(e);
         _isLoading = false;
       });
     }
@@ -162,6 +172,19 @@ class _MyReservationsPageState extends State<MyReservationsPage> with SingleTick
         title: const Text('My Reservations'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: AppColors.white,
+        actions: [
+          Semantics(
+            label: 'View reservation analytics',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.analytics),
+              onPressed: () {
+                context.push('/reservations/analytics');
+              },
+              tooltip: 'View Analytics',
+            ),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.white,
@@ -176,29 +199,40 @@ class _MyReservationsPageState extends State<MyReservationsPage> with SingleTick
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Semantics(
+              label: 'Loading reservations',
+              child: const Center(child: CircularProgressIndicator()),
+            )
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
-                      const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        style: const TextStyle(color: AppTheme.errorColor),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadReservations,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: AppColors.white,
+              ? Semantics(
+                  label: 'Error loading reservations: $_error',
+                  liveRegion: true,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          style: const TextStyle(color: AppTheme.errorColor),
+                          textAlign: TextAlign.center,
                         ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Semantics(
+                          label: 'Retry loading reservations',
+                          button: true,
+                          child: ElevatedButton(
+                            onPressed: _loadReservations,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: AppColors.white,
+                            ),
+                            child: const Text('Retry'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : TabBarView(
@@ -233,7 +267,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> with SingleTick
                               padding: const EdgeInsets.all(16),
                               itemBuilder: (context, i) {
                                 final reservation = reservations[i];
-                                return _ReservationCard(
+                                return ReservationCardWidget(
                                   reservation: reservation,
                                   onTap: () async {
                                     final result = await Navigator.of(context).push(
@@ -253,136 +287,39 @@ class _MyReservationsPageState extends State<MyReservationsPage> with SingleTick
                           );
                   }),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.of(context).pushNamed('/reservations/create');
-          if (result != null) {
-            _loadReservations();
-          }
-        },
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: AppColors.white,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class _ReservationCard extends StatelessWidget {
-  final Reservation reservation;
-  final VoidCallback onTap;
-
-  const _ReservationCard({
-    required this.reservation,
-    required this.onTap,
-  });
-
-  Color _getStatusColor(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return AppTheme.warningColor;
-      case ReservationStatus.confirmed:
-        return AppTheme.successColor;
-      case ReservationStatus.cancelled:
-        return AppTheme.errorColor;
-      case ReservationStatus.completed:
-        return AppTheme.primaryColor;
-      case ReservationStatus.noShow:
-        return AppTheme.errorColor;
-    }
-  }
-
-  String _getTypeLabel(ReservationType type) {
-    switch (type) {
-      case ReservationType.event:
-        return 'Event';
-      case ReservationType.spot:
-        return 'Spot';
-      case ReservationType.business:
-        return 'Business';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      _getTypeLabel(reservation.type),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(reservation.status).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: _getStatusColor(reservation.status)),
-                    ),
-                    child: Text(
-                      reservation.status.toString().split('.').last.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _getStatusColor(reservation.status),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                reservation.targetId,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    reservation.reservationTime.toLocal().toString().split('.')[0],
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.people, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${reservation.partySize} ${reservation.partySize == 1 ? 'person' : 'people'}',
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ],
-          ),
+      floatingActionButton: Semantics(
+        label: 'Create new reservation',
+        button: true,
+        child: FloatingActionButton(
+          onPressed: () async {
+            final result = await Navigator.of(context).pushNamed('/reservations/create');
+            if (result != null) {
+              _loadReservations();
+            }
+          },
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: AppColors.white,
+          child: const Icon(Icons.add),
         ),
       ),
     );
+  }
+
+  /// Get user-friendly error message from exception
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    final errorString = error.toString().toLowerCase();
+    
+    // Network errors
+    if (errorString.contains('network') || errorString.contains('connection')) {
+      return 'Connection error. Your reservations are available offline.';
+    }
+    
+    // Not found errors
+    if (errorString.contains('not found') || errorString.contains('does not exist')) {
+      return 'Unable to load reservations. Please try again.';
+    }
+    
+    // Generic error
+    return 'Failed to load reservations. Please try again.';
   }
 }

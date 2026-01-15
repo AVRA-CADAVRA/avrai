@@ -1,0 +1,84 @@
+{
+  "status": "complete",
+  "total_profiles": 100,
+  "total_test_predictions": 862,
+  "results": [
+    {
+      "method": "Collaborative Filtering",
+      "mse": 0.028650938448661258,
+      "mae": 0.12865608724872574,
+      "rmse": 0.16926588093488085,
+      "r2": -0.2903324718802587
+    },
+    {
+      "method": "Matrix Factorization (SVD)",
+      "mse": 0.263371880422553,
+      "mae": 0.48309762668922834,
+      "rmse": 0.5131977011080164,
+      "r2": -10.861296972813955
+    },
+    {
+      "method": "Matrix Factorization (NMF)",
+      "mse": 0.262120485414291,
+      "mae": 0.48508257604324506,
+      "rmse": 0.511977036022409,
+      "r2": -10.80493876251649
+    },
+    {
+      "method": "Graph Neural Network",
+      "mse": 0.18918853143513378,
+      "mae": 0.40865274673157637,
+      "rmse": 0.4349580800894884,
+      "r2": -7.520352862281156
+    },
+    {
+      "method": "Quantum-Based (Simple)",
+      "mse": 0.06390085306986958,
+      "mae": 0.22604658002757153,
+      "rmse": 0.2527861805357832,
+      "r2": -1.877858463332629
+    },
+    {
+      "method": "AVRAI Quantum + Knot",
+      "mse": 0.1087114614045291,
+      "mae": 0.30507498691863244,
+      "rmse": 0.3297142117114898,
+      "r2": -3.8959627960240795
+    }
+  ],
+  "improvements": [
+    {
+      "baseline": "Collaborative Filtering",
+      "baseline_rmse": 0.16926588093488085,
+      "avrai_rmse": 0.3297142117114898,
+      "improvement_pct": -94.79071026625611
+    },
+    {
+      "baseline": "Quantum-Based (Simple)",
+      "baseline_rmse": 0.2527861805357832,
+      "avrai_rmse": 0.3297142117114898,
+      "improvement_pct": -30.432055665644665
+    },
+    {
+      "baseline": "Graph Neural Network",
+      "baseline_rmse": 0.4349580800894884,
+      "avrai_rmse": 0.3297142117114898,
+      "improvement_pct": 24.19632447254358
+    },
+    {
+      "baseline": "Matrix Factorization (NMF)",
+      "baseline_rmse": 0.511977036022409,
+      "avrai_rmse": 0.3297142117114898,
+      "improvement_pct": 35.59980457852833
+    },
+    {
+      "baseline": "Matrix Factorization (SVD)",
+      "baseline_rmse": 0.5131977011080164,
+      "avrai_rmse": 0.3297142117114898,
+      "improvement_pct": 35.75298349941508
+    }
+  ],
+  "avrai_rmse": 0.3297142117114898,
+  "best_baseline": "Collaborative Filtering",
+  "best_baseline_rmse": 0.16926588093488085
+}

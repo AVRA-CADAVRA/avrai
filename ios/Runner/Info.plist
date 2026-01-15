@@ -39,6 +39,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>GMSApiKey</key>
 	<string>$(GOOGLE_MAPS_IOS_API_KEY)</string>
+	<key>GIDClientID</key>
+	<string>1081806889940-m916phe4pkfj5g5auvikacv5nn2i4r2l.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
@@ -55,6 +57,8 @@
 	<string>AVRAI needs your location to show nearby spots and create personalized recommendations based on your unique preferences.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>AVRAI needs access to your photo library so you can attach evidence (screenshots/photos) to disputes.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>AVRAI needs local network access to discover nearby devices for secure ai2ai communication and proximity awareness.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

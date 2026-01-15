@@ -6,19 +6,20 @@ import 'package:avrai/core/services/logger.dart';
 import 'package:avrai/core/utils/secure_ssn_encryption.dart';
 
 /// PDF Generation Service
-/// 
+///
 /// Generates 1099-K tax forms as PDF documents.
-/// 
+///
 /// **Philosophy Alignment:**
 /// - Opens doors to legal compliance
 /// - Enables accurate tax reporting
 /// - Supports user trust through transparency
 class PDFGenerationService {
-  static const AppLogger _logger = AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
+  static const AppLogger _logger =
+      AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
   final SecureSSNEncryption _encryption = SecureSSNEncryption();
-  
+
   /// Generate 1099-K PDF document
-  /// 
+  ///
   /// **Parameters:**
   /// - `userId`: User ID
   /// - `taxYear`: Tax year (e.g., 2025)
@@ -28,7 +29,7 @@ class PDFGenerationService {
   /// - `payerName`: SPOTS company name
   /// - `payerAddress`: SPOTS company address
   /// - `payerTIN`: SPOTS Tax Identification Number
-  /// 
+  ///
   /// **Returns:**
   /// PDF document as bytes
   Future<Uint8List> generate1099K({
@@ -46,16 +47,17 @@ class PDFGenerationService {
         'Generating 1099-K PDF: user=$userId, year=$taxYear, earnings=\$${earnings.toStringAsFixed(2)}, hasW9=$hasW9',
         tag: 'PDFGenerationService',
       );
-      
+
       final pdf = pw.Document();
-      
+
       // Get taxpayer information (if W-9 submitted)
       String? taxpayerName;
       String? taxpayerTIN;
       String? taxpayerAddress;
-      
+
       if (hasW9) {
-        taxpayerName = taxProfile.businessName ?? 'Individual'; // Would get from user profile
+        taxpayerName = taxProfile.businessName ??
+            'Individual'; // Would get from user profile
         if (taxProfile.ein != null) {
           final ein = await _encryption.decryptEIN(userId);
           taxpayerTIN = ein;
@@ -65,7 +67,7 @@ class PDFGenerationService {
         }
         taxpayerAddress = 'User Address'; // Would get from user profile
       }
-      
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.letter,
@@ -77,7 +79,7 @@ class PDFGenerationService {
                 // Header
                 _buildHeader(taxYear),
                 pw.SizedBox(height: 20),
-                
+
                 // Payer Information
                 _buildPayerSection(
                   payerName: payerName,
@@ -85,7 +87,7 @@ class PDFGenerationService {
                   payerTIN: payerTIN,
                 ),
                 pw.SizedBox(height: 20),
-                
+
                 // Recipient Information
                 _buildRecipientSection(
                   taxpayerName: taxpayerName,
@@ -94,14 +96,14 @@ class PDFGenerationService {
                   hasW9: hasW9,
                 ),
                 pw.SizedBox(height: 20),
-                
+
                 // Earnings Information
                 _buildEarningsSection(
                   earnings: earnings,
                   taxYear: taxYear,
                 ),
                 pw.SizedBox(height: 20),
-                
+
                 // Footer
                 _buildFooter(hasW9: hasW9),
               ],
@@ -109,19 +111,21 @@ class PDFGenerationService {
           },
         ),
       );
-      
+
       final pdfBytes = await pdf.save();
-      _logger.info('1099-K PDF generated successfully', tag: 'PDFGenerationService');
-      
+      _logger.info('1099-K PDF generated successfully',
+          tag: 'PDFGenerationService');
+
       return pdfBytes;
     } catch (e) {
-      _logger.error('Failed to generate 1099-K PDF', error: e, tag: 'PDFGenerationService');
+      _logger.error('Failed to generate 1099-K PDF',
+          error: e, tag: 'PDFGenerationService');
       rethrow;
     }
   }
-  
+
   // Private helper methods for PDF building
-  
+
   pw.Widget _buildHeader(int taxYear) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -148,7 +152,7 @@ class PDFGenerationService {
       ],
     );
   }
-  
+
   pw.Widget _buildPayerSection({
     required String payerName,
     required String payerAddress,
@@ -178,7 +182,7 @@ class PDFGenerationService {
       ),
     );
   }
-  
+
   pw.Widget _buildRecipientSection({
     String? taxpayerName,
     String? taxpayerTIN,
@@ -231,7 +235,7 @@ class PDFGenerationService {
       ),
     );
   }
-  
+
   pw.Widget _buildEarningsSection({
     required double earnings,
     required int taxYear,
@@ -262,7 +266,7 @@ class PDFGenerationService {
       ),
     );
   }
-  
+
   pw.Widget _buildFooter({required bool hasW9}) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -288,11 +292,10 @@ class PDFGenerationService {
         ),
         pw.SizedBox(height: 8),
         pw.Text(
-          'For questions, contact SPOTS support or visit spots.app/support',
+          'For questions, contact avrai support or visit avrai.app/support',
           style: const pw.TextStyle(fontSize: 8),
         ),
       ],
     );
   }
 }
-

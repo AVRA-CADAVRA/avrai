@@ -8,6 +8,11 @@ import 'package:avrai/core/models/event_partnership.dart';
 import 'package:avrai/core/models/revenue_split.dart';
 import 'package:avrai/core/services/partnership_service.dart';
 import 'package:avrai/core/services/business_service.dart';
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_knot/services/knot/cross_entity_compatibility_service.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 
 /// Partnership Proposal Controller
 /// 
@@ -55,14 +60,44 @@ class PartnershipProposalController
 
   final PartnershipService _partnershipService;
   final BusinessService _businessService;
+  // ignore: unused_field
+  final AtomicClockService _atomicClock; // Reserved for future timestamp-based proposal tracking
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final CrossEntityCompatibilityService? _knotCompatibilityService;
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumEntanglementService? _quantumEntanglementService;
+  final QuantumMatchingAILearningService? _aiLearningService;
 
   PartnershipProposalController({
     PartnershipService? partnershipService,
     BusinessService? businessService,
+    AtomicClockService? atomicClock,
+    CrossEntityCompatibilityService? knotCompatibilityService,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumEntanglementService? quantumEntanglementService,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _partnershipService =
             partnershipService ?? GetIt.instance<PartnershipService>(),
         _businessService =
-            businessService ?? GetIt.instance<BusinessService>();
+            businessService ?? GetIt.instance<BusinessService>(),
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _knotCompatibilityService = knotCompatibilityService ??
+            (GetIt.instance.isRegistered<CrossEntityCompatibilityService>()
+                ? GetIt.instance<CrossEntityCompatibilityService>()
+                : null),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
+                : null);
 
   /// Create partnership proposal
   /// 
@@ -161,7 +196,100 @@ class PartnershipProposalController
         name: _logName,
       );
 
-      // Step 5: Send proposal to business (when NotificationService available)
+      // Step 5: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 5.1: Calculate knot compatibility (expert ↔ business)
+      if (_knotCompatibilityService != null) {
+        try {
+          developer.log(
+            '🎯 Calculating knot compatibility for partnership proposal',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would require expert and business personality knots
+          // This is a placeholder for future knot compatibility calculation
+          developer.log(
+            'ℹ️ Knot compatibility calculation deferred (requires expert and business knots)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Knot compatibility calculation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - knot compatibility is optional
+        }
+      }
+      
+      // 5.2: Calculate quantum compatibility (expert ↔ business)
+      if (_quantumEntanglementService != null) {
+        try {
+          developer.log(
+            '🔬 Calculating quantum compatibility for partnership proposal',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would create quantum states and calculate compatibility
+          // This is a placeholder for future quantum compatibility calculation
+          developer.log(
+            'ℹ️ Quantum compatibility calculation deferred (requires quantum states)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Quantum compatibility calculation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum compatibility is optional
+        }
+      }
+      
+      // 5.3: Create 4D quantum states for compatibility calculation
+      if (_locationTimingService != null && data.venueLocation != null) {
+        try {
+          developer.log(
+            '🌐 Creating 4D quantum location state for partnership venue',
+            name: _logName,
+          );
+          
+          // Parse venue location and create quantum state
+          // Note: Full implementation would parse location and create quantum state
+          developer.log(
+            'ℹ️ Venue location quantum state creation deferred (requires location parsing)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Location quantum state creation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - location quantum state is optional
+        }
+      }
+      
+      // 5.4: Learn from partnership outcomes via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null) {
+        try {
+          developer.log(
+            '🤖 AI2AI learning service available (learning deferred to matching)',
+            name: _logName,
+          );
+          // Note: Actual learning happens when matches occur, not during proposal creation
+          // This is a placeholder for future partnership-based learning
+        } catch (e) {
+          developer.log(
+            '⚠️ AI2AI learning failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+      
+      // Step 6: Send proposal to business (when NotificationService available)
       // TODO(Phase 8.12): Integrate NotificationService when available
       // For now, notifications are handled by PartnershipService placeholder methods
 

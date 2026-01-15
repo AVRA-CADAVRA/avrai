@@ -478,6 +478,21 @@ This is the “truth layer” that simulators can’t cover. Mark each item:
   - no user-visible crash/hang even under flaky networking
   - if `global_average_deltas` is returned, applying it does not destabilize scoring
 
+### J) WiFi Scanning for Check-In (Real device)
+- **Phase 10.1:** Multi-layered proximity-triggered check-in system
+- **Android WiFi Scanning:**
+  - Validate `wifi_scan` package can detect nearby WiFi networks (SSID, BSSID, signal strength)
+  - Verify location permission is properly requested and granted
+  - Test WiFi fingerprinting validation for indoor location verification
+  - Confirm scanning works on Android 10+ (requires location permission)
+- **iOS WiFi Current SSID:**
+  - Validate `wifi_iot` package can retrieve current connected SSID/BSSID
+  - Verify iOS privacy limitations (only current network, not full scanning)
+- **Integration Testing:**
+  - Test WiFi fingerprint validation in check-in flow
+  - Verify WiFi fingerprint matching increases check-in confidence score
+  - Test fallback behavior when WiFi scanning fails or is unavailable
+
 ### Optional high-value experiments (Real device)
 - Deep links / OAuth app-switch return paths (`app_links`, `google_sign_in`)
 - Push notification delivery behavior (if enabled)

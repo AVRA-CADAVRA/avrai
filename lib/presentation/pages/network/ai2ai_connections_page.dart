@@ -1,16 +1,16 @@
 /// AI2AI Connections Page
-/// 
+///
 /// Part of Feature Matrix Phase 1: Critical UI/UX
 /// Section 1.2: Device Discovery UI - Integration with Connection Orchestrator
-/// 
+///
 /// Comprehensive page showing all AI2AI networking features:
 /// - Device discovery status and controls
 /// - Discovered devices list
 /// - Active AI2AI connections
 /// - Discovery settings access
-/// 
+///
 /// Integrates with Connection Orchestrator for real-time status synchronization.
-/// 
+///
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 library;
 
@@ -28,44 +28,46 @@ import 'dart:developer' as developer;
 /// Comprehensive page for AI2AI networking and device discovery
 class AI2AIConnectionsPage extends StatefulWidget {
   const AI2AIConnectionsPage({super.key});
-  
+
   @override
   State<AI2AIConnectionsPage> createState() => _AI2AIConnectionsPageState();
 }
 
-class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with SingleTickerProviderStateMixin {
+class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage>
+    with SingleTickerProviderStateMixin {
   DeviceDiscoveryService? _discoveryService;
   VibeConnectionOrchestrator? _orchestrator;
-  
+
   List<DiscoveredDevice> _discoveredDevices = [];
   bool _isScanning = false;
   bool _isLoading = true;
-  
+
   Timer? _refreshTimer;
   late TabController _tabController;
-  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _initializeServices();
   }
-  
+
   Future<void> _initializeServices() async {
     try {
       _discoveryService = GetIt.instance<DeviceDiscoveryService>();
       _orchestrator = GetIt.instance<VibeConnectionOrchestrator>();
-      
+
       await _refreshDevices();
       _startAutoRefresh();
-      
+
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
-      developer.log('Error initializing services', name: 'AI2AIConnectionsPage', error: e);
+      developer.log('Error initializing services',
+          name: 'AI2AIConnectionsPage', error: e);
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -73,7 +75,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       }
     }
   }
-  
+
   void _startAutoRefresh() {
     // Refresh every 3 seconds for real-time updates
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
@@ -82,10 +84,10 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       }
     });
   }
-  
+
   Future<void> _refreshDevices() async {
     if (_discoveryService == null) return;
-    
+
     final devices = _discoveryService!.getDiscoveredDevices();
     if (mounted) {
       setState(() {
@@ -93,32 +95,32 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       });
     }
   }
-  
+
   Future<void> _toggleDiscovery() async {
     if (_discoveryService == null) return;
-    
+
     final newState = !_isScanning;
-    
+
     setState(() {
       _isScanning = newState;
     });
-    
+
     if (newState) {
       await _discoveryService!.startDiscovery();
     } else {
       _discoveryService!.stopDiscovery();
     }
-    
+
     await _refreshDevices();
   }
-  
+
   @override
   void dispose() {
     _refreshTimer?.cancel();
     _tabController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -131,7 +133,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
         ),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI2AI Network'),
@@ -171,7 +173,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
+
   Widget _buildDiscoveryTab() {
     return SingleChildScrollView(
       child: Column(
@@ -183,7 +185,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
+
   Widget _buildDiscoveryStatusCard() {
     return Card(
       margin: const EdgeInsets.all(16),
@@ -211,14 +213,16 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _isScanning 
+                    color: _isScanning
                         ? AppColors.electricGreen.withValues(alpha: 0.2)
                         : AppColors.grey200,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _isScanning ? Icons.radar : Icons.radar_outlined,
-                    color: _isScanning ? AppColors.electricGreen : AppColors.textSecondary,
+                    color: _isScanning
+                        ? AppColors.electricGreen
+                        : AppColors.textSecondary,
                     size: 36,
                   ),
                 ),
@@ -237,7 +241,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        _isScanning 
+                        _isScanning
                             ? 'Scanning for nearby devices...'
                             : 'Start to discover nearby AI devices',
                         style: const TextStyle(
@@ -258,7 +262,8 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
                 icon: Icon(_isScanning ? Icons.stop : Icons.play_arrow),
                 label: Text(_isScanning ? 'Stop Discovery' : 'Start Discovery'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isScanning ? AppColors.error : AppColors.electricGreen,
+                  backgroundColor:
+                      _isScanning ? AppColors.error : AppColors.electricGreen,
                   foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -273,10 +278,10 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
+
   Widget _buildDiscoveryStatsCard() {
     final activeConnections = _orchestrator?.getActiveConnections() ?? [];
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
@@ -325,8 +330,9 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
-  Widget _buildStatItem(IconData icon, String value, String label, Color color) {
+
+  Widget _buildStatItem(
+      IconData icon, String value, String label, Color color) {
     return Column(
       children: [
         Container(
@@ -361,7 +367,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ],
     );
   }
-  
+
   Widget _buildQuickActionsCard() {
     return Card(
       margin: const EdgeInsets.all(16),
@@ -410,7 +416,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
+
   Widget _buildDevicesTab() {
     if (!_isScanning) {
       return Center(
@@ -435,7 +441,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
               ),
               const SizedBox(height: 12),
               const Text(
-                'Start discovery to find nearby SPOTS devices',
+                'Start discovery to find nearby avrai devices',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -450,7 +456,8 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.electricGreen,
                   foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
               ),
             ],
@@ -458,21 +465,21 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
         ),
       );
     }
-    
+
     return DiscoveredDevicesWidget(
       devices: _discoveredDevices,
       onRefresh: _refreshDevices,
       showConnectionButton: true,
     );
   }
-  
+
   Widget _buildConnectionsTab() {
     return AI2AIConnectionViewWidget(
       showHumanConnectionButton: true,
       onEnableHumanConnection: _handleHumanConnectionEnabled,
     );
   }
-  
+
   void _navigateToSettings() {
     Navigator.push(
       context,
@@ -484,7 +491,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       _refreshDevices();
     });
   }
-  
+
   void _showDiscoveryInfoDialog() {
     showDialog(
       context: context,
@@ -563,7 +570,7 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
+
   Widget _buildInfoPoint(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -589,11 +596,10 @@ class _AI2AIConnectionsPageState extends State<AI2AIConnectionsPage> with Single
       ),
     );
   }
-  
+
   void _handleHumanConnectionEnabled(dynamic connection) {
     // Handle navigation to human chat or other UI flow
     // This is where you'd integrate with your chat/messaging system
     debugPrint('Human connection enabled for: ${connection.connectionId}');
   }
 }
-

@@ -1,13 +1,13 @@
 /// Federated Learning Settings Section
-/// 
+///
 /// Part of Feature Matrix Phase 2: Medium Priority UI/UX
-/// 
+///
 /// Settings section for federated learning participation:
 /// - Explains what federated learning is and how it works
 /// - Shows participation benefits
 /// - Explains negative consequences of not participating
 /// - Opt-in/opt-out controls
-/// 
+///
 /// Location: Settings/Account page
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 library;
@@ -21,10 +21,12 @@ class FederatedLearningSettingsSection extends StatefulWidget {
   const FederatedLearningSettingsSection({super.key});
 
   @override
-  State<FederatedLearningSettingsSection> createState() => _FederatedLearningSettingsSectionState();
+  State<FederatedLearningSettingsSection> createState() =>
+      _FederatedLearningSettingsSectionState();
 }
 
-class _FederatedLearningSettingsSectionState extends State<FederatedLearningSettingsSection> {
+class _FederatedLearningSettingsSectionState
+    extends State<FederatedLearningSettingsSection> {
   bool _isParticipating = true;
   final _storageService = StorageService.instance;
   static const String _participationKey = 'federated_learning_participation';
@@ -57,7 +59,8 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
                   ? 'Federated learning participation enabled'
                   : 'Federated learning participation disabled',
             ),
-            backgroundColor: value ? AppColors.electricGreen : AppColors.warning,
+            backgroundColor:
+                value ? AppColors.electricGreen : AppColors.warning,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -125,10 +128,14 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
                 ),
               ),
               const SizedBox(height: 8),
-              _buildInfoItem('1. Local Training', 'Your device trains a model on your data (data never leaves your device)'),
-              _buildInfoItem('2. Update Sharing', 'Only model updates (patterns), not raw data, are sent'),
-              _buildInfoItem('3. Aggregation', 'Updates from all participants are combined to improve the global model'),
-              _buildInfoItem('4. Distribution', 'The improved model is sent back to your device'),
+              _buildInfoItem('1. Local Training',
+                  'Your device trains a model on your data (data never leaves your device)'),
+              _buildInfoItem('2. Update Sharing',
+                  'Only model updates (patterns), not raw data, are sent'),
+              _buildInfoItem('3. Aggregation',
+                  'Updates from all participants are combined to improve the global model'),
+              _buildInfoItem('4. Distribution',
+                  'The improved model is sent back to your device'),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -273,7 +280,7 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
             ),
             const SizedBox(height: 16),
             const Text(
-              'Help improve SPOTS AI while keeping your data private',
+              'Help improve avrai AI while keeping your data private',
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -372,7 +379,8 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
             ),
             const SizedBox(height: 16),
             Semantics(
-              label: 'Participate in Federated Learning toggle. Currently ${_isParticipating ? 'enabled' : 'disabled'}',
+              label:
+                  'Participate in Federated Learning toggle. Currently ${_isParticipating ? 'enabled' : 'disabled'}',
               value: _isParticipating ? 'Enabled' : 'Disabled',
               child: Card(
                 elevation: 0,
@@ -391,7 +399,7 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
                   ),
                   subtitle: Text(
                     _isParticipating
-                        ? 'Your device will contribute to improving SPOTS AI'
+                        ? 'Your device will contribute to improving avrai AI'
                         : 'Your device will not participate in federated learning',
                     style: const TextStyle(
                       fontSize: 12,
@@ -435,4 +443,3 @@ class _FederatedLearningSettingsSectionState extends State<FederatedLearningSett
     );
   }
 }
-

@@ -33,9 +33,9 @@ void main() {
     // Home page tests focus on business logic (loading state, authentication states, tab initialization, data loading), not property assignment
 
     testWidgets(
-        'should display loading state when auth is loading, display unauthenticated content when not logged in, display authenticated content when logged in, initialize with correct tab index, or load lists on initialization',
+        'should display loading state when auth is loading, display unauthenticated content when not logged in, display authenticated content when logged in, initialize with correct tab index, load lists on initialization, or display offline banner when offline',
         (WidgetTester tester) async {
-      // Test business logic: Home page state management and initialization
+      // Test business logic: Home page state management, initialization, and offline banner display
       mockAuthBloc.setState(AuthLoading());
       final widget1 = WidgetTestHelpers.createTestableWidget(
         child: const HomePage(),

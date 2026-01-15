@@ -1,0 +1,8 @@
+method,avg_score
+Graph Neural Network (GCN),0.9990990537743427
+AVRAI Quantum + Knot,0.8204319623063621
+Quantum-Based Matching (Simple),0.7432630511985682
+Matrix Factorization (SVD),0.4707773477390418
+Matrix Factorization (NMF),0.34697422927829363
+Collaborative Filtering,0.2650542776182886
+Neural Collaborative Filtering (NCF),-0.02748516585909433

@@ -1411,6 +1411,232 @@ class PhysiologicalPreferenceManager {
 
 ---
 
+---
+
+## 🗺️ **AR NAVIGATION & RESERVATION INTEGRATION (Future Work)**
+
+### **Overview**
+
+**Date Added:** January 6, 2026  
+**Status:** 📋 **PLANNED FOR FUTURE IMPLEMENTATION**  
+**Purpose:** AR lenses and directions to exact spots using spot's check-in configuration, with privacy-preserved architecture through AI2AI system and VPN
+
+### **Concept: AR Navigation to Reservation Spots**
+
+**Integration Point:**
+- Spot's `check_in_config` provides exact coordinates for AR navigation
+- Reservations reference spot's check-in config (single source of truth)
+- AR lenses can display directions to exact check-in location
+- Privacy preserved through agentId, location obfuscation, and VPN
+
+### **Architecture:**
+
+**1. Spot's Check-In Config → AR Navigation:**
+```dart
+// Spot has exact check-in coordinates
+class Spot {
+  final Map<String, dynamic>? checkInConfig; // {
+    //   "check_in_spot": {
+    //     "latitude": 40.7128,  // EXACT coordinates
+    //     "longitude": -74.0060,
+    //     "accuracy_threshold_meters": 5.0
+    //   }
+    // }
+}
+
+// AR Navigation Service uses spot's exact coordinates
+class ARNavigationService {
+  Future<ARNavigationRoute> getRouteToSpot({
+    required Reservation reservation,
+    required String agentId, // Privacy-preserved (not userId)
+    required double currentLatitude,
+    required double currentLongitude,
+  }) async {
+    // Get spot's exact check-in coordinates
+    final spot = await _getSpot(reservation.targetId);
+    final checkInConfig = spot.checkInConfig;
+    final targetLat = checkInConfig['check_in_spot']['latitude'];
+    final targetLng = checkInConfig['check_in_spot']['longitude'];
+    
+    // Calculate route using exact coordinates (LOCAL calculation)
+    final route = await _calculateRoute(
+      from: (currentLatitude, currentLongitude),
+      to: (targetLat, targetLng),
+      agentId: agentId, // Privacy-preserved identifier
+    );
+    
+    return route;
+  }
+}
+```
+
+**2. Privacy Layers:**
+
+**Layer 1: AgentId (Not UserId)**
+- AR navigation uses `agentId` (privacy-preserved identifier)
+- Never uses `userId` for routing or navigation
+- `agentId` cannot be linked back to personal information
+
+**Layer 2: Local Calculation (On-Device)**
+- Route calculation happens on-device (no server calls)
+- Exact coordinates stay on device (never transmitted)
+- AR rendering happens locally (no cloud processing)
+
+**Layer 3: AI2AI Mesh (Obfuscated Location)**
+- If routing needs mesh assistance, location is obfuscated:
+  ```dart
+  // LocationObfuscationService obfuscates to city-level
+  final obfuscatedLocation = await _locationObfuscationService.obfuscateLocation(
+    locationString: userLocation,
+    userId: userId, // Only for home location check
+    isAdmin: false,
+  );
+  // Result: City-level only (~1km precision), not exact coordinates
+  ```
+
+**Layer 4: VPN Integration (Additional Privacy)**
+- VPN encrypts all network traffic
+- Hides IP address from external services
+- Works with existing VPN/Proxy plans
+
+**3. AR Lens Integration:**
+
+```dart
+// AR Lens Service
+class ARLensService {
+  Future<AROverlay> showNavigationToSpot({
+    required Reservation reservation,
+    required String agentId,
+    required ARCamera camera,
+  }) async {
+    // Get spot's exact check-in coordinates (from check_in_config)
+    final spot = await _getSpot(reservation.targetId);
+    final checkInConfig = spot.checkInConfig;
+    final targetLat = checkInConfig['check_in_spot']['latitude'];
+    final targetLng = checkInConfig['check_in_spot']['longitude'];
+    
+    // Get user's current location (LOCAL, never transmitted)
+    final currentLocation = await _getCurrentLocation(); // On-device GPS
+    
+    // Calculate route (LOCAL calculation)
+    final route = await _calculateRouteLocally(
+      from: currentLocation,
+      to: (targetLat, targetLng),
+      agentId: agentId, // Privacy-preserved
+    );
+    
+    // Render AR overlay (LOCAL rendering)
+    return AROverlay(
+      route: route,
+      targetSpot: spot,
+      // All rendering happens on-device
+      // No location data transmitted
+    );
+  }
+}
+```
+
+### **Privacy Guarantees:**
+
+**✅ Exact Coordinates Stay Local:**
+- Spot's `check_in_config` coordinates used only on-device
+- Never transmitted to server or AI2AI mesh
+- AR rendering happens locally
+
+**✅ AgentId for Routing:**
+- Navigation uses `agentId` (not `userId`)
+- Cannot be linked back to personal information
+- Privacy-preserved identifier
+
+**✅ AI2AI Mesh (If Needed):**
+- Location obfuscated to city-level (~1km precision)
+- Differential privacy noise added
+- Home location never shared
+
+**✅ VPN Layer:**
+- All network traffic encrypted
+- IP address hidden
+- Additional privacy protection
+
+### **Implementation Flow:**
+
+```
+User Opens AR Navigation
+    ↓
+Get Spot's check_in_config (exact coordinates)
+    ↓
+Get User's Current Location (LOCAL GPS, on-device)
+    ↓
+Calculate Route (LOCAL calculation, on-device)
+    ↓
+Render AR Overlay (LOCAL rendering, on-device)
+    ↓
+[Optional] AI2AI Mesh Assistance
+    ├─ Obfuscate location to city-level
+    ├─ Use agentId (not userId)
+    ├─ Route through VPN
+    └─ Get routing hints (not exact route)
+    ↓
+Display AR Directions (LOCAL, on-device)
+```
+
+### **Integration Points:**
+
+- ✅ **Spot's `check_in_config`:** Provides exact coordinates for navigation
+- ✅ **AgentId System:** Privacy-preserved routing identifier
+- ✅ **LocationObfuscationService:** Obfuscates location for mesh (if needed)
+- ✅ **VPN/Proxy Plans:** Additional privacy layer
+- ✅ **AR Glasses Support:** Existing plans for Apple Vision Pro, Meta Quest, etc.
+- ✅ **Reservation System:** Phase 15 integration with spot check-in config
+
+### **Future Implementation Requirements:**
+
+1. **AR Navigation Service:**
+   - `ARNavigationService` - Route calculation using spot's check-in config
+   - `ARLensService` - AR overlay rendering
+   - Local route calculation (on-device)
+   - AR rendering (on-device)
+
+2. **Privacy Integration:**
+   - AgentId-based routing (not userId)
+   - Location obfuscation for mesh assistance
+   - VPN integration for network traffic
+   - Local processing (no server calls)
+
+3. **AR Glasses Integration:**
+   - ARKit/ARCore for AR rendering
+   - Eye tracking for gaze-based navigation
+   - Hand tracking for interaction
+   - Spatial mapping for accurate positioning
+
+4. **Reservation Integration:**
+   - Use spot's `check_in_config` for exact coordinates
+   - Link to reservation system (Phase 15)
+   - Show reservation context in AR overlay
+   - Privacy-preserved check-in integration
+
+### **Benefits:**
+
+**For Users:**
+- ✅ **Seamless Navigation:** AR directions to exact check-in location
+- ✅ **Privacy-Preserved:** Exact coordinates stay local, agentId for routing
+- ✅ **Offline Support:** Local route calculation works offline
+- ✅ **Visual Guidance:** AR overlay shows exact path to spot
+
+**For System:**
+- ✅ **Single Source of Truth:** Uses spot's `check_in_config` (no duplicate storage)
+- ✅ **Privacy-First:** Multiple privacy layers (agentId, obfuscation, VPN)
+- ✅ **Performance:** Local processing (fast, no network latency)
+- ✅ **Consistency:** Same check-in config used for navigation and check-in
+
+### **Related Documentation:**
+- **Reservation System:** `docs/plans/reservations/RESERVATION_SYSTEM_IMPLEMENTATION_PLAN.md`
+- **Spots System:** `docs/plans/spots/SPOTS_SYSTEM_COMPREHENSIVE_ORGANIZATION.md`
+- **Privacy Architecture:** `docs/security/SECURITY_ARCHITECTURE.md`
+- **VPN/Proxy Plans:** `docs/plans/white_label/WHITE_LABEL_VPN_PROXY_PLAN.md`
+
+---
+
 **Status:** 🟢 Active - Ready for Implementation  
-**Last Updated:** December 9, 2025  
+**Last Updated:** January 6, 2026 (AR Navigation Integration Added)  
 **Next Review:** After Phase 1 completion

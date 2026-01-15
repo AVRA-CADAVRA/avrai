@@ -2,10 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:avrai/core/models/payment_status.dart';
 
 /// Payment Intent Model
-/// 
+///
 /// Represents a Stripe payment intent for event ticket purchases.
 /// Stores payment intent data from Stripe API.
-/// 
+///
 /// **Usage:**
 /// ```dart
 /// final paymentIntent = PaymentIntent(
@@ -20,36 +20,41 @@ import 'package:avrai/core/models/payment_status.dart';
 class PaymentIntent extends Equatable {
   /// Stripe payment intent ID
   final String id;
-  
+
   /// Client secret for confirming payment
   final String clientSecret;
-  
+
   /// Amount in cents (e.g., 2500 for $25.00)
   final int amount;
-  
+
   /// Currency code (e.g., 'usd', 'eur')
   final String currency;
-  
+
   /// Current payment intent status
   final PaymentStatus status;
-  
+
   /// When payment intent was created
   final DateTime createdAt;
-  
+
   /// When payment intent was last updated
   final DateTime? updatedAt;
-  
+
   /// Payment method ID (if payment method attached)
   final String? paymentMethodId;
-  
+
   /// Event ID this payment intent is for
   final String? eventId;
-  
+
   /// User ID who initiated the payment
   final String? userId;
-  
+
   /// Optional metadata
   final Map<String, dynamic> metadata;
+
+  /// Capture method for payment intent (Phase 4: Payment holds)
+  /// - 'automatic': Charge immediately (default)
+  /// - 'manual': Hold payment, capture later (for limited seats/tickets)
+  final String? captureMethod;
 
   const PaymentIntent({
     required this.id,
@@ -63,6 +68,7 @@ class PaymentIntent extends Equatable {
     this.eventId,
     this.userId,
     this.metadata = const {},
+    this.captureMethod, // Phase 4: Payment holds
   });
 
   /// Create a copy with updated fields
@@ -78,6 +84,7 @@ class PaymentIntent extends Equatable {
     String? eventId,
     String? userId,
     Map<String, dynamic>? metadata,
+    String? captureMethod, // Phase 4: Payment holds
   }) {
     return PaymentIntent(
       id: id ?? this.id,
@@ -91,6 +98,7 @@ class PaymentIntent extends Equatable {
       eventId: eventId ?? this.eventId,
       userId: userId ?? this.userId,
       metadata: metadata ?? this.metadata,
+      captureMethod: captureMethod ?? this.captureMethod,
     );
   }
 
@@ -108,6 +116,7 @@ class PaymentIntent extends Equatable {
       'eventId': eventId,
       'userId': userId,
       'metadata': metadata,
+      'captureMethod': captureMethod, // Phase 4: Payment holds
     };
   }
 
@@ -127,6 +136,7 @@ class PaymentIntent extends Equatable {
       eventId: json['eventId'] as String?,
       userId: json['userId'] as String?,
       metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
+      captureMethod: json['captureMethod'] as String?, // Phase 4: Payment holds
     );
   }
 
@@ -151,7 +161,7 @@ class PaymentIntent extends Equatable {
         paymentMethodId,
         eventId,
         userId,
+        captureMethod, // Phase 4: Payment holds
         metadata,
       ];
 }
-

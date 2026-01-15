@@ -93,7 +93,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ///
   /// The app supports logging in using either:
   /// - an email (`user@example.com`)
-  /// - a username (`reis`) which maps to a deterministic dev email (`reis@spots.app`)
+  /// - a username (`reis`) which maps to a deterministic dev email (`reis@avrai.app`)
   ///
   /// This keeps the backend auth model simple (email+password) while allowing a
   /// friendlier UX on the login page.
@@ -102,7 +102,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (v.isEmpty) return v;
     if (v.contains('@')) return v;
     final safe = v.toLowerCase().replaceAll(RegExp(r'\s+'), '');
-    return '$safe@spots.app';
+    return '$safe@avrai.app';
   }
 
   Future<void> _onSignInRequested(
@@ -163,10 +163,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final isOffline = user.isOnline == false;
         emit(Authenticated(user: user, isOffline: isOffline));
       } else {
-        emit(AuthError('Failed to create account'));
+        emit(AuthError(
+            'Failed to create account. Please check your connection and try again.'));
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      _logger.error('🔐 AuthBloc: Sign up error', error: e, tag: 'AuthBloc');
+      // Extract user-friendly error message
+      final errorMessage = e.toString().replaceFirst('Exception: ', '');
+      emit(AuthError(
+          errorMessage.isEmpty ? 'Failed to create account' : errorMessage));
     }
   }
 

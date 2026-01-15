@@ -10,14 +10,14 @@ class SembastSeeder {
     try {
       // Use batch operations for better performance
       final db = await SembastDatabase.database;
-      
+
       // Batch all operations
       await db.transaction((txn) async {
         await _seedUsersBatch(txn);
         await _seedSpotsBatch(txn);
         await _seedListsBatch(txn);
       });
-      
+
       developer.log('Database seeded successfully', name: 'SembastSeeder');
     } catch (e) {
       developer.log('Error seeding database: $e', name: 'SembastSeeder');
@@ -30,7 +30,7 @@ class SembastSeeder {
     final now = DateTime.now();
     final demoUser = User(
       id: 'demo-user-1',
-      email: 'demo@spots.com',
+      email: 'demo@avrai.app',
       name: 'Demo User',
       displayName: 'Demo User',
       role: UserRole.user,
@@ -42,25 +42,74 @@ class SembastSeeder {
     // Add expertiseMap to make demo user an expert in everything
     final userJson = demoUser.toJson();
     final allCategories = [
-      'Coffee', 'Restaurants', 'Bars', 'Pastry', 'Wine', 'Cocktails',
-      'Food', 'Dining', 'Retail', 'Shopping', 'Hospitality', 'Service',
-      'Art', 'Music', 'Outdoor', 'Fitness', 'Books', 'Tech', 'Wellness', 'Travel',
-      'Parks', 'Bookstores', 'Museums', 'Theaters', 'Live Music', 'Sports',
-      'Shopping', 'Fashion', 'Vintage', 'Markets', 'Food Trucks', 'Bakeries',
-      'Ice Cream', 'Wine Bars', 'Craft Beer', 'Vegan/Vegetarian', 'Pizza',
-      'Sushi', 'BBQ', 'Mexican', 'Italian', 'Thai', 'Indian', 'Mediterranean',
-      'Korean', 'Hiking Trails', 'Beaches', 'Gardens', 'Botanical Gardens',
-      'Nature Reserves', 'Camping', 'Fishing', 'Kayaking', 'Biking Trails',
-      'Bird Watching', 'Stargazing', 'Picnic Spots', 'Waterfalls', 'Scenic Views',
+      'Coffee',
+      'Restaurants',
+      'Bars',
+      'Pastry',
+      'Wine',
+      'Cocktails',
+      'Food',
+      'Dining',
+      'Retail',
+      'Shopping',
+      'Hospitality',
+      'Service',
+      'Art',
+      'Music',
+      'Outdoor',
+      'Fitness',
+      'Books',
+      'Tech',
+      'Wellness',
+      'Travel',
+      'Parks',
+      'Bookstores',
+      'Museums',
+      'Theaters',
+      'Live Music',
+      'Sports',
+      'Shopping',
+      'Fashion',
+      'Vintage',
+      'Markets',
+      'Food Trucks',
+      'Bakeries',
+      'Ice Cream',
+      'Wine Bars',
+      'Craft Beer',
+      'Vegan/Vegetarian',
+      'Pizza',
+      'Sushi',
+      'BBQ',
+      'Mexican',
+      'Italian',
+      'Thai',
+      'Indian',
+      'Mediterranean',
+      'Korean',
+      'Hiking Trails',
+      'Beaches',
+      'Gardens',
+      'Botanical Gardens',
+      'Nature Reserves',
+      'Camping',
+      'Fishing',
+      'Kayaking',
+      'Biking Trails',
+      'Bird Watching',
+      'Stargazing',
+      'Picnic Spots',
+      'Waterfalls',
+      'Scenic Views',
     ];
-    
+
     final expertiseMap = <String, String>{};
     for (final category in allCategories) {
       expertiseMap[category] = 'universal'; // Highest expertise level
     }
-    
+
     userJson['expertiseMap'] = expertiseMap;
-    
+
     await store.record(demoUser.id).put(db, userJson);
   }
 

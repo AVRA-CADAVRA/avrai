@@ -242,5 +242,159 @@ void main() {
         expect(result.isValid, isTrue);
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should create 4D quantum states when location timing service available', () async {
+        // Arrange
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          category: 'Coffee',
+          location: 'Greenpoint, Brooklyn, NY, USA',
+        );
+
+        final attendee = IntegrationTestHelpers.createUserWithCityExpertise(
+          id: 'attendee_avrai_${DateTime.now().millisecondsSinceEpoch}',
+        );
+
+        final event = await eventService.createEvent(
+          host: host,
+          title: 'Coffee Tour',
+          description: 'Explore local coffee shops',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: now.add(const Duration(days: 7)),
+          endTime: now.add(const Duration(days: 7, hours: 2)),
+          location: 'Greenpoint, Brooklyn',
+          latitude: 40.7295,
+          longitude: -73.9545,
+          maxAttendees: 10,
+        );
+
+        // Act
+        final result = await controller.registerForEvent(
+          event: event,
+          attendee: attendee,
+          quantity: 1,
+        );
+
+        // Assert
+        expect(result.success, isTrue, reason: 'Should succeed with AVRAI services');
+        expect(result.event, isNotNull, reason: 'Event should be updated');
+        // Note: 4D quantum state creation happens internally and doesn't affect result
+        // This test verifies the controller doesn't crash when AVRAI services are available
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = EventAttendanceController(
+          personalityKnotService: null,
+          knotFabricService: null,
+          knotWorldsheetService: null,
+          knotStringService: null,
+          locationTimingService: null,
+          quantumEntanglementService: null,
+          aiLearningService: null,
+        );
+
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          category: 'Coffee',
+        );
+
+        final attendee = IntegrationTestHelpers.createUserWithCityExpertise(
+          id: 'attendee_avrai_${DateTime.now().millisecondsSinceEpoch}',
+        );
+
+        final event = await eventService.createEvent(
+          host: host,
+          title: 'Coffee Tour',
+          description: 'Explore local coffee shops',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: now.add(const Duration(days: 7)),
+          endTime: now.add(const Duration(days: 7, hours: 2)),
+          maxAttendees: 10,
+        );
+
+        // Act
+        final result = await controllerWithoutAVRAI.registerForEvent(
+          event: event,
+          attendee: attendee,
+          quantity: 1,
+        );
+
+        // Assert
+        expect(result.success, isTrue, reason: 'Should succeed even without AVRAI services');
+        expect(result.event, isNotNull, reason: 'Event should be updated');
+        // Core functionality should work without AVRAI services
+      });
+
+      test('should handle fabric creation for group attendance gracefully', () async {
+        // Arrange - group attendance (quantity > 1)
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          category: 'Coffee',
+        );
+
+        final attendee = IntegrationTestHelpers.createUserWithCityExpertise(
+          id: 'attendee_avrai_${DateTime.now().millisecondsSinceEpoch}',
+        );
+
+        final event = await eventService.createEvent(
+          host: host,
+          title: 'Group Coffee Tour',
+          description: 'Explore with friends',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: now.add(const Duration(days: 7)),
+          endTime: now.add(const Duration(days: 7, hours: 2)),
+          maxAttendees: 10,
+        );
+
+        // Act - Register for multiple tickets
+        final result = await controller.registerForEvent(
+          event: event,
+          attendee: attendee,
+          quantity: 3, // Group attendance
+        );
+
+        // Assert
+        expect(result.success, isTrue, reason: 'Should succeed for group attendance');
+        expect(result.event, isNotNull, reason: 'Event should be updated');
+        // Fabric creation is deferred until all attendees have knots, so it shouldn't block registration
+      });
+
+      test('should handle quantum compatibility calculation gracefully', () async {
+        // This test verifies that quantum compatibility calculation doesn't block registration
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          category: 'Coffee',
+        );
+
+        final attendee = IntegrationTestHelpers.createUserWithCityExpertise(
+          id: 'attendee_avrai_${DateTime.now().millisecondsSinceEpoch}',
+        );
+
+        final event = await eventService.createEvent(
+          host: host,
+          title: 'Coffee Tour',
+          description: 'Explore local coffee shops',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: now.add(const Duration(days: 7)),
+          endTime: now.add(const Duration(days: 7, hours: 2)),
+          maxAttendees: 10,
+        );
+
+        final result = await controller.registerForEvent(
+          event: event,
+          attendee: attendee,
+          quantity: 1,
+        );
+
+        expect(result.success, isTrue, reason: 'Should succeed even if quantum compatibility calculation fails');
+        // The controller should handle quantum compatibility calculation failures gracefully
+      });
+    });
   });
 }

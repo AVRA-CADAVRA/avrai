@@ -3,17 +3,26 @@ import 'package:avrai/core/models/spot.dart';
 import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/category_colors.dart';
 import 'package:avrai/presentation/widgets/common/source_indicator_widget.dart';
+import 'package:avrai/presentation/widgets/reservations/spot_reservation_badge_widget.dart';
 
 class SpotCard extends StatelessWidget {
   final Spot spot;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool? isReservationAvailable;
+  final bool? hasExistingReservation;
+  final int? availableCapacity;
+  final VoidCallback? onReservationTap;
 
   const SpotCard({
     super.key,
     required this.spot,
     this.onTap,
     this.trailing,
+    this.isReservationAvailable,
+    this.hasExistingReservation,
+    this.availableCapacity,
+    this.onReservationTap,
   });
 
   @override
@@ -58,10 +67,27 @@ class SpotCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            SourceIndicatorWidget(
-              indicator: spot.getSourceIndicator(),
-              compact: true,
-              showWarning: false,
+            Row(
+              children: [
+                Expanded(
+                  child: SourceIndicatorWidget(
+                    indicator: spot.getSourceIndicator(),
+                    compact: true,
+                    showWarning: false,
+                  ),
+                ),
+                if (isReservationAvailable != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: SpotReservationBadgeWidget(
+                      isAvailable: isReservationAvailable!,
+                      hasExistingReservation: hasExistingReservation ?? false,
+                      availableCapacity: availableCapacity,
+                      compact: true,
+                      onTap: onReservationTap,
+                    ),
+                  ),
+              ],
             ),
           ],
         ),

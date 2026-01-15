@@ -23,9 +23,9 @@ import 'package:avrai/presentation/widgets/common/page_transitions.dart';
 
 /// Event Details Page
 /// Agent 2: Event Discovery & Hosting UI (Phase 1, Section 1)
-/// 
+///
 /// CRITICAL: Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// Features:
 /// - Full event information display
 /// - Registration button (free events)
@@ -47,8 +47,10 @@ class EventDetailsPage extends StatefulWidget {
 
 class _EventDetailsPageState extends State<EventDetailsPage> {
   final ExpertiseEventService _eventService = ExpertiseEventService();
-  final EventAttendanceController _attendanceController = GetIt.instance<EventAttendanceController>();
-  final PartnershipService _partnershipService = GetIt.instance<PartnershipService>();
+  final EventAttendanceController _attendanceController =
+      GetIt.instance<EventAttendanceController>();
+  final PartnershipService _partnershipService =
+      GetIt.instance<PartnershipService>();
   final FraudDetectionService _fraudService = FraudDetectionService(
     eventService: ExpertiseEventService(),
   );
@@ -73,7 +75,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   Future<void> _checkFraudStatus() async {
     try {
       final fraudScore = await _fraudService.getFraudScore(_currentEvent!.id);
-      if (fraudScore != null && (fraudScore.isHighRisk || fraudScore.requiresReview)) {
+      if (fraudScore != null &&
+          (fraudScore.isHighRisk || fraudScore.requiresReview)) {
         setState(() {
           _hasFraudFlag = true;
           _fraudRiskScore = fraudScore.riskScore;
@@ -86,7 +89,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
   Future<void> _checkPartnerships() async {
     try {
-      final partnerships = await _partnershipService.getPartnershipsForEvent(_currentEvent!.id);
+      final partnerships =
+          await _partnershipService.getPartnershipsForEvent(_currentEvent!.id);
       setState(() {
         _hasPartnerships = partnerships.isNotEmpty;
       });
@@ -124,7 +128,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       }
 
       final user = authState.user;
-      
+
       // Convert User to UnifiedUser (minimal conversion for now)
       final unifiedUser = UnifiedUser(
         id: user.id,
@@ -191,7 +195,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       if (authState is! Authenticated) return;
 
       final user = authState.user;
-      
+
       final unifiedUser = UnifiedUser(
         id: user.id,
         email: user.email,
@@ -202,12 +206,13 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       );
 
       await _eventService.cancelRegistration(_currentEvent!, unifiedUser);
-      
+
       final updatedEvent = _currentEvent!.copyWith(
-        attendeeIds: _currentEvent!.attendeeIds.where((id) => id != user.id).toList(),
+        attendeeIds:
+            _currentEvent!.attendeeIds.where((id) => id != user.id).toList(),
         attendeeCount: _currentEvent!.attendeeCount - 1,
       );
-      
+
       setState(() {
         _currentEvent = updatedEvent;
         _isRegistered = false;
@@ -233,7 +238,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   Future<void> _loadEvents() async {
     // Reload event data after cancellation
     try {
-      final updatedEvent = await _eventService.getEventById(_currentEvent?.id ?? widget.event.id);
+      final updatedEvent = await _eventService
+          .getEventById(_currentEvent?.id ?? widget.event.id);
       if (updatedEvent != null) {
         setState(() {
           _currentEvent = updatedEvent;
@@ -247,7 +253,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
   void _handlePurchaseTicket() {
     if (_currentEvent == null) return;
-    
+
     // Navigate to checkout page with smooth transition
     Navigator.push(
       context,
@@ -274,7 +280,7 @@ Hosted by ${event.host.displayName ?? event.host.email}
 
 ${event.getEventTypeDisplayName()} - ${event.category}
 
-Join me on SPOTS!
+Join me on avrai!
 SPOTS - know you belong.''';
 
     SharePlus.instance.share(ShareParams(
@@ -289,22 +295,22 @@ SPOTS - know you belong.''';
     final event = _currentEvent!;
     final startTime = event.startTime;
     final endTime = event.endTime;
-    
+
     // Format: YYYYMMDDTHHmmssZ
     final startStr = _formatCalendarDate(startTime);
     final endStr = _formatCalendarDate(endTime);
-    
+
     final title = Uri.encodeComponent(event.title);
     final description = Uri.encodeComponent(event.description);
     final location = Uri.encodeComponent(event.location ?? '');
-    
+
     // Create Google Calendar URL
     final url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
         '&text=$title'
         '&dates=$startStr/$endStr'
         '&details=$description'
         '&location=$location';
-    
+
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -352,7 +358,7 @@ SPOTS - know you belong.''';
     final duration = end.difference(start);
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
-    
+
     if (hours > 0 && minutes > 0) {
       return '$hours hour${hours > 1 ? 's' : ''} $minutes minute${minutes > 1 ? 's' : ''}';
     } else if (hours > 0) {
@@ -447,11 +453,14 @@ SPOTS - know you belong.''';
                       decoration: BoxDecoration(
                         color: AppTheme.warningColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.warningColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color:
+                                AppTheme.warningColor.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.warning, color: AppTheme.warningColor, size: 20),
+                          Icon(Icons.warning,
+                              color: AppTheme.warningColor, size: 20),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -518,7 +527,7 @@ SPOTS - know you belong.''';
                   _buildDetailRow(
                     icon: Icons.attach_money,
                     label: 'Price',
-                    value: event.isPaid 
+                    value: event.isPaid
                         ? '\$${event.price?.toStringAsFixed(2) ?? '0.00'}'
                         : 'Free',
                   ),
@@ -558,7 +567,8 @@ SPOTS - know you belong.''';
                         child: event.host.photoUrl != null
                             ? Image.network(event.host.photoUrl!)
                             : Text(
-                                (event.host.displayName ?? event.host.email)[0].toUpperCase(),
+                                (event.host.displayName ?? event.host.email)[0]
+                                    .toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: AppColors.textPrimary,
@@ -578,7 +588,8 @@ SPOTS - know you belong.''';
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            if (event.host.expertiseMap.containsKey(event.category)) ...[
+                            if (event.host.expertiseMap
+                                .containsKey(event.category)) ...[
                               const SizedBox(height: 4),
                               Text(
                                 '${event.category} Expert',
@@ -611,15 +622,18 @@ SPOTS - know you belong.''';
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
-                          leading: const Icon(Icons.place, color: AppTheme.primaryColor),
+                          leading: const Icon(Icons.place,
+                              color: AppTheme.primaryColor),
                           title: Text(
                             spot.name,
-                            style: const TextStyle(color: AppColors.textPrimary),
+                            style:
+                                const TextStyle(color: AppColors.textPrimary),
                           ),
                           subtitle: spot.address != null
                               ? Text(
                                   spot.address!,
-                                  style: const TextStyle(color: AppColors.textSecondary),
+                                  style: const TextStyle(
+                                      color: AppColors.textSecondary),
                                 )
                               : null,
                           tileColor: AppColors.grey100,
@@ -646,7 +660,9 @@ SPOTS - know you belong.''';
             ),
 
             // Success Dashboard (for completed events, hosts only)
-            if (userId != null && event.host.id == userId && event.status == EventStatus.completed) ...[
+            if (userId != null &&
+                event.host.id == userId &&
+                event.status == EventStatus.completed) ...[
               Container(
                 padding: const EdgeInsets.all(20),
                 color: AppColors.surface,
@@ -753,10 +769,13 @@ SPOTS - know you belong.''';
                               ).then((_) => _checkPartnerships());
                             },
                             icon: const Icon(Icons.add),
-                            label: Text(_hasPartnerships ? 'Add Partner' : 'Propose Partnership'),
+                            label: Text(_hasPartnerships
+                                ? 'Add Partner'
+                                : 'Propose Partnership'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppTheme.primaryColor,
-                              side: const BorderSide(color: AppTheme.primaryColor),
+                              side: const BorderSide(
+                                  color: AppTheme.primaryColor),
                             ),
                           ),
                         ),
@@ -768,7 +787,8 @@ SPOTS - know you belong.''';
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const PartnershipManagementPage(),
+                                    builder: (context) =>
+                                        const PartnershipManagementPage(),
                                   ),
                                 );
                               },
@@ -797,43 +817,51 @@ SPOTS - know you belong.''';
                   // Registration/Purchase Button
                   if (_isRegistered)
                     OutlinedButton.icon(
-                      onPressed: _isLoading ? null : () {
-                        // Navigate to cancellation flow for paid events, or cancel directly for free events
-                        if (event.isPaid) {
-                          Navigator.push(
-                            context,
-                            PageTransitions.slideFromRight(
-                              CancellationFlowPage(
-                                event: event,
-                                isHost: false,
-                              ),
-                            ),
-                          ).then((_) => _loadEvents());
-                        } else {
-                          _cancelRegistration();
-                        }
-                      },
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              // Navigate to cancellation flow for paid events, or cancel directly for free events
+                              if (event.isPaid) {
+                                Navigator.push(
+                                  context,
+                                  PageTransitions.slideFromRight(
+                                    CancellationFlowPage(
+                                      event: event,
+                                      isHost: false,
+                                    ),
+                                  ),
+                                ).then((_) => _loadEvents());
+                              } else {
+                                _cancelRegistration();
+                              }
+                            },
                       icon: const Icon(Icons.cancel),
-                      label: Text(event.isPaid ? 'Cancel Ticket' : 'Cancel Registration'),
+                      label: Text(event.isPaid
+                          ? 'Cancel Ticket'
+                          : 'Cancel Registration'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.error,
                         minimumSize: const Size(double.infinity, 48),
                       ),
                     )
                   // Host cancellation button
-                  else if (userId != null && event.host.id == userId && event.status != EventStatus.cancelled)
+                  else if (userId != null &&
+                      event.host.id == userId &&
+                      event.status != EventStatus.cancelled)
                     OutlinedButton.icon(
-                      onPressed: _isLoading ? null : () {
-                        Navigator.push(
-                          context,
-                          PageTransitions.slideFromRight(
-                            CancellationFlowPage(
-                              event: event,
-                              isHost: true,
-                            ),
-                          ),
-                        ).then((_) => _loadEvents());
-                      },
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                PageTransitions.slideFromRight(
+                                  CancellationFlowPage(
+                                    event: event,
+                                    isHost: true,
+                                  ),
+                                ),
+                              ).then((_) => _loadEvents());
+                            },
                       icon: const Icon(Icons.cancel),
                       label: const Text('Cancel Event'),
                       style: OutlinedButton.styleFrom(
@@ -861,7 +889,9 @@ SPOTS - know you belong.''';
                     )
                   else if (event.isPaid)
                     ElevatedButton.icon(
-                      onPressed: _isLoading || !canRegister ? null : _handlePurchaseTicket,
+                      onPressed: _isLoading || !canRegister
+                          ? null
+                          : _handlePurchaseTicket,
                       icon: const Icon(Icons.payment),
                       label: Text(
                         'Purchase Ticket - \$${event.price?.toStringAsFixed(2) ?? '0.00'}',
@@ -874,7 +904,8 @@ SPOTS - know you belong.''';
                     )
                   else
                     ElevatedButton.icon(
-                      onPressed: _isLoading || !canRegister ? null : _registerForEvent,
+                      onPressed:
+                          _isLoading || !canRegister ? null : _registerForEvent,
                       icon: const Icon(Icons.event_available),
                       label: const Text('Register for Event'),
                       style: ElevatedButton.styleFrom(
@@ -931,7 +962,9 @@ SPOTS - know you belong.''';
                   ),
 
                   // Dispute Link (for attendees)
-                  if (userId != null && _isRegistered && event.host.id != userId) ...[
+                  if (userId != null &&
+                      _isRegistered &&
+                      event.host.id != userId) ...[
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
                       onPressed: () {
@@ -1038,4 +1071,3 @@ SPOTS - know you belong.''';
     );
   }
 }
-

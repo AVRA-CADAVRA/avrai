@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:avrai/core/models/expertise_event.dart';
 import 'package:avrai/core/models/unified_user.dart';
-import 'package:avrai/core/services/expertise_event_service.dart';
+import 'package:avrai/core/controllers/event_creation_controller.dart';
 import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/app_theme.dart';
 import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
+import 'package:get_it/get_it.dart';
 
 /// Community Event Creation Form Page
 /// Agent 2: Frontend & UX Specialist (Phase 6, Week 28)
@@ -28,7 +29,8 @@ class _CreateCommunityEventPageState extends State<CreateCommunityEventPage> {
   final _formKey = GlobalKey<FormState>();
   
   // TODO: Replace with CommunityEventService when Agent 1 creates it
-  final _eventService = ExpertiseEventService();
+  // Using EventCreationController for now
+  late final EventCreationController _eventCreationController;
   
   // Form fields
   final _titleController = TextEditingController();
@@ -67,6 +69,7 @@ class _CreateCommunityEventPageState extends State<CreateCommunityEventPage> {
   @override
   void initState() {
     super.initState();
+    _eventCreationController = GetIt.instance<EventCreationController>();
     _loadUserData();
   }
 
@@ -282,11 +285,9 @@ class _CreateCommunityEventPageState extends State<CreateCommunityEventPage> {
         return;
       }
 
-      // TODO: Replace with CommunityEventService.createCommunityEvent() when Agent 1 creates it
-      // For now, create a placeholder event
+      // Use EventCreationController for event creation
       // Community events: price must be null or 0.0, isPaid must be false, isPublic must be true
-      final event = await _eventService.createEvent(
-        host: _currentUser!,
+      final formData = EventFormData(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _selectedCategory!,
@@ -299,22 +300,43 @@ class _CreateCommunityEventPageState extends State<CreateCommunityEventPage> {
         isPublic: true, // Community events must be public
       );
 
+      final result = await _eventCreationController.createEvent(
+        formData: formData,
+        host: _currentUser!,
+      );
+
       setState(() {
         _isLoading = false;
       });
 
-      if (mounted) {
+      if (!result.isSuccess) {
+        setState(() {
+          _error = result.error ?? 'Failed to create community event';
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_error!),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted && result.event != null) {
         // Show success and navigate back
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Community event "${event.title}" created successfully!'),
+            content: Text('Community event "${result.event!.title}" created successfully!'),
             backgroundColor: AppTheme.successColor,
             duration: const Duration(seconds: 3),
           ),
         );
         
         // Navigate back
-        Navigator.pop(context, event);
+        Navigator.pop(context, result.event);
       }
     } catch (e) {
       setState(() {

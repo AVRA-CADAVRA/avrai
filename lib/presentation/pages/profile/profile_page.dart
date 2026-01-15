@@ -36,7 +36,7 @@ import 'package:avrai/presentation/pages/knot/knot_meditation_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
-  
+
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -48,7 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
   KnotStorageService? _knotStorageService;
   DynamicKnotService? _dynamicKnotService;
   WearableDataService? _wearableDataService;
-  
+
   DynamicKnot? _dynamicKnot;
   bool _isLoadingKnot = false;
 
@@ -101,7 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
   }
-  
+
   Future<void> _loadDynamicKnot() async {
     final authState = context.read<AuthBloc>().state;
     if (authState is! Authenticated) return;
@@ -112,24 +112,24 @@ class _ProfilePageState extends State<ProfilePage> {
         _wearableDataService == null) {
       return;
     }
-    
+
     setState(() {
       _isLoadingKnot = true;
     });
-    
+
     try {
       final userId = authState.user.id;
       final agentId = await _agentIdService!.getUserAgentId(userId);
-      
+
       // Load knot from storage
       final knot = await _knotStorageService!.loadKnot(agentId);
-      
+
       if (knot != null) {
         // Get mood/energy/stress from wearables, fallback to defaults
         final mood = await _wearableDataService!.getCurrentMood();
         final energy = await _wearableDataService!.getCurrentEnergy();
         final stress = await _wearableDataService!.getCurrentStress();
-        
+
         // Create dynamic knot
         final dynamicKnot = _dynamicKnotService!.updateKnotWithCurrentState(
           baseKnot: knot,
@@ -137,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
           energy: energy,
           stress: stress,
         );
-        
+
         if (mounted) {
           setState(() {
             _dynamicKnot = dynamicKnot;
@@ -165,7 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,7 +194,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 const SizedBox(
                                   width: 60,
                                   height: 60,
-                                  child: Center(child: CircularProgressIndicator()),
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
                                 )
                               else if (_dynamicKnot != null)
                                 DynamicKnotWidget(
@@ -302,7 +303,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const KnotMeditationPage(),
+                                    builder: (context) =>
+                                        const KnotMeditationPage(),
                                   ),
                                 );
                               },
@@ -315,15 +317,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'Knot Meditation',
-                                          style: Theme.of(context).textTheme.titleMedium,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium,
                                         ),
                                         Text(
                                           'Breathe with your personality knot',
-                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
                                                 color: AppTheme.offlineColor,
                                               ),
                                         ),
@@ -424,7 +432,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     context,
                     icon: Icons.radar,
                     title: 'Device Discovery',
-                    subtitle: 'View nearby SPOTS-enabled devices',
+                    subtitle: 'View nearby avrai-enabled devices',
                     onTap: () {
                       context.go('/device-discovery');
                     },

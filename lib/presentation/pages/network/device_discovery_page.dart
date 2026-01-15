@@ -1,18 +1,18 @@
 /// Device Discovery Status Page
-/// 
+///
 /// Part of Feature Matrix Phase 1: Critical UI/UX
 /// Section 1.2: Device Discovery UI
-/// 
+///
 /// Shows device discovery status and lists discovered devices nearby.
 /// Users can see what SPOTS-enabled devices are in their proximity.
-/// 
+///
 /// Features:
 /// - Discovery status (on/off)
 /// - List of discovered devices
 /// - Connection status indicators
 /// - Real-time updates
 /// - Privacy-preserving device info
-/// 
+///
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 library;
 
@@ -26,7 +26,7 @@ import 'package:go_router/go_router.dart';
 /// Page displaying device discovery status and discovered devices
 class DeviceDiscoveryPage extends StatefulWidget {
   const DeviceDiscoveryPage({super.key});
-  
+
   @override
   State<DeviceDiscoveryPage> createState() => _DeviceDiscoveryPageState();
 }
@@ -37,19 +37,19 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
   bool _isScanning = false;
   bool _isLoading = true;
   Timer? _refreshTimer;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeDiscovery();
   }
-  
+
   Future<void> _initializeDiscovery() async {
     try {
       _discoveryService = GetIt.instance<DeviceDiscoveryService>();
       await _refreshDevices();
       _startAutoRefresh();
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -60,7 +60,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       });
     }
   }
-  
+
   void _startAutoRefresh() {
     // Refresh device list every 3 seconds while page is active
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
@@ -69,10 +69,10 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       }
     });
   }
-  
+
   Future<void> _refreshDevices() async {
     if (_discoveryService == null) return;
-    
+
     final devices = _discoveryService!.getDiscoveredDevices();
     if (mounted) {
       setState(() {
@@ -80,29 +80,29 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       });
     }
   }
-  
+
   Future<void> _toggleDiscovery() async {
     if (_discoveryService == null) return;
-    
+
     setState(() {
       _isScanning = !_isScanning;
     });
-    
+
     if (_isScanning) {
       await _discoveryService!.startDiscovery();
     } else {
       _discoveryService!.stopDiscovery();
     }
-    
+
     await _refreshDevices();
   }
-  
+
   @override
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -115,7 +115,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
         ),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Device Discovery'),
@@ -147,7 +147,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       ),
     );
   }
-  
+
   Widget _buildDiscoveryStatusCard() {
     return Card(
       margin: const EdgeInsets.all(16),
@@ -164,14 +164,16 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _isScanning 
+                    color: _isScanning
                         ? AppColors.electricGreen.withValues(alpha: 0.1)
                         : AppColors.grey200,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _isScanning ? Icons.radar : Icons.radar_outlined,
-                    color: _isScanning ? AppColors.electricGreen : AppColors.textSecondary,
+                    color: _isScanning
+                        ? AppColors.electricGreen
+                        : AppColors.textSecondary,
                     size: 32,
                   ),
                 ),
@@ -190,8 +192,8 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _isScanning 
-                            ? 'Scanning for nearby SPOTS devices...'
+                        _isScanning
+                            ? 'Scanning for nearby avrai devices...'
                             : 'Tap to start discovering nearby devices',
                         style: const TextStyle(
                           fontSize: 14,
@@ -211,7 +213,8 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
                 icon: Icon(_isScanning ? Icons.stop : Icons.play_arrow),
                 label: Text(_isScanning ? 'Stop Discovery' : 'Start Discovery'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isScanning ? AppColors.error : AppColors.electricGreen,
+                  backgroundColor:
+                      _isScanning ? AppColors.error : AppColors.electricGreen,
                   foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -245,7 +248,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       ),
     );
   }
-  
+
   Widget _buildDevicesList() {
     if (!_isScanning) {
       return const Padding(
@@ -271,7 +274,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
         ),
       );
     }
-    
+
     if (_discoveredDevices.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -281,7 +284,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
               CircularProgressIndicator(),
               SizedBox(height: 16),
               Text(
-                'Searching for nearby SPOTS devices...',
+                'Searching for nearby avrai devices...',
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -292,7 +295,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
         ),
       );
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -319,12 +322,12 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       ],
     );
   }
-  
+
   Widget _buildDeviceCard(DiscoveredDevice device) {
     final proximityScore = device.proximityScore;
     final proximityColor = _getProximityColor(proximityScore);
     final proximityLabel = _getProximityLabel(proximityScore);
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
@@ -430,7 +433,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
       ),
     );
   }
-  
+
   IconData _getDeviceIcon(DeviceType type) {
     switch (type) {
       case DeviceType.wifi:
@@ -445,19 +448,19 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
         return Icons.web;
     }
   }
-  
+
   Color _getProximityColor(double score) {
     if (score >= 0.7) return AppColors.success;
     if (score >= 0.4) return AppColors.warning;
     return AppColors.error;
   }
-  
+
   String _getProximityLabel(double score) {
     if (score >= 0.7) return 'Very Close';
     if (score >= 0.4) return 'Nearby';
     return 'Far';
   }
-  
+
   void _showInfoDialog() {
     showDialog(
       context: context,
@@ -469,7 +472,7 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Device Discovery finds nearby SPOTS-enabled devices using:',
+                'Device Discovery finds nearby avrai-enabled devices using:',
                 style: TextStyle(fontWeight: FontWeight.w500),
               ),
               SizedBox(height: 12),
@@ -508,4 +511,3 @@ class _DeviceDiscoveryPageState extends State<DeviceDiscoveryPage> {
     );
   }
 }
-

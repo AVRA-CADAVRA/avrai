@@ -176,7 +176,7 @@ class _SupabaseTestPageState extends State<SupabaseTestPage> {
     final u = _currentUser;
     if (u == null) {
       setState(() {
-        _status = '❌ Sign in first to create SPOTS account';
+        _status = '❌ Sign in first to create avrai account';
       });
       return;
     }
@@ -201,13 +201,13 @@ class _SupabaseTestPageState extends State<SupabaseTestPage> {
       final res = await _data.createUser(profile);
       setState(() {
         _status = res.success
-            ? '✅ SPOTS account created'
+            ? '✅ avrai account created'
             : '❌ Create failed: ${res.error ?? 'unknown'}';
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _status = '❌ Create SPOTS account error: $e';
+        _status = '❌ Create avrai account error: $e';
         _isLoading = false;
       });
     }
@@ -218,7 +218,7 @@ class _SupabaseTestPageState extends State<SupabaseTestPage> {
     final u = _currentUser;
     if (u == null) {
       setState(() {
-        _status = '❌ Sign in first to load SPOTS account';
+        _status = '❌ Sign in first to load avrai account';
       });
       return;
     }
@@ -227,13 +227,13 @@ class _SupabaseTestPageState extends State<SupabaseTestPage> {
       final res = await _data.getUser(u.id);
       setState(() {
         _status = res.success && res.data != null
-            ? '✅ Loaded SPOTS account for ${res.data!.email}'
-            : '⚠️ No SPOTS account found';
+            ? '✅ Loaded avrai account for ${res.data!.email}'
+            : '⚠️ No avrai account found';
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _status = '❌ Load SPOTS account error: $e';
+        _status = '❌ Load avrai account error: $e';
         _isLoading = false;
       });
     }
@@ -512,7 +512,7 @@ class _SupabaseTestPageState extends State<SupabaseTestPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('SPOTS Account',
+                    Text('avrai Account',
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
                     Wrap(
@@ -530,7 +530,7 @@ class _SupabaseTestPageState extends State<SupabaseTestPage> {
                         ),
                         ElevatedButton(
                             onPressed: _isLoading ? null : _createSpotsAccount,
-                            child: const Text('Create SPOTS Account')),
+                            child: const Text('Create avrai Account')),
                         ElevatedButton(
                             onPressed: _isLoading ? null : _loadMySpotsAccount,
                             child: const Text('Load My Account')),

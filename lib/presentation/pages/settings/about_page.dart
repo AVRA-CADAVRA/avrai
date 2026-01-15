@@ -10,7 +10,7 @@ class AboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About SPOTS'),
+        title: const Text('About avrai'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -36,19 +36,19 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'SPOTS',
+                    'avrai',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'know you belong.',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.grey600,
-                      fontStyle: FontStyle.italic,
-                    ),
+                          color: AppColors.grey600,
+                          fontStyle: FontStyle.italic,
+                        ),
                   ),
                 ],
               ),
@@ -79,7 +79,7 @@ class AboutPage extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'SPOTS exists to help people find places, experiences, and communities where they truly feel at home—wherever they are. We believe everyone deserves to know they belong.',
+                      'avrai exists to help people find places, experiences, and communities where they truly feel at home—wherever they are. We believe everyone deserves to know they belong.',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 16,
@@ -95,8 +95,8 @@ class AboutPage extends StatelessWidget {
             Text(
               'Our Values',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -131,8 +131,8 @@ class AboutPage extends StatelessWidget {
             Text(
               'App Information',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -156,8 +156,8 @@ class AboutPage extends StatelessWidget {
             Text(
               'Key Features',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -202,8 +202,8 @@ class AboutPage extends StatelessWidget {
             Text(
               'Connect With Us',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -212,37 +212,37 @@ class AboutPage extends StatelessWidget {
                 children: [
                   _buildLinkTile(
                     'Website',
-                    'spots.app',
+                    'avrai.app',
                     Icons.web,
-                    () => _launchUrl('https://spots.app'),
+                    () => _launchUrl('https://avrai.app'),
                   ),
                   const Divider(height: 1),
                   _buildLinkTile(
                     'OUR_GUTS.md',
                     'Read our full philosophy',
                     Icons.favorite,
-                    () => _launchUrl('https://spots.app/our-guts'),
+                    () => _launchUrl('https://avrai.app/our-guts'),
                   ),
                   const Divider(height: 1),
                   _buildLinkTile(
                     'Privacy Policy',
                     'How we protect your data',
                     Icons.policy,
-                    () => _launchUrl('https://spots.app/privacy'),
+                    () => _launchUrl('https://avrai.app/privacy'),
                   ),
                   const Divider(height: 1),
                   _buildLinkTile(
                     'Terms of Service',
                     'Usage terms and conditions',
                     Icons.gavel,
-                    () => _launchUrl('https://spots.app/terms'),
+                    () => _launchUrl('https://avrai.app/terms'),
                   ),
                   const Divider(height: 1),
                   _buildLinkTile(
                     'Support',
                     'Get help and contact us',
                     Icons.support_agent,
-                    () => _launchEmail('support@spots.app'),
+                    () => _launchEmail('support@avrai.app'),
                   ),
                 ],
               ),
@@ -253,8 +253,8 @@ class AboutPage extends StatelessWidget {
             Text(
               'Legal',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -265,22 +265,22 @@ class AboutPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '© 2025 SPOTS Technologies, Inc.',
+                      '© 2025 avrai Technologies, Inc.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'All rights reserved. SPOTS and "know you belong" are trademarks of SPOTS Technologies, Inc.',
-                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                         color: AppColors.textSecondary,
-                       ),
+                      'All rights reserved. avrai and "know you belong" are trademarks of avrai Technologies, Inc.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Third-Party Licenses',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
@@ -317,7 +317,7 @@ class AboutPage extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'SPOTS is built with care by a team that believes technology should help people feel more connected to the places and communities around them.',
+                      'avrai is built with care by a team that believes technology should help people feel more connected to the places and communities around them.',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                       ),
@@ -340,7 +340,8 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildValueCard(String title, String description, IconData icon, Color color) {
+  Widget _buildValueCard(
+      String title, String description, IconData icon, Color color) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -402,7 +403,8 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkTile(String title, String subtitle, IconData icon, VoidCallback onTap) {
+  Widget _buildLinkTile(
+      String title, String subtitle, IconData icon, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: AppColors.grey600),
       title: Text(title),
@@ -415,7 +417,7 @@ class AboutPage extends StatelessWidget {
   void _showLicenses(BuildContext context) {
     showLicensePage(
       context: context,
-      applicationName: 'SPOTS',
+      applicationName: 'avrai',
       applicationVersion: '1.0.0',
       applicationIcon: Container(
         width: 48,
@@ -445,7 +447,7 @@ class AboutPage extends StatelessWidget {
       scheme: 'mailto',
       path: email,
     );
-    
+
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }

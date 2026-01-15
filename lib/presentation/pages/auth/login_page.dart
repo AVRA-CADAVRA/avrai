@@ -77,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'SPOTS',
+                        'avrai',
                         textAlign: TextAlign.center,
                         style:
                             Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -203,7 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                       // Demo login button
                       OutlinedButton(
                         onPressed: () {
-                          _emailController.text = 'demo@spots.com';
+                          _emailController.text = 'demo@avrai.app';
                           _passwordController.text = 'password123';
                           _handleLogin();
                         },

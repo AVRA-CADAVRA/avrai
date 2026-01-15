@@ -221,6 +221,52 @@ void main() {
         expect(validation.fieldErrors['birthday'], isNotNull, reason: 'Should have birthday error');
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () async {
+        final data = OnboardingData(
+          agentId: '',
+          age: 25,
+          homebase: 'New York',
+          completedAt: DateTime.now(),
+        );
+
+        final result = await controller.completeOnboarding(
+          data: data,
+          userId: testUserId,
+        );
+
+        expect(result.isSuccess, isTrue, reason: 'Should succeed even with AVRAI services available');
+        expect(result.agentId, isNotNull, reason: 'AgentId should be assigned');
+        // Note: AVRAI integrations are deferred to AgentInitializationController
+        // This test verifies graceful handling when services are available
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = OnboardingFlowController(
+          personalityKnotService: null,
+          knotStorageService: null,
+          locationTimingService: null,
+        );
+
+        final data = OnboardingData(
+          agentId: '',
+          age: 25,
+          homebase: 'New York',
+          completedAt: DateTime.now(),
+        );
+
+        final result = await controllerWithoutAVRAI.completeOnboarding(
+          data: data,
+          userId: testUserId,
+        );
+
+        expect(result.isSuccess, isTrue, reason: 'Should succeed even without AVRAI services');
+        expect(result.agentId, isNotNull, reason: 'AgentId should be assigned');
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }
 

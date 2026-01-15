@@ -66,14 +66,21 @@ class AuthRepositoryImpl extends SimplifiedRepositoryBase
     // Sign up is remote-only, but do not rely on Connectivity checks which may be flaky.
     if (remoteDataSource == null) {
       throw Exception(
-          'Remote data source not available (backend not initialized)');
+          'Authentication service is not available. Please check your Supabase configuration and try again.');
     }
 
-    final user = await remoteDataSource!.signUp(email, password, name);
-    if (user != null) {
-      await localDataSource?.saveUser(user);
+    try {
+      final user = await remoteDataSource!.signUp(email, password, name);
+      if (user != null) {
+        await localDataSource?.saveUser(user);
+      }
+      return user;
+    } catch (e) {
+      developer.log('🔐 AuthRepository: Sign up error: $e',
+          name: 'AuthRepository');
+      // Re-throw to let AuthBloc handle the error message
+      rethrow;
     }
-    return user;
   }
 
   @override

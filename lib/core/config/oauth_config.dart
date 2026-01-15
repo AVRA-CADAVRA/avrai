@@ -20,9 +20,22 @@ class OAuthConfig {
   );
 
   // Google OAuth
+  // Note: For native sign-in, Android/iOS use platform-specific client IDs from native configs
+  // This Dart client ID is used for token refresh and API calls (can use Android client ID)
   static const String googleClientId = String.fromEnvironment(
     'GOOGLE_OAUTH_CLIENT_ID',
     defaultValue: '', // Empty = use placeholder
+  );
+
+  // Platform-specific client IDs (for reference - actual sign-in uses native configs)
+  static const String googleClientIdAndroid = String.fromEnvironment(
+    'GOOGLE_OAUTH_CLIENT_ID_ANDROID',
+    defaultValue: '',
+  );
+
+  static const String googleClientIdIOS = String.fromEnvironment(
+    'GOOGLE_OAUTH_CLIENT_ID_IOS',
+    defaultValue: '',
   );
 
   // Instagram OAuth

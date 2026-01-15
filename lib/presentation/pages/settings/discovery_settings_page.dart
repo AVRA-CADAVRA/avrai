@@ -1,10 +1,10 @@
 /// Discovery Settings Page
-/// 
+///
 /// Part of Feature Matrix Phase 1: Critical UI/UX
 /// Section 1.2: Device Discovery UI
-/// 
+///
 /// Allows users to control device discovery settings and privacy preferences.
-/// 
+///
 /// Features:
 /// - Enable/disable discovery toggle
 /// - Discovery method preferences (WiFi, Bluetooth, etc.)
@@ -12,7 +12,7 @@
 /// - Auto-discovery options
 /// - Discovery range settings
 /// - Privacy explanations
-/// 
+///
 /// Uses AppColors and AppTheme for consistent styling per design token requirements.
 library;
 
@@ -30,7 +30,7 @@ import 'package:get_it/get_it.dart';
 /// Settings page for device discovery configuration
 class DiscoverySettingsPage extends StatefulWidget {
   const DiscoverySettingsPage({super.key});
-  
+
   @override
   State<DiscoverySettingsPage> createState() => _DiscoverySettingsPageState();
 }
@@ -38,7 +38,7 @@ class DiscoverySettingsPage extends StatefulWidget {
 class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
   final _storageService = StorageService.instance;
   static const String _logName = 'DiscoverySettingsPage';
-  
+
   // Discovery settings
   bool _discoveryEnabled = false;
   bool _autoDiscovery = false;
@@ -47,25 +47,29 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
   bool _discoverBluetooth = true;
   bool _discoverMultipeer = true;
   bool _eventModeEnabled = false;
-  
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
   }
-  
+
   void _loadSettings() {
     setState(() {
       _discoveryEnabled = _storageService.getBool('discovery_enabled') ?? false;
       _autoDiscovery = _storageService.getBool('auto_discovery') ?? false;
-      _sharePersonalityData = _storageService.getBool('share_personality_data') ?? true;
+      _sharePersonalityData =
+          _storageService.getBool('share_personality_data') ?? true;
       _discoverWiFi = _storageService.getBool('discover_wifi') ?? true;
-      _discoverBluetooth = _storageService.getBool('discover_bluetooth') ?? true;
-      _discoverMultipeer = _storageService.getBool('discover_multipeer') ?? true;
-      _eventModeEnabled = _storageService.getBool('event_mode_enabled') ?? false;
+      _discoverBluetooth =
+          _storageService.getBool('discover_bluetooth') ?? true;
+      _discoverMultipeer =
+          _storageService.getBool('discover_multipeer') ?? true;
+      _eventModeEnabled =
+          _storageService.getBool('event_mode_enabled') ?? false;
     });
   }
-  
+
   Future<void> _saveSetting(String key, bool value) async {
     await _storageService.setBool(key, value);
   }
@@ -83,9 +87,8 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
 
       final userId = authState.user.id;
       final personalityLearning = GetIt.instance<PersonalityLearning>();
-      final profile =
-          await personalityLearning.getCurrentPersonality(userId) ??
-              await personalityLearning.initializePersonality(userId);
+      final profile = await personalityLearning.getCurrentPersonality(userId) ??
+          await personalityLearning.initializePersonality(userId);
       await orchestrator.initializeOrchestration(userId, profile);
     } catch (e, st) {
       developer.log(
@@ -96,7 +99,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       );
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,13 +158,16 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
         },
         activeColor: AppColors.electricGreen,
         secondary: Icon(
-          _eventModeEnabled ? Icons.local_activity : Icons.local_activity_outlined,
-          color: _eventModeEnabled ? AppColors.electricGreen : AppColors.grey300,
+          _eventModeEnabled
+              ? Icons.local_activity
+              : Icons.local_activity_outlined,
+          color:
+              _eventModeEnabled ? AppColors.electricGreen : AppColors.grey300,
         ),
       ),
     );
   }
-  
+
   Widget _buildHeaderSection() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -204,7 +210,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Find nearby SPOTS-enabled devices',
+                  'Find nearby avrai-enabled devices',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -217,7 +223,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       ),
     );
   }
-  
+
   Widget _buildMainToggle() {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -254,12 +260,13 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
         activeColor: AppColors.electricGreen,
         secondary: Icon(
           _discoveryEnabled ? Icons.radar : Icons.radar_outlined,
-          color: _discoveryEnabled ? AppColors.electricGreen : AppColors.grey300,
+          color:
+              _discoveryEnabled ? AppColors.electricGreen : AppColors.grey300,
         ),
       ),
     );
   }
-  
+
   Widget _buildDiscoveryMethodsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,7 +315,8 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
                   await _saveSetting('discover_bluetooth', value);
                 },
                 activeColor: AppColors.electricGreen,
-                secondary: const Icon(Icons.bluetooth, color: AppColors.primary),
+                secondary:
+                    const Icon(Icons.bluetooth, color: AppColors.primary),
               ),
               const Divider(height: 1),
               SwitchListTile(
@@ -330,7 +338,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       ],
     );
   }
-  
+
   Widget _buildPrivacySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +407,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       ],
     );
   }
-  
+
   Widget _buildAdvancedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,7 +451,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       ],
     );
   }
-  
+
   Widget _buildInfoSection() {
     return Container(
       margin: const EdgeInsets.all(16),
@@ -476,7 +484,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
           SizedBox(height: 12),
           Text(
             '• Discovery uses device radios (WiFi/Bluetooth) and may affect battery life\n'
-            '• Only SPOTS-enabled devices can be discovered\n'
+            '• Only avrai-enabled devices can be discovered\n'
             '• All data shared is anonymized and encrypted\n'
             '• You can stop discovery at any time\n'
             '• Discovery requires location permissions on some platforms',
@@ -490,7 +498,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       ),
     );
   }
-  
+
   void _showPrivacyInfoDialog() {
     showDialog(
       context: context,
@@ -577,7 +585,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
       ),
     );
   }
-  
+
   Widget _buildPrivacyPoint(IconData icon, String title, String description) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,4 +622,3 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
     );
   }
 }
-

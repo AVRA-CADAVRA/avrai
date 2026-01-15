@@ -28,5 +28,36 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AVRAI needs your location to show nearby spots and create personalized recommendations based on your unique preferences.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>AVRAI needs location access to detect nearby spots and provide personalized recommendations even when the app is in the background, ensuring continuous learning per OUR_GUTS.md principles.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>AVRAI needs background location access for continuous spot detection and ai2ai learning that respects your privacy while helping you discover places where you belong.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>AVRAI uses Bluetooth for secure ai2ai communication between devices, enabling anonymous personality learning while maintaining your privacy and control.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>AVRAI uses Bluetooth to connect with nearby devices for secure ai2ai learning, always respecting your privacy per OUR_GUTS.md principles.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AVRAI uses the camera to capture evidence for disputes (e.g., screenshots/photos) to help resolve issues fairly.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AVRAI needs access to your photo library so you can attach evidence (screenshots/photos) to disputes.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AVRAI may need microphone access for voice-based features and communications.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>AVRAI uses the local network for secure ai2ai communication between nearby devices, enabling anonymous personality learning while maintaining your privacy.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.avrai.app.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>avrai</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

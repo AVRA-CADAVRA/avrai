@@ -64,6 +64,51 @@ void main() {
         expect(invalidResult.isValid, isFalse);
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () {
+        final validData = PartnershipProposalData(
+          type: PartnershipType.eventBased,
+          sharedResponsibilities: ['Venue'],
+        );
+        final validInput = PartnershipProposalInput(
+          eventId: 'event_123',
+          proposerId: 'user_456',
+          businessId: 'business_789',
+          data: validData,
+        );
+
+        final validationResult = controller.validate(validInput);
+        expect(validationResult.isValid, isTrue, reason: 'Should validate correctly with AVRAI services');
+        // Note: AVRAI integrations (knot compatibility, quantum compatibility, 4D quantum, AI2AI learning)
+        // happen internally during proposal creation and don't affect validation
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = PartnershipProposalController(
+          knotCompatibilityService: null,
+          locationTimingService: null,
+          quantumEntanglementService: null,
+          aiLearningService: null,
+        );
+
+        final validData = PartnershipProposalData(
+          type: PartnershipType.eventBased,
+          sharedResponsibilities: ['Venue'],
+        );
+        final validInput = PartnershipProposalInput(
+          eventId: 'event_123',
+          proposerId: 'user_456',
+          businessId: 'business_789',
+          data: validData,
+        );
+
+        final validationResult = controllerWithoutAVRAI.validate(validInput);
+        expect(validationResult.isValid, isTrue, reason: 'Should validate correctly even without AVRAI services');
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }
 

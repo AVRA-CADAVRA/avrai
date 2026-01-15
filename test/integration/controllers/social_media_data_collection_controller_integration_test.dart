@@ -94,6 +94,20 @@ void main() {
         expect(result.generalErrors, contains('User ID cannot be empty'));
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work correctly (no AVRAI integration needed)', () async {
+        // SocialMediaDataCollectionController doesn't have AVRAI integration
+        // (it's just data collection, not personality/entity workflows)
+        const userId = 'test_user_avrai';
+
+        final result = await controller.collectAllData(userId: userId);
+
+        expect(result, isNotNull, reason: 'Should return result');
+        // Note: SocialMediaDataCollectionController doesn't need AVRAI integration
+        // It's purely data collection, not personality/entity workflows
+      });
+    });
   });
 }
 

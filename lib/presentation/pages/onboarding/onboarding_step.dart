@@ -1,6 +1,8 @@
+import 'dart:io' show Platform, Process;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:avrai/core/services/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
@@ -24,6 +26,51 @@ class _PermissionsPageState extends State<PermissionsPage> {
   void initState() {
     super.initState();
     _loadPermissions();
+  }
+
+  /// Opens System Settings on macOS using native command
+  /// More reliable than openAppSettings() from permission_handler
+  Future<bool> _openMacOSSystemSettings() async {
+    if (!Platform.isMacOS) {
+      return false;
+    }
+
+    try {
+      _logger.info('Opening macOS System Settings...', tag: 'PermissionsPage');
+
+      // Open System Settings > Privacy & Security
+      // This opens directly to the Privacy & Security pane
+      final result = await Process.run(
+        'open',
+        ['-b', 'com.apple.preference.security'],
+        runInShell: false,
+      );
+
+      if (result.exitCode == 0) {
+        _logger.info('Successfully opened System Settings',
+            tag: 'PermissionsPage');
+        return true;
+      } else {
+        _logger.warn('Failed to open System Settings: ${result.stderr}',
+            tag: 'PermissionsPage');
+        // Fallback: try opening general System Settings
+        final fallback = await Process.run(
+          'open',
+          ['x-apple.systempreferences:com.apple.preference.security'],
+          runInShell: false,
+        );
+        return fallback.exitCode == 0;
+      }
+    } catch (e) {
+      _logger.error('Error opening System Settings: $e',
+          tag: 'PermissionsPage');
+      // Last resort: try openAppSettings()
+      try {
+        return await openAppSettings();
+      } catch (_) {
+        return false;
+      }
+    }
   }
 
   /// Load permissions from device and saved preferences
@@ -57,6 +104,8 @@ class _PermissionsPageState extends State<PermissionsPage> {
     await _refreshStatuses();
 
     // Show permission dialog after statuses are loaded
+    // On macOS, we'll request permissions programmatically first (via button click)
+    // which will trigger system dialogs and make the app appear in System Settings
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         _showPermissionDialog();
@@ -71,24 +120,141 @@ class _PermissionsPageState extends State<PermissionsPage> {
       return;
     }
 
-    final permissions = <Permission>[
-      Permission.locationWhenInUse,
-      Permission.locationAlways,
-      Permission.bluetooth,
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.bluetoothAdvertise,
-      Permission.nearbyWifiDevices,
-    ];
     final statuses = <Permission, PermissionStatus>{};
-    for (final p in permissions) {
+
+    if (Platform.isMacOS) {
+      // On macOS, use geolocator for location permissions
       try {
-        statuses[p] = await p.status;
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        final permission = await Geolocator.checkPermission();
+
+        // Map geolocator permission to permission_handler status
+        if (serviceEnabled &&
+            (permission == LocationPermission.whileInUse ||
+                permission == LocationPermission.always)) {
+          statuses[Permission.locationWhenInUse] = PermissionStatus.granted;
+          if (permission == LocationPermission.always) {
+            statuses[Permission.locationAlways] = PermissionStatus.granted;
+          } else {
+            statuses[Permission.locationAlways] = PermissionStatus.denied;
+          }
+        } else if (permission == LocationPermission.deniedForever) {
+          statuses[Permission.locationWhenInUse] =
+              PermissionStatus.permanentlyDenied;
+          statuses[Permission.locationAlways] =
+              PermissionStatus.permanentlyDenied;
+        } else {
+          statuses[Permission.locationWhenInUse] = PermissionStatus.denied;
+          statuses[Permission.locationAlways] = PermissionStatus.denied;
+        }
+
+        _logger.info(
+            'macOS location permission: $permission (service enabled: $serviceEnabled)',
+            tag: 'PermissionsPage');
       } catch (e) {
-        // Skip permissions that aren't supported on this platform
-        continue;
+        _logger.warn('Error checking macOS location permission: $e',
+            tag: 'PermissionsPage');
+        statuses[Permission.locationWhenInUse] = PermissionStatus.denied;
+        statuses[Permission.locationAlways] = PermissionStatus.denied;
+      }
+
+      // Bluetooth and WiFi permissions on macOS are handled differently
+      // They're often granted automatically when the app uses the APIs
+      // Mark as denied for now (user needs to grant in System Settings)
+      statuses[Permission.bluetooth] = PermissionStatus.denied;
+      statuses[Permission.bluetoothScan] = PermissionStatus.denied;
+      statuses[Permission.bluetoothConnect] = PermissionStatus.denied;
+      statuses[Permission.bluetoothAdvertise] = PermissionStatus.denied;
+      statuses[Permission.nearbyWifiDevices] = PermissionStatus.denied;
+
+      _logger.info(
+          'macOS Bluetooth/WiFi permissions require System Settings configuration',
+          tag: 'PermissionsPage');
+    } else if (Platform.isIOS) {
+      // On iOS, use geolocator for location permissions (more reliable than permission_handler)
+      try {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        final permission = await Geolocator.checkPermission();
+
+        // Map geolocator permission to permission_handler status
+        if (serviceEnabled &&
+            (permission == LocationPermission.whileInUse ||
+                permission == LocationPermission.always)) {
+          statuses[Permission.locationWhenInUse] = PermissionStatus.granted;
+          if (permission == LocationPermission.always) {
+            statuses[Permission.locationAlways] = PermissionStatus.granted;
+          } else {
+            statuses[Permission.locationAlways] = PermissionStatus.denied;
+          }
+        } else if (permission == LocationPermission.deniedForever) {
+          statuses[Permission.locationWhenInUse] =
+              PermissionStatus.permanentlyDenied;
+          statuses[Permission.locationAlways] =
+              PermissionStatus.permanentlyDenied;
+        } else {
+          statuses[Permission.locationWhenInUse] = PermissionStatus.denied;
+          statuses[Permission.locationAlways] = PermissionStatus.denied;
+        }
+
+        _logger.info(
+            'iOS location permission: $permission (service enabled: $serviceEnabled)',
+            tag: 'PermissionsPage');
+      } catch (e) {
+        _logger.warn('Error checking iOS location permission: $e',
+            tag: 'PermissionsPage');
+        statuses[Permission.locationWhenInUse] = PermissionStatus.denied;
+        statuses[Permission.locationAlways] = PermissionStatus.denied;
+      }
+
+      // Use permission_handler for Bluetooth and WiFi on iOS
+      final permissions = <Permission>[
+        Permission.bluetooth,
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.bluetoothAdvertise,
+        Permission.nearbyWifiDevices,
+      ];
+
+      for (final p in permissions) {
+        try {
+          final status = await p.status;
+          statuses[p] = status;
+          _logger.info('Permission $p status: $status', tag: 'PermissionsPage');
+        } catch (e) {
+          _logger.warn('Permission $p not supported: $e',
+              tag: 'PermissionsPage');
+          statuses[p] = PermissionStatus.denied;
+        }
+      }
+    } else {
+      // Use permission_handler for Android
+      final permissions = <Permission>[
+        Permission.locationWhenInUse,
+        Permission.locationAlways,
+        Permission.bluetooth,
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.bluetoothAdvertise,
+        Permission.nearbyWifiDevices,
+      ];
+
+      for (final p in permissions) {
+        try {
+          final status = await p.status;
+          statuses[p] = status;
+          _logger.info('Permission $p status: $status', tag: 'PermissionsPage');
+        } catch (e) {
+          _logger.warn('Permission $p not supported: $e',
+              tag: 'PermissionsPage');
+          statuses[p] = PermissionStatus.denied;
+        }
       }
     }
+
+    _logger.info(
+        'Refreshed ${statuses.length} permission statuses. Granted: ${statuses.values.where((s) => s.isGranted).length}',
+        tag: 'PermissionsPage');
+
     setState(() => _statuses = statuses);
   }
 
@@ -100,41 +266,193 @@ class _PermissionsPageState extends State<PermissionsPage> {
       return;
     }
 
+    // On macOS, we need to request permissions programmatically first
+    // This triggers the system dialog and makes the app appear in System Settings
+    // Only open System Settings if permissions are denied after requesting
     setState(() => _loading = true);
+
     try {
       // Request permissions sequentially, starting with location (required for locationAlways)
-      // iOS requires locationWhenInUse before locationAlways
+      // On macOS, use geolocator (permission_handler doesn't support macOS)
+      // On other platforms, use permission_handler
 
-      // 1. Location permissions (must be first, and locationWhenInUse before locationAlways)
-      final locationWhenInUseStatus =
-          await Permission.locationWhenInUse.request();
-      _logger.info('Location when in use: $locationWhenInUseStatus',
-          tag: 'PermissionsPage');
-
-      // Only request locationAlways if locationWhenInUse was granted
-      if (locationWhenInUseStatus.isGranted) {
-        final locationAlwaysStatus = await Permission.locationAlways.request();
-        _logger.info('Location always: $locationAlwaysStatus',
+      // 1. Location permissions
+      if (Platform.isMacOS) {
+        _logger.info('Requesting location permission via geolocator (macOS)...',
             tag: 'PermissionsPage');
+
+        // Check if location services are enabled
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          _logger.warn('Location services are disabled on macOS',
+              tag: 'PermissionsPage');
+          // Open System Settings to enable location services
+          await _openMacOSSystemSettings();
+          if (mounted && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please enable Location Services in System Settings > Privacy & Security > Location Services.',
+                ),
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          // Check and request permission
+          LocationPermission permission = await Geolocator.checkPermission();
+          _logger.info('Current location permission: $permission',
+              tag: 'PermissionsPage');
+
+          if (permission == LocationPermission.denied) {
+            _logger.info('Requesting location permission...',
+                tag: 'PermissionsPage');
+            permission = await Geolocator.requestPermission();
+            _logger.info('Location permission after request: $permission',
+                tag: 'PermissionsPage');
+          }
+
+          if (permission == LocationPermission.deniedForever) {
+            _logger.warn(
+                'Location permission permanently denied, opening System Settings',
+                tag: 'PermissionsPage');
+            await _openMacOSSystemSettings();
+            if (mounted && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Please grant location permission in System Settings > Privacy & Security > Location Services.',
+                  ),
+                  duration: Duration(seconds: 4),
+                ),
+              );
+            }
+          } else if (permission == LocationPermission.whileInUse ||
+              permission == LocationPermission.always) {
+            _logger.info('Location permission granted: $permission',
+                tag: 'PermissionsPage');
+          }
+        }
+      } else if (Platform.isIOS) {
+        // On iOS, use geolocator for location permissions (more reliable than permission_handler)
+        _logger.info('Requesting location permission via geolocator (iOS)...',
+            tag: 'PermissionsPage');
+
+        // Check if location services are enabled
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          _logger.warn('Location services are disabled on iOS',
+              tag: 'PermissionsPage');
+          if (mounted && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please enable Location Services in Settings > Privacy & Security > Location Services.',
+                ),
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          // Check and request permission
+          LocationPermission permission = await Geolocator.checkPermission();
+          _logger.info('Current location permission: $permission',
+              tag: 'PermissionsPage');
+
+          if (permission == LocationPermission.denied) {
+            _logger.info('Requesting location permission...',
+                tag: 'PermissionsPage');
+            permission = await Geolocator.requestPermission();
+            _logger.info('Location permission after request: $permission',
+                tag: 'PermissionsPage');
+          }
+
+          if (permission == LocationPermission.deniedForever) {
+            _logger.warn(
+                'Location permission permanently denied, opening System Settings',
+                tag: 'PermissionsPage');
+            await _openMacOSSystemSettings();
+            if (mounted && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Please grant location permission in System Settings > Privacy & Security > Location Services.',
+                  ),
+                  duration: Duration(seconds: 4),
+                ),
+              );
+            }
+          } else if (permission == LocationPermission.whileInUse ||
+              permission == LocationPermission.always) {
+            _logger.info('Location permission granted: $permission',
+                tag: 'PermissionsPage');
+          }
+        }
+      } else {
+        // Use permission_handler for Android
+        _logger.info('Requesting location when in use permission...',
+            tag: 'PermissionsPage');
+        final locationWhenInUseStatus =
+            await Permission.locationWhenInUse.request();
+        _logger.info('Location when in use result: $locationWhenInUseStatus',
+            tag: 'PermissionsPage');
+
+        // Only request locationAlways if locationWhenInUse was granted
+        if (locationWhenInUseStatus.isGranted) {
+          _logger.info('Requesting location always permission...',
+              tag: 'PermissionsPage');
+          final locationAlwaysStatus =
+              await Permission.locationAlways.request();
+          _logger.info('Location always result: $locationAlwaysStatus',
+              tag: 'PermissionsPage');
+        } else {
+          _logger.warn(
+              'Location when in use not granted, skipping location always',
+              tag: 'PermissionsPage');
+        }
       }
 
-      // 2. Bluetooth permissions (can be requested together)
-      await [
+      // 2. Bluetooth permissions (request individually for better error handling)
+      // On macOS, Bluetooth permissions are handled through System Settings
+      // We'll request them here to trigger the system dialog, but they may need System Settings
+      _logger.info('Requesting Bluetooth permissions...',
+          tag: 'PermissionsPage');
+      final bluetoothPermissions = [
         Permission.bluetooth,
         Permission.bluetoothScan,
         Permission.bluetoothConnect,
         Permission.bluetoothAdvertise,
-      ].request();
+      ];
+
+      for (final permission in bluetoothPermissions) {
+        try {
+          _logger.info('Requesting $permission...', tag: 'PermissionsPage');
+          final status = await permission.request();
+          _logger.info('$permission result: $status', tag: 'PermissionsPage');
+        } catch (e) {
+          _logger.warn('Failed to request $permission: $e',
+              tag: 'PermissionsPage');
+          // On macOS, Bluetooth permissions often require System Settings
+          // This is expected and we'll open System Settings after all requests
+        }
+      }
 
       // 3. Nearby WiFi devices (if supported)
       try {
-        await Permission.nearbyWifiDevices.request();
+        _logger.info('Requesting nearby WiFi devices permission...',
+            tag: 'PermissionsPage');
+        final wifiStatus = await Permission.nearbyWifiDevices.request();
+        _logger.info('Nearby WiFi devices result: $wifiStatus',
+            tag: 'PermissionsPage');
       } catch (e) {
         _logger.warn('Nearby WiFi devices permission not supported: $e',
             tag: 'PermissionsPage');
+        // On macOS, WiFi permissions require System Settings
+        // This is expected and we'll open System Settings after all requests
       }
 
       // Refresh statuses to get actual device permission state
+      _logger.info('Refreshing permission statuses...', tag: 'PermissionsPage');
       await _refreshStatuses();
 
       // Update UI immediately to reflect changes
@@ -146,9 +464,64 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
       // Save permissions to device storage
       await _savePermissionsToDevice();
-    } catch (e) {
+
+      _logger.info(
+          'Permission request process completed. Granted: $_grantedCount/$_totalCount',
+          tag: 'PermissionsPage');
+
+      // Automatically open System Settings if permissions are still denied
+      // This is especially important on macOS where some permissions require System Settings
+      if (mounted) {
+        final stillDenied = _statuses.values.any(
+          (status) => status.isDenied || status.isPermanentlyDenied,
+        );
+
+        if (stillDenied) {
+          _logger.info(
+              'Some permissions still denied, opening System Settings...',
+              tag: 'PermissionsPage');
+
+          // On macOS, automatically open System Settings for denied permissions
+          if (Platform.isMacOS) {
+            Future.delayed(const Duration(milliseconds: 500), () async {
+              if (mounted) {
+                final opened = await _openMacOSSystemSettings();
+                _logger.info('Opened System Settings: $opened',
+                    tag: 'PermissionsPage');
+
+                // Show a helpful message
+                if (mounted && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please grant permissions in System Settings. The app will check again when you return.',
+                      ),
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                }
+
+                // Refresh statuses after a delay to check if user granted permissions
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted) {
+                    _refreshStatuses();
+                  }
+                });
+              }
+            });
+          } else {
+            // On other platforms, show dialog first
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                _showPermissionDialog();
+              }
+            });
+          }
+        }
+      }
+    } catch (e, stackTrace) {
       _logger.error('Error requesting permissions',
-          error: e, tag: 'PermissionsPage');
+          error: e, stackTrace: stackTrace, tag: 'PermissionsPage');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -257,7 +630,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'SPOTS needs certain permissions to provide the best experience:',
+                'avrai needs certain permissions to provide the best experience:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 12),
@@ -316,7 +689,9 @@ class _PermissionsPageState extends State<PermissionsPage> {
       await _requestAll();
     } else {
       // User chose to go to settings
-      final opened = await openAppSettings();
+      final opened = Platform.isMacOS
+          ? await _openMacOSSystemSettings()
+          : await openAppSettings();
       _logger.info('Opened app settings: $opened', tag: 'PermissionsPage');
 
       // Refresh statuses after returning from settings
@@ -353,7 +728,11 @@ class _PermissionsPageState extends State<PermissionsPage> {
     );
 
     if (result == true && mounted) {
-      await openAppSettings();
+      if (Platform.isMacOS) {
+        await _openMacOSSystemSettings();
+      } else {
+        await openAppSettings();
+      }
     }
   }
 
@@ -477,7 +856,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
             ),
           const SizedBox(height: 16),
 
-          // Simulator info note (shown when permissions are not granted)
+          // Platform-specific info note (shown when permissions are not granted)
           if (!allGranted && _statuses.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(12),
@@ -501,7 +880,11 @@ class _PermissionsPageState extends State<PermissionsPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Note: Some permissions (especially Bluetooth and WiFi) may not be fully supported on iOS Simulator. Test on a real device for complete functionality.',
+                      Platform.isMacOS
+                          ? 'Note: On macOS, some permissions (especially Bluetooth and WiFi) require System Settings configuration. The app will automatically open System Settings if needed.'
+                          : Platform.isIOS
+                              ? 'Note: Some permissions (especially Bluetooth and WiFi) may not be fully supported on iOS Simulator. Test on a real device for complete functionality.'
+                              : 'Note: Some permissions may require manual configuration in your device settings.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue.shade900,
@@ -641,16 +1024,22 @@ class _PermissionsPageState extends State<PermissionsPage> {
                                             permission);
                                       } else if (newStatus != null &&
                                           !newStatus.isGranted) {
-                                        if (!mounted || !context.mounted) return;
-                                        // Show helpful message for simulator limitations
+                                        if (!mounted || !context.mounted) {
+                                          return;
+                                        }
+                                        // Show helpful message for platform limitations
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          const SnackBar(
+                                          SnackBar(
                                             content: Text(
-                                              'Some permissions may not be fully supported on iOS Simulator. Test on a real device for complete functionality.',
+                                              Platform.isMacOS
+                                                  ? 'On macOS, some permissions may require System Settings configuration. Check System Settings > Privacy & Security if needed.'
+                                                  : Platform.isIOS
+                                                      ? 'Some permissions may not be fully supported on iOS Simulator. Test on a real device for complete functionality.'
+                                                      : 'Some permissions may require manual configuration in device settings.',
                                             ),
                                             duration:
-                                                Duration(seconds: 3),
+                                                const Duration(seconds: 3),
                                           ),
                                         );
                                       }
@@ -669,7 +1058,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
                                       );
                                     }
                                   },
-                            ),
+                          ),
                         ),
                       );
                     }),
@@ -686,7 +1075,11 @@ class _PermissionsPageState extends State<PermissionsPage> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () async {
-                  await openAppSettings();
+                  if (Platform.isMacOS) {
+                    await _openMacOSSystemSettings();
+                  } else {
+                    await openAppSettings();
+                  }
                   Future.delayed(const Duration(seconds: 1), () {
                     if (mounted) _refreshStatuses();
                   });
@@ -704,18 +1097,8 @@ class _PermissionsPageState extends State<PermissionsPage> {
                   ? null
                   : () async {
                       await _requestAll();
-                      await _refreshStatuses();
-                      if (mounted) {
-                        final stillDenied = _statuses.values.any(
-                          (status) =>
-                              status.isDenied || status.isPermanentlyDenied,
-                        );
-                        if (stillDenied) {
-                          Future.delayed(const Duration(milliseconds: 500), () {
-                            if (mounted) _showPermissionDialog();
-                          });
-                        }
-                      }
+                      // _requestAll() now handles opening System Settings automatically
+                      // No need to check again here
                     },
               icon: Icon(_loading ? Icons.hourglass_empty : Icons.security),
               label: Text(_loading

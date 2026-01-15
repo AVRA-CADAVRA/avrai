@@ -20,6 +20,9 @@ dependencies:
   # UI Components
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
+  qr_flutter: ^4.1.0  # Phase 10.1: QR code generation for reservation check-in
+  nfc_manager: ^3.2.0  # Phase 10.1: NFC tap-to-check-in (phone-to-phone or phone-to-tag)
+  flutter_local_notifications: ^19.5.0  # Phase 5: Local notifications for reservation reminders
   
   # Map Components
   flutter_map: ^8.2.2
@@ -38,6 +41,8 @@ dependencies:
   # Network
   dio: ^5.4.0
   connectivity_plus: ^7.0.0
+  wifi_scan: ^0.4.1+2  # Phase 10.1: Android WiFi scanning (SSID, BSSID, signal) for fingerprinting
+  add_2_calendar: ^2.1.2  # Phase 10.2: Calendar integration (iOS Calendar, Google Calendar)
   
   # Sharing and URL launching - Added for Phase 1 completion
   share_plus: ^12.0.1
@@ -73,6 +78,9 @@ dependencies:
   # Firebase
   firebase_core: ^4.3.0
   firebase_auth: ^6.1.3
+  firebase_messaging: ^16.0.2  # Phase 5: Optional push notifications (enhancement when online)
+  # Note: FCM is optional enhancement for server-initiated notifications when online
+  # Local notifications are primary mechanism and work offline
   cloud_firestore: ^6.1.1
   firebase_storage: ^13.0.5
   firebase_analytics: ^12.1.0

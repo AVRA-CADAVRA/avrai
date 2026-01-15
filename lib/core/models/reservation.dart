@@ -196,6 +196,10 @@ class Reservation extends Equatable {
   /// Seat ID (if seating chart used)
   final String? seatId;
 
+  /// Calendar event ID (Phase 10.2: Calendar integration)
+  /// Links reservation to device calendar event
+  final String? calendarEventId;
+
   /// Cancellation policy
   final CancellationPolicy? cancellationPolicy;
 
@@ -245,6 +249,7 @@ class Reservation extends Equatable {
     this.ticketPrice,
     this.depositAmount,
     this.seatId,
+    this.calendarEventId,
     this.cancellationPolicy,
     this.modificationCount = 0,
     this.lastModifiedAt,
@@ -312,6 +317,7 @@ class Reservation extends Equatable {
     double? ticketPrice,
     double? depositAmount,
     String? seatId,
+    String? calendarEventId,
     CancellationPolicy? cancellationPolicy,
     int? modificationCount,
     DateTime? lastModifiedAt,
@@ -338,6 +344,7 @@ class Reservation extends Equatable {
       ticketPrice: ticketPrice ?? this.ticketPrice,
       depositAmount: depositAmount ?? this.depositAmount,
       seatId: seatId ?? this.seatId,
+      calendarEventId: calendarEventId ?? this.calendarEventId,
       cancellationPolicy: cancellationPolicy ?? this.cancellationPolicy,
       modificationCount: modificationCount ?? this.modificationCount,
       lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
@@ -368,6 +375,7 @@ class Reservation extends Equatable {
       'ticketPrice': ticketPrice,
       'depositAmount': depositAmount,
       'seatId': seatId,
+      'calendarEventId': calendarEventId,
       'cancellationPolicy': cancellationPolicy?.toJson(),
       'modificationCount': modificationCount,
       'lastModifiedAt': lastModifiedAt?.toIso8601String(),
@@ -406,6 +414,7 @@ class Reservation extends Equatable {
       ticketPrice: json['ticketPrice'] as double?,
       depositAmount: json['depositAmount'] as double?,
       seatId: json['seatId'] as String?,
+      calendarEventId: json['calendarEventId'] as String?,
       cancellationPolicy: json['cancellationPolicy'] != null
           ? CancellationPolicy.fromJson(
               json['cancellationPolicy'] as Map<String, dynamic>)
@@ -419,8 +428,8 @@ class Reservation extends Equatable {
         orElse: () => DisputeStatus.none,
       ),
       disputeReason: json['disputeReason'] != null
-          ? DisputeReason.values.firstWhere(
-              (e) => e.name == json['disputeReason'] as String)
+          ? DisputeReason.values
+              .firstWhere((e) => e.name == json['disputeReason'] as String)
           : null,
       disputeDescription: json['disputeDescription'] as String?,
       atomicTimestamp: json['atomicTimestamp'] != null
@@ -454,6 +463,7 @@ class Reservation extends Equatable {
         ticketPrice,
         depositAmount,
         seatId,
+        calendarEventId,
         cancellationPolicy,
         modificationCount,
         lastModifiedAt,

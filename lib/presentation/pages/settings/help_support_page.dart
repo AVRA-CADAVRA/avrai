@@ -27,7 +27,8 @@ class HelpSupportPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.support_agent, color: AppColors.textSecondary),
+                        Icon(Icons.support_agent,
+                            color: AppColors.textSecondary),
                         SizedBox(width: 8),
                         Text(
                           'We\'re Here to Help',
@@ -41,7 +42,7 @@ class HelpSupportPage extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'SPOTS is designed to be effortless and seamless. If you need help or have questions, we\'re here to support you.',
+                      'avrai is designed to be effortless and seamless. If you need help or have questions, we\'re here to support you.',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
@@ -54,8 +55,8 @@ class HelpSupportPage extends StatelessWidget {
             Text(
               'Quick Help',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -64,7 +65,7 @@ class HelpSupportPage extends StatelessWidget {
                 children: [
                   _buildHelpTile(
                     'Getting Started',
-                    'Learn the basics of using SPOTS',
+                    'Learn the basics of using avrai',
                     Icons.play_circle_outline,
                     () => _showGettingStarted(context),
                   ),
@@ -92,7 +93,7 @@ class HelpSupportPage extends StatelessWidget {
                   const Divider(height: 1),
                   _buildHelpTile(
                     'AI2AI Learning',
-                    'Understanding how SPOTS learns your preferences',
+                    'Understanding how avrai learns your preferences',
                     Icons.psychology,
                     () => _showAI2AIHelp(context),
                   ),
@@ -105,8 +106,8 @@ class HelpSupportPage extends StatelessWidget {
             Text(
               'Contact Support',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -122,7 +123,7 @@ class HelpSupportPage extends StatelessWidget {
                   const Divider(height: 1),
                   _buildHelpTile(
                     'Report a Bug',
-                    'Help us improve SPOTS',
+                    'Help us improve avrai',
                     Icons.bug_report,
                     () => _reportBug(context),
                   ),
@@ -136,7 +137,7 @@ class HelpSupportPage extends StatelessWidget {
                   const Divider(height: 1),
                   _buildHelpTile(
                     'Community Forum',
-                    'Connect with other SPOTS users',
+                    'Connect with other avrai users',
                     Icons.forum,
                     () => _openCommunityForum(),
                   ),
@@ -149,8 +150,8 @@ class HelpSupportPage extends StatelessWidget {
             Text(
               'Resources',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -193,8 +194,8 @@ class HelpSupportPage extends StatelessWidget {
             Text(
               'System Information',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
 
@@ -207,7 +208,8 @@ class HelpSupportPage extends StatelessWidget {
                     _buildInfoRow('App Version', '1.0.0'),
                     _buildInfoRow('Build Number', '100'),
                     _buildInfoRow('Platform', Theme.of(context).platform.name),
-                    _buildInfoRow('Support ID', 'USR-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}'),
+                    _buildInfoRow('Support ID',
+                        'USR-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}'),
                   ],
                 ),
               ),
@@ -253,13 +255,13 @@ class HelpSupportPage extends StatelessWidget {
         title: const Text('Getting Started'),
         content: const SingleChildScrollView(
           child: Text(
-            '🎯 Welcome to SPOTS!\n\n'
+            '🎯 Welcome to avrai!\n\n'
             '1. Create your first spot by tapping the + button\n'
             '2. Add spots to lists to organize them\n'
             '3. Explore nearby spots and recommendations\n'
             '4. Share your favorite places with friends\n'
             '5. Let the AI learn your preferences for better suggestions\n\n'
-            'Remember: SPOTS is designed to be effortless. You don\'t need to check in or jump through hoops - just enjoy discovering places where you belong!',
+            'Remember: avrai is designed to be effortless. You don\'t need to check in or jump through hoops - just enjoy discovering places where you belong!',
           ),
         ),
         actions: [
@@ -370,7 +372,7 @@ class HelpSupportPage extends StatelessWidget {
         title: const Text('AI2AI Learning'),
         content: const SingleChildScrollView(
           child: Text(
-            '🤖 How SPOTS Learns:\n\n'
+            '🤖 How avrai Learns:\n\n'
             'AI2AI learning means your device\'s AI communicates anonymously with other devices to improve recommendations while protecting your privacy.\n\n'
             '🔄 What It Learns:\n'
             '• Your spot preferences and patterns\n'
@@ -401,7 +403,7 @@ class HelpSupportPage extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Send Feedback'),
         content: const Text(
-          'We\'d love to hear your thoughts! Your feedback helps us make SPOTS better for everyone.',
+          'We\'d love to hear your thoughts! Your feedback helps us make avrai better for everyone.',
         ),
         actions: [
           TextButton(
@@ -411,7 +413,7 @@ class HelpSupportPage extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _launchEmail('feedback@spots.app', 'SPOTS Feedback');
+              _launchEmail('feedback@avrai.app', 'avrai Feedback');
             },
             child: const Text('Send Email'),
           ),
@@ -436,7 +438,7 @@ class HelpSupportPage extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _launchEmail('bugs@spots.app', 'Bug Report');
+              _launchEmail('bugs@avrai.app', 'Bug Report');
             },
             child: const Text('Report Bug'),
           ),
@@ -446,19 +448,19 @@ class HelpSupportPage extends StatelessWidget {
   }
 
   void _emailSupport() {
-    _launchEmail('support@spots.app', 'Support Request');
+    _launchEmail('support@avrai.app', 'Support Request');
   }
 
   void _openCommunityForum() {
-    _launchUrl('https://community.spots.app');
+    _launchUrl('https://community.avrai.app');
   }
 
   void _openVideoTutorials() {
-    _launchUrl('https://help.spots.app/videos');
+    _launchUrl('https://help.avrai.app/videos');
   }
 
   void _openUserGuide() {
-    _launchUrl('https://help.spots.app/guide');
+    _launchUrl('https://help.avrai.app/guide');
   }
 
   void _showWhatsNew(BuildContext context) {
@@ -468,7 +470,7 @@ class HelpSupportPage extends StatelessWidget {
         title: const Text('What\'s New'),
         content: const SingleChildScrollView(
           child: Text(
-            '🎉 SPOTS v1.0.0\n\n'
+            '🎉 avrai v1.0.0\n\n'
             '✨ New Features:\n'
             '• Complete UI overhaul\n'
             '• Edit and share spots\n'
@@ -517,7 +519,7 @@ class HelpSupportPage extends StatelessWidget {
             'Connect with people and experiences.\n\n'
             '🎯 Personalized, Not Prescriptive\n'
             'Suggestions, not commands.\n\n'
-            'Read the full philosophy at spots.app/our-guts',
+            'Read the full philosophy at avrai.app/our-guts',
           ),
         ),
         actions: [
@@ -536,7 +538,7 @@ class HelpSupportPage extends StatelessWidget {
       path: email,
       query: 'subject=${Uri.encodeComponent(subject)}',
     );
-    
+
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }

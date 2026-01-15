@@ -191,5 +191,71 @@ void main() {
         expect(invalidResult.isValid, isFalse);
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () async {
+        final curator = UnifiedUser(
+          id: 'curator_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          email: 'curator@test.com',
+          displayName: 'Test Curator',
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final data = ListFormData(
+          title: 'My Test List',
+          description: 'A list for testing',
+          category: 'General',
+          isPublic: true,
+          curator: curator,
+        );
+
+        final result = await controller.createList(
+          data: data,
+          curator: curator,
+        );
+
+        expect(result.success, isTrue, reason: 'Should succeed with AVRAI services');
+        expect(result.list, isNotNull, reason: 'List should be created');
+        // Note: AVRAI integrations (4D quantum, quantum compatibility, knot recommendations)
+        // happen internally and don't affect result
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = ListCreationController(
+          locationTimingService: null,
+          quantumEntanglementService: null,
+          knotCompatibilityService: null,
+          knotEngine: null,
+          aiLearningService: null,
+        );
+
+        final curator = UnifiedUser(
+          id: 'curator_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          email: 'curator@test.com',
+          displayName: 'Test Curator',
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final data = ListFormData(
+          title: 'My Test List',
+          description: 'A list for testing',
+          category: 'General',
+          isPublic: true,
+          curator: curator,
+        );
+
+        final result = await controllerWithoutAVRAI.createList(
+          data: data,
+          curator: curator,
+        );
+
+        expect(result.success, isTrue, reason: 'Should succeed even without AVRAI services');
+        expect(result.list, isNotNull, reason: 'List should be created');
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }

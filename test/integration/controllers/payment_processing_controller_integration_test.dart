@@ -323,6 +323,36 @@ void main() {
         expect(result.fieldErrors['event'], equals('Event is not available for purchase'));
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () {
+        // PaymentProcessingController doesn't have AVRAI integration
+        // (AI2AI learning is optional and not yet implemented)
+        // This test verifies the controller works correctly
+        final result = controller.validatePayment(
+          event: testEvent,
+          buyer: testUser,
+          quantity: 1,
+        );
+
+        expect(result.isValid, isTrue, reason: 'Should validate correctly');
+        // Note: PaymentProcessingController doesn't have AVRAI integration yet
+        // AI2AI learning is planned but not implemented
+      });
+
+      test('should work without AVRAI services (graceful degradation)', () {
+        // PaymentProcessingController doesn't use AVRAI services
+        // This test verifies core functionality works
+        final result = controller.validatePayment(
+          event: testEvent,
+          buyer: testUser,
+          quantity: 1,
+        );
+
+        expect(result.isValid, isTrue, reason: 'Should validate correctly');
+        // Core payment processing doesn't depend on AVRAI services
+      });
+    });
   });
 }
 

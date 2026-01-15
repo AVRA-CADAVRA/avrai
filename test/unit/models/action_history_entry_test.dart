@@ -142,6 +142,45 @@ void main() {
         expect(restored.result.success, isFalse);
         expect(restored.result.errorMessage, equals('Test error'));
       });
+
+      test('should serialize and deserialize CreateEventIntent correctly', () {
+        // Test business logic: CreateEventIntent serialization (new action type)
+        final eventIntent = CreateEventIntent(
+          userId: 'user123',
+          templateId: 'coffee_tasting_tour',
+          title: 'Coffee Tour',
+          description: 'A fun coffee tour',
+          startTime: DateTime(2025, 12, 25, 10, 0),
+          maxAttendees: 20,
+          price: 25.0,
+          category: 'Coffee',
+          confidence: 0.8,
+        );
+        final eventResult = ActionResult.success(intent: eventIntent);
+
+        final entry = ActionHistoryEntry(
+          id: 'entry5',
+          intent: eventIntent,
+          result: eventResult,
+          timestamp: testTimestamp,
+          canUndo: true,
+          userId: 'user123',
+        );
+
+        final json = entry.toJson();
+        final restored = ActionHistoryEntry.fromJson(json);
+
+        expect(restored.intent, isA<CreateEventIntent>());
+        final restoredIntent = restored.intent as CreateEventIntent;
+        expect(restoredIntent.userId, equals('user123'));
+        expect(restoredIntent.templateId, equals('coffee_tasting_tour'));
+        expect(restoredIntent.title, equals('Coffee Tour'));
+        expect(restoredIntent.description, equals('A fun coffee tour'));
+        expect(restoredIntent.startTime, equals(DateTime(2025, 12, 25, 10, 0)));
+        expect(restoredIntent.maxAttendees, equals(20));
+        expect(restoredIntent.price, equals(25.0));
+        expect(restoredIntent.category, equals('Coffee'));
+      });
     });
 
     group('copyWith', () {

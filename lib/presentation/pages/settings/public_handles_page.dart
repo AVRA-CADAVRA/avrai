@@ -21,7 +21,8 @@ class PublicHandlesPage extends StatefulWidget {
 }
 
 class _PublicHandlesPageState extends State<PublicHandlesPage> {
-  final PublicProfileAnalysisService _analysisService = di.sl<PublicProfileAnalysisService>();
+  final PublicProfileAnalysisService _analysisService =
+      di.sl<PublicProfileAnalysisService>();
   final AgentIdService _agentIdService = di.sl<AgentIdService>();
 
   final Map<String, TextEditingController> _controllers = {};
@@ -208,7 +209,8 @@ class _PublicHandlesPageState extends State<PublicHandlesPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? 'Consent revoked' : 'Failed to revoke consent'),
+            content:
+                Text(success ? 'Consent revoked' : 'Failed to revoke consent'),
             backgroundColor: success ? Colors.orange : AppTheme.errorColor,
           ),
         );
@@ -307,14 +309,20 @@ class _PublicHandlesPageState extends State<PublicHandlesPage> {
                             children: [
                               Text(
                                 'I consent to public profile analysis',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'I understand that SPOTS will analyze my public posts, interests, and content to enhance my AI personality. I can revoke this consent at any time.',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                'I understand that avrai will analyze my public posts, interests, and content to enhance my AI personality. I can revoke this consent at any time.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
                                       color: AppColors.grey700,
                                     ),
                               ),

@@ -8,6 +8,11 @@ import 'package:avrai/core/models/list.dart';
 import 'package:avrai/core/models/unified_user.dart';
 import 'package:avrai/domain/repositories/lists_repository.dart';
 import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_knot/services/knot/cross_entity_compatibility_service.dart';
+import 'package:avrai_knot/services/knot/integrated_knot_recommendation_engine.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 
 /// List Creation Controller
 /// 
@@ -52,13 +57,45 @@ class ListCreationController
 
   final ListsRepository _listsRepository;
   final AtomicClockService _atomicClock;
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumEntanglementService? _quantumEntanglementService;
+  final CrossEntityCompatibilityService? _knotCompatibilityService;
+  final IntegratedKnotRecommendationEngine? _knotEngine;
+  final QuantumMatchingAILearningService? _aiLearningService;
 
   ListCreationController({
     ListsRepository? listsRepository,
     AtomicClockService? atomicClock,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumEntanglementService? quantumEntanglementService,
+    CrossEntityCompatibilityService? knotCompatibilityService,
+    IntegratedKnotRecommendationEngine? knotEngine,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _listsRepository =
             listsRepository ?? GetIt.instance<ListsRepository>(),
-        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>();
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null),
+        _knotCompatibilityService = knotCompatibilityService ??
+            (GetIt.instance.isRegistered<CrossEntityCompatibilityService>()
+                ? GetIt.instance<CrossEntityCompatibilityService>()
+                : null),
+        _knotEngine = knotEngine ??
+            (GetIt.instance.isRegistered<IntegratedKnotRecommendationEngine>()
+                ? GetIt.instance<IntegratedKnotRecommendationEngine>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
+                : null);
 
   /// Create a list
   /// 
@@ -143,7 +180,106 @@ class ListCreationController
         );
       }
 
-      // Step 5: Generate AI suggestions (optional, when service available)
+      // Step 5: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 5.1: Create 4D quantum states for spots in list (if spots provided)
+      if (_locationTimingService != null && initialSpotIds != null && initialSpotIds.isNotEmpty) {
+        try {
+          developer.log(
+            '🌐 Creating 4D quantum states for ${initialSpotIds.length} spots in list',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would load Spot objects and create quantum states
+          // This is a placeholder for future 4D quantum state creation for list spots
+          developer.log(
+            'ℹ️ 4D quantum state creation for spots deferred (requires Spot objects)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ 4D quantum state creation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum state creation is optional
+        }
+      }
+      
+      // 5.2: Calculate quantum compatibility (user ↔ spots)
+      if (_quantumEntanglementService != null && initialSpotIds != null && initialSpotIds.isNotEmpty) {
+        try {
+          developer.log(
+            '🔬 Quantum compatibility calculation deferred (requires Spot objects and user profile)',
+            name: _logName,
+          );
+          // Note: Full implementation would use QuantumMatchingController
+        } catch (e) {
+          developer.log(
+            '⚠️ Quantum compatibility calculation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum compatibility is optional
+        }
+      }
+      
+      // 5.3: Calculate knot compatibility for recommendations
+      if (_knotCompatibilityService != null) {
+        try {
+          developer.log(
+            '🎯 Knot compatibility service available (compatibility calculation deferred)',
+            name: _logName,
+          );
+          // Note: Full implementation would calculate knot compatibility for recommendations
+        } catch (e) {
+          developer.log(
+            '⚠️ Knot compatibility calculation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - knot compatibility is optional
+        }
+      }
+      
+      // 5.4: Use knot-based recommendations (if available)
+      if (_knotEngine != null && generateAISuggestions) {
+        try {
+          developer.log(
+            '🧵 Using knot-based recommendation engine for AI suggestions',
+            name: _logName,
+          );
+          // Note: Full implementation would use IntegratedKnotRecommendationEngine
+          // This is a placeholder for future knot-based list recommendations
+        } catch (e) {
+          developer.log(
+            '⚠️ Knot-based recommendations failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - knot recommendations are optional
+        }
+      }
+      
+      // 5.5: Learn from list creation via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null) {
+        try {
+          developer.log(
+            '🤖 AI2AI learning service available (learning deferred to matching)',
+            name: _logName,
+          );
+          // Note: Actual learning happens when matches occur, not during list creation
+        } catch (e) {
+          developer.log(
+            '⚠️ AI2AI learning failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+      
+      // Step 6: Generate AI suggestions (optional, when service available)
       // TODO(Phase 8.12): Implement AI list generation when AIListGeneratorService is available
       if (generateAISuggestions) {
         developer.log(

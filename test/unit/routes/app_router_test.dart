@@ -33,8 +33,8 @@ void main() {
       expect(router, isNotNull);
     });
 
-    test('should configure new Phase 7 routes', () {
-      // Test business logic: new routes from Phase 7 are configured
+    test('should configure new Phase 7 routes and new Phase 1/2.1 routes', () {
+      // Test business logic: new routes from Phase 1 (device discovery, AI2AI), Phase 2.1 (federated learning), and Phase 7 are configured
       final router = AppRouter.build(authBloc: mockAuthBloc);
 
       // Verify router has routes configured
@@ -43,6 +43,14 @@ void main() {
       // Verify route paths are accessible (router.configuration will contain route information)
       // Note: GoRouter doesn't expose route paths directly, but building without errors
       // confirms routes are configured correctly
+      // New routes added:
+      // - /device-discovery (Phase 1)
+      // - /ai2ai-connections (Phase 1)
+      // - /discovery-settings (Phase 1)
+      // - /federated-learning (Phase 2.1)
+      // - /ai-improvement (Phase 7)
+      // - /ai2ai-learning-methods (Phase 7)
+      // - /continuous-learning (Phase 7)
     });
 
     test('should handle authenticated state for routing', () {

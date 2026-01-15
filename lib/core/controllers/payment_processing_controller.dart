@@ -10,11 +10,11 @@ import 'package:avrai/core/models/revenue_split.dart';
 import 'dart:developer' as developer;
 
 /// Payment Processing Controller
-/// 
+///
 /// Orchestrates the complete payment processing workflow for event ticket purchases.
 /// Coordinates multiple services to handle payment validation, tax calculation,
 /// payment processing, event registration, and receipt generation.
-/// 
+///
 /// **Flow:**
 /// 1. Validate payment data
 /// 2. Calculate sales tax
@@ -23,7 +23,7 @@ import 'dart:developer' as developer;
 /// 5. Update event (add attendee)
 /// 6. Generate receipt (if ReceiptService available)
 /// 7. Return unified result
-/// 
+///
 /// **Usage:**
 /// ```dart
 /// final controller = GetIt.instance<PaymentProcessingController>();
@@ -38,7 +38,8 @@ import 'dart:developer' as developer;
 ///   final taxAmount = result.taxAmount;
 /// } else {
 ///   // Handle error
-///   print(result.error);
+///   developer.log('Payment processing failed: ${result.error}',
+///     name: 'PaymentProcessingController');
 /// }
 /// ```
 class PaymentProcessingController
@@ -55,7 +56,7 @@ class PaymentProcessingController
         _paymentEventService = paymentEventService;
 
   /// Process event payment
-  /// 
+  ///
   /// Complete payment processing workflow:
   /// 1. Validate payment data
   /// 2. Calculate sales tax
@@ -63,12 +64,12 @@ class PaymentProcessingController
   /// 4. Process payment via PaymentService
   /// 5. Register user for event
   /// 6. Return unified result
-  /// 
+  ///
   /// **Parameters:**
   /// - `event`: Event to purchase tickets for
   /// - `buyer`: User making the purchase
   /// - `quantity`: Number of tickets (default: 1)
-  /// 
+  ///
   /// **Returns:**
   /// PaymentProcessingResult with payment details, tax, and registration status
   Future<PaymentProcessingResult> processEventPayment({
@@ -196,16 +197,16 @@ class PaymentProcessingController
   }
 
   /// Process refund
-  /// 
+  ///
   /// Processes a refund for a completed payment.
-  /// 
+  ///
   /// **Parameters:**
   /// - `paymentId`: Payment ID to refund
   /// - `reason`: Reason for refund
-  /// 
+  ///
   /// **Returns:**
   /// PaymentProcessingResult with refund details
-  /// 
+  ///
   /// **Note:** Refund functionality not yet implemented in PaymentService
   Future<PaymentProcessingResult> processRefund({
     required String paymentId,
@@ -238,15 +239,15 @@ class PaymentProcessingController
   }
 
   /// Validate payment data
-  /// 
+  ///
   /// Validates payment request before processing.
   /// Checks event availability, user eligibility, and payment requirements.
-  /// 
+  ///
   /// **Parameters:**
   /// - `event`: Event to purchase tickets for
   /// - `buyer`: User making the purchase
   /// - `quantity`: Number of tickets
-  /// 
+  ///
   /// **Returns:**
   /// ValidationResult with any validation errors
   ValidationResult validatePayment({
@@ -275,7 +276,8 @@ class PaymentProcessingController
     // Validate capacity
     final availableSpots = event.maxAttendees - event.attendeeCount;
     if (quantity > availableSpots) {
-      errors['quantity'] = 'Insufficient capacity. Only $availableSpots tickets available';
+      errors['quantity'] =
+          'Insufficient capacity. Only $availableSpots tickets available';
     }
 
     // Validate user can attend (expertise/geographic scope)
@@ -285,7 +287,8 @@ class PaymentProcessingController
       if (event.attendeeIds.contains(buyer.id)) {
         errors['buyer'] = 'User is already registered for this event';
       } else {
-        errors['buyer'] = 'User cannot attend this event (expertise or geographic scope restriction)';
+        errors['buyer'] =
+            'User cannot attend this event (expertise or geographic scope restriction)';
       }
     }
 
@@ -340,7 +343,7 @@ class PaymentProcessingController
 }
 
 /// Payment data input for PaymentProcessingController
-/// 
+///
 /// Encapsulates all data needed to process a payment.
 class PaymentData {
   final ExpertiseEvent event;
@@ -355,7 +358,7 @@ class PaymentData {
 }
 
 /// Payment Processing Result
-/// 
+///
 /// Unified result for payment processing operations.
 /// Extends ControllerResult and includes all payment-related data.
 class PaymentProcessingResult extends ControllerResult {
@@ -469,4 +472,3 @@ class PaymentProcessingResult extends ControllerResult {
         validationErrors,
       ];
 }
-

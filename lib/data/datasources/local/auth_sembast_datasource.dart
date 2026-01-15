@@ -7,7 +7,8 @@ import 'package:avrai/data/datasources/local/sembast_database.dart';
 class AuthSembastDataSource implements AuthLocalDataSource {
   final StoreRef<String, Map<String, dynamic>> _usersStore;
   final StoreRef<String, Map<String, dynamic>> _preferencesStore;
-  final AppLogger _logger = const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
+  final AppLogger _logger =
+      const AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
 
   AuthSembastDataSource()
       : _usersStore = SembastDatabase.usersStore,
@@ -16,16 +17,20 @@ class AuthSembastDataSource implements AuthLocalDataSource {
   @override
   Future<User?> signIn(String email, String password) async {
     try {
-      _logger.info('🔐 AuthSembastDataSource: Starting sign in for $email', tag: 'AuthSembastDataSource');
-      _logger.debug('Attempting sign in for: $email', tag: 'AuthSembastDataSource');
-      
+      _logger.info('🔐 AuthSembastDataSource: Starting sign in for $email',
+          tag: 'AuthSembastDataSource');
+      _logger.debug('Attempting sign in for: $email',
+          tag: 'AuthSembastDataSource');
+
       // BACKDOOR: Always allow demo user login
-      if (email == 'demo@spots.com' && password == 'password123') {
-        _logger.warn('🔐 AuthSembastDataSource: BACKDOOR - Demo user login approved', tag: 'AuthSembastDataSource');
+      if (email == 'demo@avrai.app' && password == 'password123') {
+        _logger.warn(
+            '🔐 AuthSembastDataSource: BACKDOOR - Demo user login approved',
+            tag: 'AuthSembastDataSource');
         final now = DateTime.now();
         final demoUser = User(
           id: 'demo-user-1',
-          email: 'demo@spots.com',
+          email: 'demo@avrai.app',
           name: 'Demo User',
           displayName: 'Demo User',
           role: UserRole.user,
@@ -33,50 +38,64 @@ class AuthSembastDataSource implements AuthLocalDataSource {
           updatedAt: now,
           isOnline: true,
         );
-        
+
         // Save to database if possible
         try {
           final db = await SembastDatabase.database;
           await _usersStore.record(demoUser.id).put(db, demoUser.toJson());
-          await _preferencesStore.record('currentUser').put(db, {'key': 'currentUser', 'value': demoUser.id});
-          _logger.debug('🔐 AuthSembastDataSource: Demo user saved to database', tag: 'AuthSembastDataSource');
+          await _preferencesStore
+              .record('currentUser')
+              .put(db, {'key': 'currentUser', 'value': demoUser.id});
+          _logger.debug('🔐 AuthSembastDataSource: Demo user saved to database',
+              tag: 'AuthSembastDataSource');
         } catch (e) {
-          _logger.warn('🔐 AuthSembastDataSource: Database save failed, but login continues: $e', tag: 'AuthSembastDataSource');
+          _logger.warn(
+              '🔐 AuthSembastDataSource: Database save failed, but login continues: $e',
+              tag: 'AuthSembastDataSource');
         }
-        
+
         return demoUser;
       }
-      
+
       // Regular database lookup for other users
       final db = await SembastDatabase.database;
-      _logger.debug('🔐 AuthSembastDataSource: Database obtained', tag: 'AuthSembastDataSource');
+      _logger.debug('🔐 AuthSembastDataSource: Database obtained',
+          tag: 'AuthSembastDataSource');
       final finder = Finder(filter: Filter.equals('email', email));
       final records = await _usersStore.find(db, finder: finder);
-      
-      _logger.debug('🔐 AuthSembastDataSource: Found ${records.length} users with email: $email', tag: 'AuthSembastDataSource');
-      
+
+      _logger.debug(
+          '🔐 AuthSembastDataSource: Found ${records.length} users with email: $email',
+          tag: 'AuthSembastDataSource');
+
       if (records.isNotEmpty) {
         final userData = records.first.value;
-        _logger.debug('🔐 AuthSembastDataSource: User data found', tag: 'AuthSembastDataSource');
+        _logger.debug('🔐 AuthSembastDataSource: User data found',
+            tag: 'AuthSembastDataSource');
         final user = User.fromJson(userData);
-        
-        // For demo purposes, accept any password for demo@spots.com
+
+        // For demo purposes, accept any password for demo@avrai.app
         // In a real app, you'd verify the password hash
-        if (email == 'demo@spots.com' || password.isNotEmpty) {
+        if (email == 'demo@avrai.app' || password.isNotEmpty) {
           // Save current user
-          await _preferencesStore.record('currentUser').put(db, {'key': 'currentUser', 'value': user.id});
-          _logger.info('🔐 AuthSembastDataSource: Demo user signed in successfully: $email', tag: 'AuthSembastDataSource');
+          await _preferencesStore
+              .record('currentUser')
+              .put(db, {'key': 'currentUser', 'value': user.id});
+          _logger.info(
+              '🔐 AuthSembastDataSource: Demo user signed in successfully: $email',
+              tag: 'AuthSembastDataSource');
           return user;
         }
       }
-      
+
       // TEMPORARY: Create demo user on-the-fly if not found
-      if (email == 'demo@spots.com') {
-        _logger.info('🔐 AuthSembastDataSource: Creating demo user on-the-fly', tag: 'AuthSembastDataSource');
+      if (email == 'demo@avrai.app') {
+        _logger.info('🔐 AuthSembastDataSource: Creating demo user on-the-fly',
+            tag: 'AuthSembastDataSource');
         final now = DateTime.now();
         final demoUser = User(
           id: 'demo-user-1',
-          email: 'demo@spots.com',
+          email: 'demo@avrai.app',
           name: 'Demo User',
           displayName: 'Demo User',
           role: UserRole.user,
@@ -84,44 +103,102 @@ class AuthSembastDataSource implements AuthLocalDataSource {
           updatedAt: now,
           isOnline: true,
         );
-        
+
         // Add expertiseMap to make demo user an expert in everything
         final userJson = demoUser.toJson();
         final allCategories = [
-          'Coffee', 'Restaurants', 'Bars', 'Pastry', 'Wine', 'Cocktails',
-          'Food', 'Dining', 'Retail', 'Shopping', 'Hospitality', 'Service',
-          'Art', 'Music', 'Outdoor', 'Fitness', 'Books', 'Tech', 'Wellness', 'Travel',
-          'Parks', 'Bookstores', 'Museums', 'Theaters', 'Live Music', 'Sports',
-          'Fashion', 'Vintage', 'Markets', 'Food Trucks', 'Bakeries',
-          'Ice Cream', 'Wine Bars', 'Craft Beer', 'Vegan/Vegetarian', 'Pizza',
-          'Sushi', 'BBQ', 'Mexican', 'Italian', 'Thai', 'Indian', 'Mediterranean',
-          'Korean', 'Hiking Trails', 'Beaches', 'Gardens', 'Botanical Gardens',
-          'Nature Reserves', 'Camping', 'Fishing', 'Kayaking', 'Biking Trails',
-          'Bird Watching', 'Stargazing', 'Picnic Spots', 'Waterfalls', 'Scenic Views',
+          'Coffee',
+          'Restaurants',
+          'Bars',
+          'Pastry',
+          'Wine',
+          'Cocktails',
+          'Food',
+          'Dining',
+          'Retail',
+          'Shopping',
+          'Hospitality',
+          'Service',
+          'Art',
+          'Music',
+          'Outdoor',
+          'Fitness',
+          'Books',
+          'Tech',
+          'Wellness',
+          'Travel',
+          'Parks',
+          'Bookstores',
+          'Museums',
+          'Theaters',
+          'Live Music',
+          'Sports',
+          'Fashion',
+          'Vintage',
+          'Markets',
+          'Food Trucks',
+          'Bakeries',
+          'Ice Cream',
+          'Wine Bars',
+          'Craft Beer',
+          'Vegan/Vegetarian',
+          'Pizza',
+          'Sushi',
+          'BBQ',
+          'Mexican',
+          'Italian',
+          'Thai',
+          'Indian',
+          'Mediterranean',
+          'Korean',
+          'Hiking Trails',
+          'Beaches',
+          'Gardens',
+          'Botanical Gardens',
+          'Nature Reserves',
+          'Camping',
+          'Fishing',
+          'Kayaking',
+          'Biking Trails',
+          'Bird Watching',
+          'Stargazing',
+          'Picnic Spots',
+          'Waterfalls',
+          'Scenic Views',
         ];
-        
+
         final expertiseMap = <String, String>{};
         for (final category in allCategories) {
           expertiseMap[category] = 'universal'; // Highest expertise level
         }
-        
+
         userJson['expertiseMap'] = expertiseMap;
-        _logger.debug('🔐 AuthSembastDataSource: Added ${expertiseMap.length} expertise categories to demo user', tag: 'AuthSembastDataSource');
-        
+        _logger.debug(
+            '🔐 AuthSembastDataSource: Added ${expertiseMap.length} expertise categories to demo user',
+            tag: 'AuthSembastDataSource');
+
         // Save demo user to database
         await _usersStore.record(demoUser.id).put(db, userJson);
-        _logger.debug('🔐 AuthSembastDataSource: Demo user saved to database with universal expertise', tag: 'AuthSembastDataSource');
-        
+        _logger.debug(
+            '🔐 AuthSembastDataSource: Demo user saved to database with universal expertise',
+            tag: 'AuthSembastDataSource');
+
         // Save current user
-        await _preferencesStore.record('currentUser').put(db, {'key': 'currentUser', 'value': demoUser.id});
-        _logger.info('🔐 AuthSembastDataSource: Demo user created and signed in successfully: $email', tag: 'AuthSembastDataSource');
+        await _preferencesStore
+            .record('currentUser')
+            .put(db, {'key': 'currentUser', 'value': demoUser.id});
+        _logger.info(
+            '🔐 AuthSembastDataSource: Demo user created and signed in successfully: $email',
+            tag: 'AuthSembastDataSource');
         return demoUser;
       }
-      
-      _logger.warn('🔐 AuthSembastDataSource: Invalid credentials for: $email', tag: 'AuthSembastDataSource');
+
+      _logger.warn('🔐 AuthSembastDataSource: Invalid credentials for: $email',
+          tag: 'AuthSembastDataSource');
       return null;
     } catch (e) {
-      _logger.error('🔐 AuthSembastDataSource: Error signing in', error: e, tag: 'AuthSembastDataSource');
+      _logger.error('🔐 AuthSembastDataSource: Error signing in',
+          error: e, tag: 'AuthSembastDataSource');
       return null;
     }
   }
@@ -150,7 +227,8 @@ class AuthSembastDataSource implements AuthLocalDataSource {
           .record('currentUser')
           .put(db, {'key': 'currentUser', 'value': user.id});
     } catch (e) {
-      _logger.error('Error saving user', error: e, tag: 'AuthSembastDataSource');
+      _logger.error('Error saving user',
+          error: e, tag: 'AuthSembastDataSource');
     }
   }
 
@@ -158,8 +236,9 @@ class AuthSembastDataSource implements AuthLocalDataSource {
   Future<User?> getCurrentUser() async {
     try {
       final db = await SembastDatabase.database;
-      final records = await _preferencesStore.find(db, finder: Finder(filter: Filter.equals('key', 'currentUser')));
-      
+      final records = await _preferencesStore.find(db,
+          finder: Finder(filter: Filter.equals('key', 'currentUser')));
+
       if (records.isNotEmpty) {
         final userId = records.first.value['value'] as String?;
         if (userId != null) {
@@ -171,7 +250,8 @@ class AuthSembastDataSource implements AuthLocalDataSource {
       }
       return null;
     } catch (e) {
-      _logger.error('Error getting current user', error: e, tag: 'AuthSembastDataSource');
+      _logger.error('Error getting current user',
+          error: e, tag: 'AuthSembastDataSource');
       return null;
     }
   }
@@ -182,7 +262,8 @@ class AuthSembastDataSource implements AuthLocalDataSource {
       final db = await SembastDatabase.database;
       await _preferencesStore.record('currentUser').delete(db);
     } catch (e) {
-      _logger.error('Error clearing user', error: e, tag: 'AuthSembastDataSource');
+      _logger.error('Error clearing user',
+          error: e, tag: 'AuthSembastDataSource');
     }
   }
 
@@ -190,10 +271,12 @@ class AuthSembastDataSource implements AuthLocalDataSource {
   Future<bool> isOnboardingCompleted() async {
     try {
       final db = await SembastDatabase.database;
-      final records = await _preferencesStore.find(db, finder: Finder(filter: Filter.equals('key', 'onboardingCompleted')));
+      final records = await _preferencesStore.find(db,
+          finder: Finder(filter: Filter.equals('key', 'onboardingCompleted')));
       return records.isNotEmpty && records.first.value['value'] == true;
     } catch (e) {
-      _logger.error('Error checking onboarding status', error: e, tag: 'AuthSembastDataSource');
+      _logger.error('Error checking onboarding status',
+          error: e, tag: 'AuthSembastDataSource');
       return false;
     }
   }
@@ -202,9 +285,12 @@ class AuthSembastDataSource implements AuthLocalDataSource {
   Future<void> markOnboardingCompleted() async {
     try {
       final db = await SembastDatabase.database;
-      await _preferencesStore.record('onboardingCompleted').put(db, {'key': 'onboardingCompleted', 'value': true});
+      await _preferencesStore
+          .record('onboardingCompleted')
+          .put(db, {'key': 'onboardingCompleted', 'value': true});
     } catch (e) {
-      _logger.error('Error marking onboarding completed', error: e, tag: 'AuthSembastDataSource');
+      _logger.error('Error marking onboarding completed',
+          error: e, tag: 'AuthSembastDataSource');
     }
   }
 
@@ -214,14 +300,19 @@ class AuthSembastDataSource implements AuthLocalDataSource {
       final db = await SembastDatabase.database;
       final users = await SembastDatabase.usersStore.find(db, finder: Finder());
       // Using a local logger instance since static context doesn't have _logger
-      const localLogger = AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
-      localLogger.debug('🔍 AuthSembastDataSource: Found ${users.length} users in database', tag: 'AuthSembastDataSource');
+      const localLogger =
+          AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
+      localLogger.debug(
+          '🔍 AuthSembastDataSource: Found ${users.length} users in database',
+          tag: 'AuthSembastDataSource');
       for (final user in users) {
         localLogger.debug('User: ${user.value}', tag: 'AuthSembastDataSource');
       }
     } catch (e) {
-      const localLogger = AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
-      localLogger.error('Error debugging database', error: e, tag: 'AuthSembastDataSource');
+      const localLogger =
+          AppLogger(defaultTag: 'SPOTS', minimumLevel: LogLevel.debug);
+      localLogger.error('Error debugging database',
+          error: e, tag: 'AuthSembastDataSource');
     }
   }
 }

@@ -187,8 +187,8 @@ class MockBehaviorSetup {
 
     when(() => BlocMockFactory.deleteSpotUseCase.call(any()))
         .thenAnswer((_) async {
-          return;
-        });
+      return;
+    });
   }
 
   /// Sets up spots operation failures
@@ -219,8 +219,8 @@ class MockBehaviorSetup {
 
     when(() => BlocMockFactory.deleteListUseCase.call(any()))
         .thenAnswer((_) async {
-          return;
-        });
+      return;
+    });
   }
 
   /// Sets up lists operation failures
@@ -233,13 +233,15 @@ class MockBehaviorSetup {
   }
 
   /// Sets up successful search operations
-  static void setupSuccessfulSearch() {
+  static void setupSuccessfulSearch({bool includeFilters = false}) {
     when(() => BlocMockFactory.hybridSearchUseCase.searchSpots(
           query: any(named: 'query'),
           latitude: any(named: 'latitude'),
           longitude: any(named: 'longitude'),
           maxResults: any(named: 'maxResults'),
           includeExternal: any(named: 'includeExternal'),
+          filters: any(named: 'filters'),
+          sortOption: any(named: 'sortOption'),
         )).thenAnswer((_) async => HybridSearchResult(
           spots: TestDataFactory.createTestSpots(10),
           communityCount: 5,
@@ -280,8 +282,8 @@ class MockBehaviorSetup {
           includeExternal: any(named: 'includeExternal'),
           result: any(named: 'result'),
         )).thenAnswer((_) async {
-          return;
-        });
+      return;
+    });
 
     when(() => BlocMockFactory.aiSearchSuggestionsService.learnFromSearch(
           query: any(named: 'query'),
@@ -319,22 +321,22 @@ class MockBehaviorSetup {
     when(() => BlocMockFactory.searchCacheService.prefetchPopularSearches(
           searchFunction: any(named: 'searchFunction'),
         )).thenAnswer((_) async {
-          return;
-        });
+      return;
+    });
 
     when(() => BlocMockFactory.searchCacheService.warmLocationCache(
           latitude: any(named: 'latitude'),
           longitude: any(named: 'longitude'),
           nearbySearchFunction: any(named: 'nearbySearchFunction'),
         )).thenAnswer((_) async {
-          return;
-        });
+      return;
+    });
 
     when(() => BlocMockFactory.searchCacheService.clearCache(
           preserveOffline: any(named: 'preserveOffline'),
         )).thenAnswer((_) async {
-          return;
-        });
+      return;
+    });
 
     when(() => BlocMockFactory.aiSearchSuggestionsService.clearLearningData())
         .thenReturn(null);
@@ -348,6 +350,8 @@ class MockBehaviorSetup {
           longitude: any(named: 'longitude'),
           maxResults: any(named: 'maxResults'),
           includeExternal: any(named: 'includeExternal'),
+          filters: any(named: 'filters'),
+          sortOption: any(named: 'sortOption'),
         )).thenThrow(Exception('Search failed'));
   }
 }

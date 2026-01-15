@@ -171,7 +171,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (_isCompleting) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Welcome to SPOTS'),
+          title: const Text('Welcome to avrai'),
           automaticallyImplyLeading: false,
         ),
         body: const Center(
@@ -182,7 +182,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome to SPOTS'),
+        title: const Text('Welcome to avrai'),
         automaticallyImplyLeading: false,
         actions: [
           if (kDebugMode)
@@ -193,9 +193,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 try {
                   final proof = GetIt.instance<ProofRunServiceV0>();
                   final existing = proof.getActiveRunId();
-                  final runId = existing ?? await proof.startRun(payload: const {
-                    'started_from': 'onboarding',
-                  });
+                  final runId = existing ??
+                      await proof.startRun(payload: const {
+                        'started_from': 'onboarding',
+                      });
                   if (!mounted || !context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -727,7 +728,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
             if (const bool.fromEnvironment('FLUTTER_TEST')) {
               // Helpful signal in integration test output.
               // ignore: avoid_print
-              developer.log('TEST: OnboardingPage -> /ai-loading', name: 'onuoardingpage');
+              developer.log('TEST: OnboardingPage -> /ai-loading',
+                  name: 'onuoardingpage');
             }
 
             // Get user name from auth state
@@ -1112,7 +1114,8 @@ class _ConnectAndDiscoverPageState extends State<_ConnectAndDiscoverPage> {
     _loadOfflineLlmPreferenceAndEligibility();
   }
 
-  Stream<LocalLlmProvisioningState> _createProvisioningStreamWithInitial() async* {
+  Stream<LocalLlmProvisioningState>
+      _createProvisioningStreamWithInitial() async* {
     yield await _provisioning.getState();
     yield* _provisioningStream;
   }
@@ -1153,8 +1156,7 @@ class _ConnectAndDiscoverPageState extends State<_ConnectAndDiscoverPage> {
       final eligible = recommended != OfflineLlmTier.none;
 
       // Opt-out default: if eligible, default enabled unless user disabled.
-      final hasUserChoice =
-          prefs.containsKey('offline_llm_enabled_v1');
+      final hasUserChoice = prefs.containsKey('offline_llm_enabled_v1');
       bool enabled = prefs.getBool('offline_llm_enabled_v1') ?? false;
       if (!hasUserChoice) {
         enabled = eligible;
@@ -1272,7 +1274,8 @@ class _ConnectAndDiscoverPageState extends State<_ConnectAndDiscoverPage> {
                       : 'Offline AI: updating… (current: $packId)';
                 } else if (phase == LocalLlmProvisioningPhase.error) {
                   final err = s?.lastError ?? 'Unknown error';
-                  text = 'Offline AI: installed ($packId) — update error ($err).';
+                  text =
+                      'Offline AI: installed ($packId) — update error ($err).';
                 } else {
                   text = 'Offline AI: installed ($packId).';
                 }
@@ -1289,7 +1292,8 @@ class _ConnectAndDiscoverPageState extends State<_ConnectAndDiscoverPage> {
                     text = 'Offline AI: queued until you are charging + idle.';
                     break;
                   case LocalLlmProvisioningPhase.downloading:
-                    final pct = (progress != null) ? (progress * 100).round() : null;
+                    final pct =
+                        (progress != null) ? (progress * 100).round() : null;
                     text = pct != null
                         ? 'Offline AI: downloading on Wi‑Fi… $pct%'
                         : 'Offline AI: downloading on Wi‑Fi…';

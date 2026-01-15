@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:avrai/presentation/blocs/spots/spots_bloc.dart';
 import 'package:avrai/presentation/pages/spots/create_spot_page.dart';
-import 'package:avrai/presentation/widgets/spots/spot_card.dart';
+import 'package:avrai/presentation/widgets/spots/spot_card_with_reservation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:avrai/presentation/widgets/common/offline_indicator.dart';
 import 'package:avrai/core/theme/app_theme.dart';
@@ -142,7 +142,7 @@ class _SpotsPageState extends State<SpotsPage> {
             itemCount: spotsToShow.length,
             itemBuilder: (context, index) {
               final spot = spotsToShow[index];
-              return SpotCard(
+              return SpotCardWithReservation(
                 spot: spot,
                 onTap: () {
                   context.go('/spot/${spot.id}');

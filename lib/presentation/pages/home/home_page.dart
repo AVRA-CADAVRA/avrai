@@ -167,7 +167,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Welcome to SPOTS',
+              'Welcome to avrai',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
@@ -852,7 +852,7 @@ class _AISubTabState extends State<AISubTab> {
     // Add welcome message
     _messages.add({
       'message':
-          "Hi! I'm your SPOTS AI assistant. I can help you create lists, add spots, find places, discover events, connect with users, and much more! Just tell me what you'd like to do.",
+          "Hi! I'm your avrai AI assistant. I can help you create lists, add spots, find places, discover events, connect with users, and much more! Just tell me what you'd like to do.",
       'isUser': false,
       'timestamp': DateTime.now(),
     });

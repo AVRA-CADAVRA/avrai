@@ -1,5 +1,5 @@
 n_entities,convergence_iterations,final_fidelity,constraint_satisfied
-3,2,0.009043255496568179,True
+3,2,0.0001118617389581012,True
 5,2,1.0,True
-7,2,1.0,True
-10,2,1.0,True
+7,2,1.0000000000000004,True
+10,2,1.0000000000000004,True

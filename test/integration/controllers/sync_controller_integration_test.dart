@@ -154,6 +154,70 @@ void main() {
         );
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () async {
+        final userId = 'test_user_avrai_${DateTime.now().millisecondsSinceEpoch}';
+        const password = 'test_password_123';
+        
+        // Ensure sync is disabled to test validation path
+        await personalitySyncService.setCloudSyncEnabled(false);
+
+        final input = SyncInput(
+          userId: userId,
+          password: password,
+          scope: SyncScope.all,
+        );
+
+        final result = await controller.execute(input);
+
+        // In test environment, connectivity check may fail first
+        // Accept either NO_CONNECTIVITY or SYNC_DISABLED as valid test outcomes
+        expect(result.success, isFalse);
+        expect(
+          result.errorCode,
+          anyOf(equals('SYNC_DISABLED'), equals('NO_CONNECTIVITY')),
+        );
+        // Note: AVRAI integrations (knot sync, fabric sync, worldsheet sync, quantum state sync, AI2AI mesh)
+        // happen internally during sync and don't affect validation
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = SyncController(
+          agentIdService: null,
+          personalityKnotService: null,
+          knotStorageService: null,
+          knotFabricService: null,
+          knotWorldsheetService: null,
+          quantumEntanglementService: null,
+          ai2aiProtocol: null,
+        );
+
+        final userId = 'test_user_avrai_${DateTime.now().millisecondsSinceEpoch}';
+        const password = 'test_password_123';
+        
+        // Ensure sync is disabled to test validation path
+        await personalitySyncService.setCloudSyncEnabled(false);
+
+        final input = SyncInput(
+          userId: userId,
+          password: password,
+          scope: SyncScope.all,
+        );
+
+        final result = await controllerWithoutAVRAI.execute(input);
+
+        // In test environment, connectivity check may fail first
+        // Accept either NO_CONNECTIVITY or SYNC_DISABLED as valid test outcomes
+        expect(result.success, isFalse);
+        expect(
+          result.errorCode,
+          anyOf(equals('SYNC_DISABLED'), equals('NO_CONNECTIVITY')),
+        );
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }
 

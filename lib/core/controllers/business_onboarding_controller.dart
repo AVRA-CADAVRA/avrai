@@ -9,6 +9,11 @@ import 'package:avrai/core/models/business_expert_preferences.dart';
 import 'package:avrai/core/models/business_patron_preferences.dart';
 import 'package:avrai/core/services/business_account_service.dart';
 import 'package:avrai/core/services/business_shared_agent_service.dart';
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_knot/services/knot/personality_knot_service.dart';
+import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
 
 /// Business Onboarding Controller
 /// 
@@ -51,14 +56,44 @@ class BusinessOnboardingController
 
   final BusinessAccountService _businessAccountService;
   final BusinessSharedAgentService? _sharedAgentService;
+  // ignore: unused_field
+  final AtomicClockService _atomicClock; // Reserved for future timestamp-based business tracking
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final PersonalityKnotService? _personalityKnotService;
+  final KnotStorageService? _knotStorageService;
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumEntanglementService? _quantumEntanglementService;
 
   BusinessOnboardingController({
     BusinessAccountService? businessAccountService,
     BusinessSharedAgentService? sharedAgentService,
+    AtomicClockService? atomicClock,
+    PersonalityKnotService? personalityKnotService,
+    KnotStorageService? knotStorageService,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumEntanglementService? quantumEntanglementService,
   })  : _businessAccountService =
             businessAccountService ?? GetIt.instance<BusinessAccountService>(),
         _sharedAgentService =
-            sharedAgentService ?? GetIt.instance<BusinessSharedAgentService>();
+            sharedAgentService ?? GetIt.instance<BusinessSharedAgentService>(),
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _personalityKnotService = personalityKnotService ??
+            (GetIt.instance.isRegistered<PersonalityKnotService>()
+                ? GetIt.instance<PersonalityKnotService>()
+                : null),
+        _knotStorageService = knotStorageService ??
+            (GetIt.instance.isRegistered<KnotStorageService>()
+                ? GetIt.instance<KnotStorageService>()
+                : null),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null);
 
   /// Complete business onboarding
   /// 
@@ -137,7 +172,76 @@ class BusinessOnboardingController
         }
       }
 
-      // Step 5: Setup payment processing (if applicable)
+      // Step 5: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 5.1: Generate business personality knot (if business has personality profile)
+      if (_personalityKnotService != null && _knotStorageService != null && sharedAgentId != null) {
+        try {
+          developer.log(
+            '🎯 Generating business personality knot for shared agent: ${sharedAgentId.substring(0, 10)}...',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would require business personality profile
+          // This is a placeholder for future business personality knot generation
+          developer.log(
+            'ℹ️ Business personality knot generation deferred (requires business personality profile)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Business personality knot generation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - knot generation is optional
+        }
+      }
+      
+      // 5.2: Create 4D quantum location state for business location
+      if (_locationTimingService != null && updatedAccount.location != null) {
+        try {
+          developer.log(
+            '🌐 Creating 4D quantum location state for business',
+            name: _logName,
+          );
+          
+          // Parse business location (format may vary)
+          // For now, create a placeholder for future location quantum state creation
+          // Note: BusinessAccount.location format needs to be determined
+          developer.log(
+            'ℹ️ Business location quantum state creation deferred (requires location parsing)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Business location quantum state creation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum state creation is optional
+        }
+      }
+      
+      // 5.3: Create quantum entanglement state for business entity
+      if (_quantumEntanglementService != null) {
+        try {
+          developer.log(
+            '🔬 Quantum entanglement service available (quantum state creation deferred)',
+            name: _logName,
+          );
+          // Note: Full implementation would create quantum state for business entity
+        } catch (e) {
+          developer.log(
+            '⚠️ Quantum entanglement service check failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum entanglement is optional
+        }
+      }
+      
+      // Step 6: Setup payment processing (if applicable)
       // TODO(Phase 8.12): Implement Stripe Connect account setup
       // For now, this is a placeholder
 

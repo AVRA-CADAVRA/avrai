@@ -1,0 +1,24 @@
+{
+  "status": "complete",
+  "total_nodes": 25,
+  "total_messages_tested": 100,
+  "message_delivery": {
+    "avrai_success_rate": 0.71,
+    "baseline_success_rate": 1.0,
+    "improvement_pct": -29.000000000000004
+  },
+  "battery_adaptive": {
+    "avg_adaptive_advantage": 0.1,
+    "charging_allows_more_hops": false
+  },
+  "network_resilience": {
+    "avg_avrai_success_rate": 0.625,
+    "avg_baseline_success_rate": 0.725,
+    "improvement": -0.09999999999999998
+  },
+  "success_criteria": {
+    "avrai_better_delivery": "False",
+    "battery_adaptive_works": "True",
+    "resilience_improvement": "False"
+  }
+}

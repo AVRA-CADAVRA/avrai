@@ -228,7 +228,7 @@ class _FriendDiscoveryPageState extends State<FriendDiscoveryPage> {
                       const Icon(Icons.people, color: AppTheme.primaryColor),
                       const SizedBox(width: 8),
                       Text(
-                        'Find Friends on SPOTS',
+                        'Find Friends on avrai',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -237,7 +237,7 @@ class _FriendDiscoveryPageState extends State<FriendDiscoveryPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Connect your social media accounts to find friends who use SPOTS. We use privacy-preserving matching (hashed IDs) to protect your privacy.',
+                    'Connect your social media accounts to find friends who use avrai. We use privacy-preserving matching (hashed IDs) to protect your privacy.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.grey600,
                         ),
@@ -287,7 +287,7 @@ class _FriendDiscoveryPageState extends State<FriendDiscoveryPage> {
                             Text(
                               _hasSearched
                                   ? 'No friends found'
-                                  : 'Tap "Find Friends" to discover friends who use SPOTS',
+                                  : 'Tap "Find Friends" to discover friends who use avrai',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyLarge

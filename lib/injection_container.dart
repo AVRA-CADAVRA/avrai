@@ -65,6 +65,7 @@ import 'package:avrai/domain/usecases/search/hybrid_search_usecase.dart';
 import 'package:avrai/presentation/blocs/search/hybrid_search_bloc.dart';
 import 'package:avrai/presentation/blocs/group_matching_bloc.dart';
 import 'package:avrai/core/controllers/group_matching_controller.dart';
+import 'package:avrai/core/controllers/reservation_creation_controller.dart';
 import 'package:avrai/core/services/group_formation_service.dart';
 
 // Phase 2: Missing Services
@@ -73,6 +74,7 @@ import 'package:avrai/core/models/user_role.dart';
 // Note: SearchCacheService, AISearchSuggestionsService, CommunityValidationService,
 // PerformanceMonitor, SecurityValidator, and DeploymentValidator are now registered
 // in registerCoreServices() (injection_container_core.dart)
+import 'package:avrai/core/services/ai_search_suggestions_service.dart';
 
 // Patent #30: Quantum Atomic Clock System
 import 'package:avrai_core/services/atomic_clock_service.dart';
@@ -80,7 +82,6 @@ import 'package:avrai_core/services/atomic_clock_service.dart';
 // Patent #31: Topological Knot Theory for Personality Representation
 // Note: Most knot services are registered in registerKnotServices() (injection_container_knot.dart)
 // Import only services needed in main container (for CommunityService dependencies)
-import 'package:avrai_knot/services/knot/knot_fabric_service.dart';
 import 'package:avrai_knot/services/knot/knot_storage_service.dart';
 // Quantum Enhancement Implementation Plan - Phase 2.1: Decoherence Tracking
 // Quantum Enhancement Implementation Plan - Phase 3.1: Quantum Prediction Features
@@ -143,7 +144,40 @@ import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_ser
 import 'package:avrai/core/services/reservation_quantum_service.dart';
 import 'package:avrai/core/services/reservation_service.dart';
 import 'package:avrai/core/services/reservation_recommendation_service.dart';
+import 'package:avrai/core/services/reservation_availability_service.dart';
+import 'package:avrai/core/services/reservation_ticket_queue_service.dart';
+// Phase 6.2 Enhancement: Knot Theory Integration
+import 'package:avrai_knot/services/knot/personality_knot_service.dart';
+import 'package:avrai_knot/services/knot/knot_evolution_string_service.dart';
+import 'package:avrai_knot/services/knot/knot_fabric_service.dart';
+import 'package:avrai_knot/services/knot/knot_worldsheet_service.dart';
+import 'package:avrai_knot/services/knot/knot_orchestrator_service.dart';
+import 'package:avrai_knot/services/knot/integrated_knot_recommendation_engine.dart';
+import 'package:avrai_knot/avra_knot.dart' show CrossEntityCompatibilityService;
+import 'package:avrai/core/services/reservation_rate_limit_service.dart';
+import 'package:avrai/core/services/reservation_cancellation_policy_service.dart';
+import 'package:avrai/core/services/reservation_dispute_service.dart';
+import 'package:avrai/core/services/reservation_notification_service.dart';
+import 'package:avrai/core/services/reservation_waitlist_service.dart';
+import 'package:avrai/core/services/reservation_analytics_service.dart';
+import 'package:avrai/core/services/business_reservation_analytics_service.dart';
+// Phase 10.1: Multi-layered Check-In System
+import 'package:avrai/core/services/reservation_proximity_service.dart';
+import 'package:avrai/core/services/wifi_fingerprint_service.dart';
+import 'package:avrai/core/services/reservation_check_in_service.dart';
+import 'package:avrai/core/services/reservation_calendar_service.dart';
+import 'package:avrai/core/services/reservation_recurrence_service.dart';
+import 'package:avrai/core/services/reservation_sharing_service.dart';
+import 'package:avrai/core/ai/event_logger.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
+// Phase 10.1: AI2AI Mesh Integration
+import 'package:avrai/core/ai2ai/connection_orchestrator.dart'
+    show VibeConnectionOrchestrator;
+import 'package:avrai/core/ai2ai/adaptive_mesh_networking_service.dart';
+import 'package:avrai/core/ai2ai/anonymous_communication.dart';
+import 'package:avrai/core/services/rate_limiting_service.dart';
 import 'package:avrai/core/services/event_success_analysis_service.dart';
+import 'package:avrai/core/controllers/quantum_matching_controller.dart';
 import 'package:avrai/core/services/post_event_feedback_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:avrai/core/services/logger.dart';
@@ -169,6 +203,7 @@ import 'package:avrai/core/services/business_service.dart';
 import 'package:avrai/core/services/payment_service.dart';
 import 'package:avrai/core/services/payment_event_service.dart';
 import 'package:avrai/core/services/revenue_split_service.dart';
+import 'package:avrai/core/services/refund_service.dart';
 import 'package:avrai/core/services/partnership_service.dart';
 import 'package:avrai/core/services/sponsorship_service.dart';
 import 'package:avrai/core/services/product_tracking_service.dart';
@@ -555,6 +590,43 @@ Future<void> init() async {
   await registerQuantumServices(sl);
   logger.debug('✅ [DI] Quantum services registered');
 
+  // Message Encryption Service (Phase 14.4: Signal Protocol Integration)
+  // MUST be registered BEFORE AI services (AI2AIProtocol depends on it)
+  // Uses HybridEncryptionService which tries Signal Protocol first, falls back to AES-256-GCM
+  sl.registerLazySingleton<MessageEncryptionService>(
+    () {
+      final supabaseService = sl<SupabaseService>();
+      final atomicClock = sl<AtomicClockService>();
+
+      // Create Signal Protocol Encryption Service (will be used if Signal Protocol is available)
+      // Note: SignalProtocolService is registered later in backend initialization, so check if registered
+      SignalProtocolEncryptionService? signalProtocolEncryptionService;
+      if (sl.isRegistered<SignalProtocolService>()) {
+        try {
+          final signalProtocolService = sl<SignalProtocolService>();
+          signalProtocolEncryptionService = SignalProtocolEncryptionService(
+            signalProtocol: signalProtocolService,
+            supabaseService: supabaseService,
+            atomicClock: atomicClock,
+          );
+        } catch (e) {
+          logger.warn(
+              '⚠️ [DI] Signal Protocol Encryption Service creation failed: $e');
+          signalProtocolEncryptionService = null;
+        }
+      } else {
+        logger.debug(
+            'ℹ️ [DI] SignalProtocolService not registered yet, MessageEncryptionService will use AES-256-GCM fallback');
+      }
+
+      // Create hybrid service that tries Signal Protocol first, falls back to AES-256-GCM
+      return HybridEncryptionService(
+        signalProtocolService: signalProtocolEncryptionService,
+      );
+    },
+  );
+  logger.debug('✅ [DI] MessageEncryptionService registered');
+
   // 4. AI Services (depends on Knot, Quantum, and Payment services via PartnershipService)
   await registerAIServices(sl);
   logger.debug('✅ [DI] AI services registered');
@@ -597,6 +669,17 @@ Future<void> init() async {
         onboardingDataService: sl<OnboardingDataService>(),
         agentIdService: sl<AgentIdService>(),
         legalDocumentService: sl<LegalDocumentService>(),
+        atomicClock: sl<AtomicClockService>(),
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotStorageService: sl.isRegistered<KnotStorageService>()
+            ? sl<KnotStorageService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
       ));
 
   // Agent Initialization Controller (Phase 8.11)
@@ -608,6 +691,18 @@ Future<void> init() async {
         recommendationService: sl<OnboardingRecommendationService>(),
         syncService: sl<PersonalitySyncService>(),
         agentIdService: sl<AgentIdService>(),
+        atomicClock: sl<AtomicClockService>(),
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
       ));
 
   // ============================================================================
@@ -679,6 +774,33 @@ Future<void> init() async {
   sl.registerLazySingleton(() => EventCreationController(
         eventService: sl<ExpertiseEventService>(),
         geographicScopeService: sl<GeographicScopeService>(),
+        atomicClock: sl<AtomicClockService>(),
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotStorageService: sl.isRegistered<KnotStorageService>()
+            ? sl<KnotStorageService>()
+            : null,
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        knotWorldsheetService: sl.isRegistered<KnotWorldsheetService>()
+            ? sl<KnotWorldsheetService>()
+            : null,
+        knotStringService: sl.isRegistered<KnotEvolutionStringService>()
+            ? sl<KnotEvolutionStringService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
       ));
 
   // Social Media Data Collection Controller (Phase 8.11)
@@ -697,6 +819,31 @@ Future<void> init() async {
 
   // AI Recommendation Controller (Phase 8.11)
   sl.registerLazySingleton(() => AIRecommendationController(
+        atomicClock: sl<AtomicClockService>(),
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotStorageService: sl.isRegistered<KnotStorageService>()
+            ? sl<KnotStorageService>()
+            : null,
+        knotCompatibilityService:
+            sl.isRegistered<CrossEntityCompatibilityService>()
+                ? sl<CrossEntityCompatibilityService>()
+                : null,
+        knotEngine: sl.isRegistered<IntegratedKnotRecommendationEngine>()
+            ? sl<IntegratedKnotRecommendationEngine>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         personalityLearning: sl<PersonalityLearning>(),
         preferencesProfileService: sl<PreferencesProfileService>(),
         eventRecommendationService:
@@ -707,12 +854,51 @@ Future<void> init() async {
   // Sync Controller (Phase 8.11)
   // Register BusinessOnboardingController (Phase 8.11)
   sl.registerLazySingleton(() => BusinessOnboardingController(
+        atomicClock: sl<AtomicClockService>(),
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotStorageService: sl.isRegistered<KnotStorageService>()
+            ? sl<KnotStorageService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
         businessAccountService: sl<BusinessAccountService>(),
         sharedAgentService: sl<BusinessSharedAgentService>(),
       ));
 
   // Register EventAttendanceController (Phase 8.11)
   sl.registerLazySingleton(() => EventAttendanceController(
+        atomicClock: sl<AtomicClockService>(),
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        knotWorldsheetService: sl.isRegistered<KnotWorldsheetService>()
+            ? sl<KnotWorldsheetService>()
+            : null,
+        knotStringService: sl.isRegistered<KnotEvolutionStringService>()
+            ? sl<KnotEvolutionStringService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         eventService: sl<ExpertiseEventService>(),
         paymentController: sl<PaymentProcessingController>(),
         preferencesService: sl<PreferencesProfileService>(),
@@ -721,18 +907,63 @@ Future<void> init() async {
 
   // Register ListCreationController (Phase 8.11)
   sl.registerLazySingleton(() => ListCreationController(
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        knotCompatibilityService:
+            sl.isRegistered<CrossEntityCompatibilityService>()
+                ? sl<CrossEntityCompatibilityService>()
+                : null,
+        knotEngine: sl.isRegistered<IntegratedKnotRecommendationEngine>()
+            ? sl<IntegratedKnotRecommendationEngine>()
+            : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         listsRepository: sl<ListsRepository>(),
         atomicClock: sl<AtomicClockService>(),
       ));
 
   // Register ProfileUpdateController (Phase 8.11)
   sl.registerLazySingleton(() => ProfileUpdateController(
+        agentIdService:
+            sl.isRegistered<AgentIdService>() ? sl<AgentIdService>() : null,
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotStorageService: sl.isRegistered<KnotStorageService>()
+            ? sl<KnotStorageService>()
+            : null,
+        knotStringService: sl.isRegistered<KnotEvolutionStringService>()
+            ? sl<KnotEvolutionStringService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         authRepository: sl<AuthRepository>(),
         atomicClock: sl<AtomicClockService>(),
       ));
 
   // Register EventCancellationController (Phase 8.11)
   sl.registerLazySingleton(() => EventCancellationController(
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        knotWorldsheetService: sl.isRegistered<KnotWorldsheetService>()
+            ? sl<KnotWorldsheetService>()
+            : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         cancellationService: sl<CancellationService>(),
         eventService: sl<ExpertiseEventService>(),
         paymentService: sl<PaymentService>(),
@@ -740,12 +971,46 @@ Future<void> init() async {
 
   // Register PartnershipProposalController (Phase 8.11)
   sl.registerLazySingleton(() => PartnershipProposalController(
+        atomicClock: sl<AtomicClockService>(),
+        knotCompatibilityService:
+            sl.isRegistered<CrossEntityCompatibilityService>()
+                ? sl<CrossEntityCompatibilityService>()
+                : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         partnershipService: sl<PartnershipService>(),
         businessService: sl<BusinessService>(),
       ));
 
   // Register CheckoutController (Phase 8.11)
   sl.registerLazySingleton(() => CheckoutController(
+        atomicClock: sl<AtomicClockService>(),
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        knotWorldsheetService: sl.isRegistered<KnotWorldsheetService>()
+            ? sl<KnotWorldsheetService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         paymentController: sl<PaymentProcessingController>(),
         salesTaxService: sl<SalesTaxService>(),
         legalService: sl<LegalDocumentService>(),
@@ -754,6 +1019,24 @@ Future<void> init() async {
 
   // Register PartnershipCheckoutController (Phase 8.11)
   sl.registerLazySingleton(() => PartnershipCheckoutController(
+        atomicClock: sl<AtomicClockService>(),
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        knotWorldsheetService: sl.isRegistered<KnotWorldsheetService>()
+            ? sl<KnotWorldsheetService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         paymentController: sl<PaymentProcessingController>(),
         revenueSplitService: sl<RevenueSplitService>(),
         partnershipService: sl<PartnershipService>(),
@@ -763,12 +1046,52 @@ Future<void> init() async {
 
   // Register SponsorshipCheckoutController (Phase 8.11)
   sl.registerLazySingleton(() => SponsorshipCheckoutController(
+        atomicClock: sl<AtomicClockService>(),
+        knotCompatibilityService:
+            sl.isRegistered<CrossEntityCompatibilityService>()
+                ? sl<CrossEntityCompatibilityService>()
+                : null,
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        locationTimingService:
+            sl.isRegistered<LocationTimingQuantumStateService>()
+                ? sl<LocationTimingQuantumStateService>()
+                : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        aiLearningService: sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null,
         sponsorshipService: sl<SponsorshipService>(),
         eventService: sl<ExpertiseEventService>(),
         productTrackingService: sl<ProductTrackingService>(),
       ));
 
   sl.registerLazySingleton(() => SyncController(
+        agentIdService:
+            sl.isRegistered<AgentIdService>() ? sl<AgentIdService>() : null,
+        personalityKnotService: sl.isRegistered<PersonalityKnotService>()
+            ? sl<PersonalityKnotService>()
+            : null,
+        knotStorageService: sl.isRegistered<KnotStorageService>()
+            ? sl<KnotStorageService>()
+            : null,
+        knotFabricService: sl.isRegistered<KnotFabricService>()
+            ? sl<KnotFabricService>()
+            : null,
+        knotWorldsheetService: sl.isRegistered<KnotWorldsheetService>()
+            ? sl<KnotWorldsheetService>()
+            : null,
+        quantumEntanglementService:
+            sl.isRegistered<QuantumEntanglementService>()
+                ? sl<QuantumEntanglementService>()
+                : null,
+        ai2aiProtocol: sl.isRegistered<AnonymousCommunicationProtocol>()
+            ? sl<AnonymousCommunicationProtocol>()
+            : null,
         connectivityService: sl<EnhancedConnectivityService>(),
         personalitySyncService: sl<PersonalitySyncService>(),
         personalityLearning: sl<PersonalityLearning>(),
@@ -780,38 +1103,7 @@ Future<void> init() async {
 
   // Note: Quantum services are registered in Quantum module
 
-  // Message Encryption Service (Phase 14.4: Signal Protocol Integration)
-  // Uses HybridEncryptionService which tries Signal Protocol first, falls back to AES-256-GCM
-  // Note: This is a shared service (kept in main container due to complex initialization)
-  sl.registerLazySingleton<MessageEncryptionService>(
-    () {
-      // Get Signal Protocol service (may not be initialized yet)
-      final signalProtocolService = sl<SignalProtocolService>();
-
-      final supabaseService = sl<SupabaseService>();
-      final atomicClock = sl<AtomicClockService>();
-
-      // Create Signal Protocol Encryption Service (will be used if Signal Protocol is available)
-      SignalProtocolEncryptionService? signalProtocolEncryptionService;
-      try {
-        signalProtocolEncryptionService = SignalProtocolEncryptionService(
-          signalProtocol: signalProtocolService,
-          supabaseService: supabaseService,
-          atomicClock: atomicClock,
-        );
-      } catch (e) {
-        logger.warn(
-            '⚠️ [DI] Signal Protocol Encryption Service creation failed: $e');
-        signalProtocolEncryptionService = null;
-      }
-
-      // Create hybrid service that tries Signal Protocol first, falls back to AES-256-GCM
-      return HybridEncryptionService(
-        signalProtocolService: signalProtocolEncryptionService,
-      );
-    },
-  );
-
+  // Note: MessageEncryptionService is now registered BEFORE AI services (moved up to fix dependency order)
   // Note: AI/network services (chat services, business services, admin services, payment services,
   // AI learning services, etc.) are registered in their respective domain modules
 
@@ -1054,18 +1346,415 @@ Future<void> init() async {
               agentIdService: sl<AgentIdService>(),
               storageService: sl<StorageService>(),
               supabaseService: sl<SupabaseService>(),
+              paymentService: sl.isRegistered<PaymentService>()
+                  ? sl<PaymentService>()
+                  : null,
+              refundService:
+                  sl.isRegistered<RefundService>() ? sl<RefundService>() : null,
+              cancellationPolicyService:
+                  sl.isRegistered<ReservationCancellationPolicyService>()
+                      ? sl<ReservationCancellationPolicyService>()
+                      : null,
+              // Phase 7.1: Analytics Integration
+              analyticsService: sl.isRegistered<ReservationAnalyticsService>()
+                  ? sl<ReservationAnalyticsService>()
+                  : null,
+              eventLogger:
+                  sl.isRegistered<EventLogger>() ? sl<EventLogger>() : null,
             ));
         logger.debug('✅ [DI] ReservationService registered');
 
         sl.registerLazySingleton(() => ReservationRecommendationService(
               quantumService: sl<ReservationQuantumService>(),
               atomicClock: sl<AtomicClockService>(),
-              entanglementService: sl<
-                  QuantumEntanglementService>(), // Optional, graceful degradation
-              eventService: sl<ExpertiseEventService>(),
-              agentIdService: sl<AgentIdService>(),
+              entanglementService: sl.isRegistered<QuantumEntanglementService>()
+                  ? sl<QuantumEntanglementService>()
+                  : null, // Optional, graceful degradation
+              eventService: sl.isRegistered<ExpertiseEventService>()
+                  ? sl<ExpertiseEventService>()
+                  : null,
+              agentIdService: sl.isRegistered<AgentIdService>()
+                  ? sl<AgentIdService>()
+                  : null,
+              llmService: sl.isRegistered<LLMService>()
+                  ? sl<LLMService>()
+                  : null, // Phase 6.2: AI-powered suggestions
+              personalityLearning: sl.isRegistered<PersonalityLearning>()
+                  ? sl<PersonalityLearning>()
+                  : null, // Phase 6.2: User preferences
+              aiSearchService: sl.isRegistered<AISearchSuggestionsService>()
+                  ? sl<AISearchSuggestionsService>()
+                  : null, // Phase 6.2: Suggestion patterns
+              reservationService: sl.isRegistered<ReservationService>()
+                  ? sl<ReservationService>()
+                  : null, // Phase 6.2: Past reservations
+              // Phase 6.2 Enhancement: Knot Theory Integration
+              knotService: sl.isRegistered<PersonalityKnotService>()
+                  ? sl<PersonalityKnotService>()
+                  : null,
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              knotEngine: sl.isRegistered<IntegratedKnotRecommendationEngine>()
+                  ? sl<IntegratedKnotRecommendationEngine>()
+                  : null,
             ));
         logger.debug('✅ [DI] ReservationRecommendationService registered');
+
+        // Register Reservation Analytics Service (Phase 7.1)
+        sl.registerLazySingleton(() => ReservationAnalyticsService(
+              reservationService: sl<ReservationService>(),
+              agentIdService: sl<AgentIdService>(),
+              eventLogger:
+                  sl.isRegistered<EventLogger>() ? sl<EventLogger>() : null,
+              paymentService: sl.isRegistered<PaymentService>()
+                  ? sl<PaymentService>()
+                  : null,
+              // Phase 7.1 Enhancement: Knot/String/Fabric/Worldsheet/Quantum/AI2AI Integration
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              atomicClock: sl.isRegistered<AtomicClockService>()
+                  ? sl<AtomicClockService>()
+                  : null,
+              aiLearningService:
+                  sl.isRegistered<QuantumMatchingAILearningService>()
+                      ? sl<QuantumMatchingAILearningService>()
+                      : null,
+              quantumService: sl.isRegistered<ReservationQuantumService>()
+                  ? sl<ReservationQuantumService>()
+                  : null,
+              personalityLearning: sl.isRegistered<PersonalityLearning>()
+                  ? sl<PersonalityLearning>()
+                  : null,
+            ));
+        logger.debug('✅ [DI] ReservationAnalyticsService registered');
+
+        // Register Business Reservation Analytics Service (Phase 7.2)
+        sl.registerLazySingleton(() => BusinessReservationAnalyticsService(
+              reservationService: sl<ReservationService>(),
+              agentIdService: sl<AgentIdService>(),
+              paymentService: sl.isRegistered<PaymentService>()
+                  ? sl<PaymentService>()
+                  : null,
+              rateLimitService: sl.isRegistered<ReservationRateLimitService>()
+                  ? sl<ReservationRateLimitService>()
+                  : null,
+              waitlistService: sl.isRegistered<ReservationWaitlistService>()
+                  ? sl<ReservationWaitlistService>()
+                  : null,
+              availabilityService:
+                  sl.isRegistered<ReservationAvailabilityService>()
+                      ? sl<ReservationAvailabilityService>()
+                      : null,
+              eventLogger:
+                  sl.isRegistered<EventLogger>() ? sl<EventLogger>() : null,
+              // Phase 7.2 Enhancement: Knot/String/Fabric/Worldsheet/Quantum/AI2AI Integration
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              atomicClock: sl.isRegistered<AtomicClockService>()
+                  ? sl<AtomicClockService>()
+                  : null,
+              aiLearningService:
+                  sl.isRegistered<QuantumMatchingAILearningService>()
+                      ? sl<QuantumMatchingAILearningService>()
+                      : null,
+              quantumService: sl.isRegistered<ReservationQuantumService>()
+                  ? sl<ReservationQuantumService>()
+                  : null,
+              personalityLearning: sl.isRegistered<PersonalityLearning>()
+                  ? sl<PersonalityLearning>()
+                  : null,
+            ));
+        logger.debug('✅ [DI] BusinessReservationAnalyticsService registered');
+
+        // Register Reservation Creation Controller (Phase 15.1.2.5)
+        sl.registerLazySingleton(() => ReservationCreationController(
+              reservationService: sl<ReservationService>(),
+              quantumService: sl<ReservationQuantumService>(),
+              quantumController: sl<QuantumMatchingController>(),
+              agentIdService: sl<AgentIdService>(),
+              atomicClock: sl<AtomicClockService>(),
+              availabilityService:
+                  sl.isRegistered<ReservationAvailabilityService>()
+                      ? sl<ReservationAvailabilityService>()
+                      : null,
+              rateLimitService: sl.isRegistered<ReservationRateLimitService>()
+                  ? sl<ReservationRateLimitService>()
+                  : null,
+              ticketQueueService:
+                  sl.isRegistered<ReservationTicketQueueService>()
+                      ? sl<ReservationTicketQueueService>()
+                      : null,
+            ));
+        logger.debug('✅ [DI] ReservationCreationController registered');
+
+        // Register Reservation Availability Service (Phase 15.1.4)
+        sl.registerLazySingleton(() => ReservationAvailabilityService(
+              reservationService: sl<ReservationService>(),
+              eventService: sl<ExpertiseEventService>(),
+              supabaseService: sl<SupabaseService>(),
+            ));
+        logger.debug('✅ [DI] ReservationAvailabilityService registered');
+
+        // Register Reservation Ticket Queue Service (Phase 15.1.3)
+        sl.registerLazySingleton(() => ReservationTicketQueueService(
+              atomicClock: sl<AtomicClockService>(),
+              agentIdService: sl<AgentIdService>(),
+              storageService: sl<StorageService>(),
+              supabaseService: sl<SupabaseService>(),
+            ));
+        logger.debug('✅ [DI] ReservationTicketQueueService registered');
+
+        // Register Rate Limiting Service (if not already registered)
+        if (!sl.isRegistered<RateLimitingService>()) {
+          sl.registerLazySingleton(() => RateLimitingService());
+          logger.debug('✅ [DI] RateLimitingService registered');
+        }
+
+        // Register Reservation Rate Limit Service (Phase 15.1.8) - CRITICAL GAP FIX
+        sl.registerLazySingleton(() => ReservationRateLimitService(
+              rateLimitingService: sl<RateLimitingService>(),
+              agentIdService: sl<AgentIdService>(),
+              reservationService: sl<ReservationService>(),
+            ));
+        logger.debug('✅ [DI] ReservationRateLimitService registered');
+
+        // Register Reservation Cancellation Policy Service (Phase 15.1.5)
+        sl.registerLazySingleton(() => ReservationCancellationPolicyService(
+              reservationService: sl<ReservationService>(),
+              storageService: sl<StorageService>(),
+              supabaseService: sl<SupabaseService>(),
+            ));
+        logger.debug('✅ [DI] ReservationCancellationPolicyService registered');
+
+        // Register Reservation Dispute Service (Phase 15.1.6)
+        sl.registerLazySingleton(() => ReservationDisputeService(
+              reservationService: sl<ReservationService>(),
+              agentIdService: sl<AgentIdService>(),
+              storageService: sl<StorageService>(),
+              supabaseService: sl<SupabaseService>(),
+              paymentService: sl.isRegistered<PaymentService>()
+                  ? sl<PaymentService>()
+                  : null,
+              refundService:
+                  sl.isRegistered<RefundService>() ? sl<RefundService>() : null,
+            ));
+        logger.debug('✅ [DI] ReservationDisputeService registered');
+
+        // Register Reservation Notification Service (Phase 15.1.7)
+        sl.registerLazySingleton(() => ReservationNotificationService(
+              supabaseService: sl<SupabaseService>(),
+              storageService: sl<StorageService>(),
+            ));
+        logger.debug('✅ [DI] ReservationNotificationService registered');
+
+        // Register Reservation Waitlist Service (Phase 15.1.9) - CRITICAL GAP FIX
+        sl.registerLazySingleton(() => ReservationWaitlistService(
+              atomicClock: sl<AtomicClockService>(),
+              agentIdService: sl<AgentIdService>(),
+              storageService: sl<StorageService>(),
+              supabaseService: sl<SupabaseService>(),
+              notificationService:
+                  sl.isRegistered<ReservationNotificationService>()
+                      ? sl<ReservationNotificationService>()
+                      : null,
+            ));
+        logger.debug('✅ [DI] ReservationWaitlistService registered');
+
+        // Phase 10.1: Multi-layered Check-In System Services
+        // Register Reservation Proximity Service (no dependencies)
+        sl.registerLazySingleton(() => ReservationProximityService());
+        logger.debug('✅ [DI] ReservationProximityService registered');
+
+        // Register WiFi Fingerprint Service (no dependencies)
+        sl.registerLazySingleton(() => WiFiFingerprintService());
+        logger.debug('✅ [DI] WiFiFingerprintService registered');
+
+        // Register Reservation Check-In Service (Phase 10.1: Full knot/quantum/AI2AI integration)
+        sl.registerLazySingleton(() => ReservationCheckInService(
+              reservationService: sl<ReservationService>(),
+              proximityService: sl<ReservationProximityService>(),
+              wifiService: sl<WiFiFingerprintService>(),
+              quantumService: sl<ReservationQuantumService>(),
+              agentIdService: sl<AgentIdService>(),
+              personalityLearning: sl<PersonalityLearning>(),
+              atomicClock: sl<AtomicClockService>(),
+              // Optional knot services (graceful degradation if not available)
+              knotOrchestrator: sl.isRegistered<KnotOrchestratorService>()
+                  ? sl<KnotOrchestratorService>()
+                  : null,
+              knotStorage: sl.isRegistered<KnotStorageService>()
+                  ? sl<KnotStorageService>()
+                  : null,
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              // Optional AI2AI mesh learning (graceful degradation if not available)
+              aiLearningService:
+                  sl.isRegistered<QuantumMatchingAILearningService>()
+                      ? sl<QuantumMatchingAILearningService>()
+                      : null,
+              // Optional Signal Protocol services (graceful degradation if not available)
+              encryptionService: sl.isRegistered<HybridEncryptionService>()
+                  ? sl<HybridEncryptionService>()
+                  : null,
+              ai2aiProtocol: sl.isRegistered<AnonymousCommunicationProtocol>()
+                  ? sl<AnonymousCommunicationProtocol>()
+                  : null,
+              orchestrator: sl.isRegistered<VibeConnectionOrchestrator>()
+                  ? sl<VibeConnectionOrchestrator>()
+                  : null,
+              meshService: sl.isRegistered<AdaptiveMeshNetworkingService>()
+                  ? sl<AdaptiveMeshNetworkingService>()
+                  : null,
+            ));
+        logger.debug(
+            '✅ [DI] ReservationCheckInService registered (Phase 10.1: Full integration)');
+
+        // Register Reservation Calendar Service (Phase 10.2: Calendar integration with full AVRAI integration)
+        sl.registerLazySingleton(() => ReservationCalendarService(
+              reservationService: sl<ReservationService>(),
+              quantumService: sl<ReservationQuantumService>(),
+              agentIdService: sl<AgentIdService>(),
+              personalityLearning: sl<PersonalityLearning>(),
+              atomicClock: sl<AtomicClockService>(),
+              // Optional knot services (graceful degradation if not available)
+              knotOrchestrator: sl.isRegistered<KnotOrchestratorService>()
+                  ? sl<KnotOrchestratorService>()
+                  : null,
+              knotStorage: sl.isRegistered<KnotStorageService>()
+                  ? sl<KnotStorageService>()
+                  : null,
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              // Optional AI2AI mesh learning (graceful degradation if not available)
+              aiLearningService:
+                  sl.isRegistered<QuantumMatchingAILearningService>()
+                      ? sl<QuantumMatchingAILearningService>()
+                      : null,
+              // Optional Signal Protocol services (graceful degradation if not available)
+              encryptionService: sl.isRegistered<HybridEncryptionService>()
+                  ? sl<HybridEncryptionService>()
+                  : null,
+              ai2aiProtocol: sl.isRegistered<AnonymousCommunicationProtocol>()
+                  ? sl<AnonymousCommunicationProtocol>()
+                  : null,
+            ));
+        logger.debug(
+            '✅ [DI] ReservationCalendarService registered (Phase 10.2: Full AVRAI integration)');
+
+        // Phase 10.3: Recurring Reservations Service
+        sl.registerLazySingleton(() => ReservationRecurrenceService(
+              reservationService: sl<ReservationService>(),
+              quantumService: sl<ReservationQuantumService>(),
+              agentIdService: sl<AgentIdService>(),
+              personalityLearning: sl<PersonalityLearning>(),
+              atomicClock: sl<AtomicClockService>(),
+              // Optional knot services (graceful degradation if not available)
+              knotOrchestrator: sl.isRegistered<KnotOrchestratorService>()
+                  ? sl<KnotOrchestratorService>()
+                  : null,
+              knotStorage: sl.isRegistered<KnotStorageService>()
+                  ? sl<KnotStorageService>()
+                  : null,
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              // Optional AI2AI services
+              aiLearningService:
+                  sl.isRegistered<QuantumMatchingAILearningService>()
+                      ? sl<QuantumMatchingAILearningService>()
+                      : null,
+              encryptionService: sl.isRegistered<HybridEncryptionService>()
+                  ? sl<HybridEncryptionService>()
+                  : null,
+              ai2aiProtocol: sl.isRegistered<AnonymousCommunicationProtocol>()
+                  ? sl<AnonymousCommunicationProtocol>()
+                  : null,
+              // Optional analytics
+              analyticsService: sl.isRegistered<ReservationAnalyticsService>()
+                  ? sl<ReservationAnalyticsService>()
+                  : null,
+            ));
+        logger.debug(
+            '✅ [DI] ReservationRecurrenceService registered (Phase 10.3: Full AVRAI integration)');
+
+        // Phase 10.4: Reservation Sharing & Transfer Service
+        sl.registerLazySingleton(() => ReservationSharingService(
+              reservationService: sl<ReservationService>(),
+              quantumService: sl<ReservationQuantumService>(),
+              agentIdService: sl<AgentIdService>(),
+              personalityLearning: sl<PersonalityLearning>(),
+              atomicClock: sl<AtomicClockService>(),
+              // Optional knot services (graceful degradation if not available)
+              knotOrchestrator: sl.isRegistered<KnotOrchestratorService>()
+                  ? sl<KnotOrchestratorService>()
+                  : null,
+              knotStorage: sl.isRegistered<KnotStorageService>()
+                  ? sl<KnotStorageService>()
+                  : null,
+              stringService: sl.isRegistered<KnotEvolutionStringService>()
+                  ? sl<KnotEvolutionStringService>()
+                  : null,
+              fabricService: sl.isRegistered<KnotFabricService>()
+                  ? sl<KnotFabricService>()
+                  : null,
+              worldsheetService: sl.isRegistered<KnotWorldsheetService>()
+                  ? sl<KnotWorldsheetService>()
+                  : null,
+              // Optional AI2AI services
+              aiLearningService:
+                  sl.isRegistered<QuantumMatchingAILearningService>()
+                      ? sl<QuantumMatchingAILearningService>()
+                      : null,
+              encryptionService: sl.isRegistered<HybridEncryptionService>()
+                  ? sl<HybridEncryptionService>()
+                  : null,
+              ai2aiProtocol: sl.isRegistered<AnonymousCommunicationProtocol>()
+                  ? sl<AnonymousCommunicationProtocol>()
+                  : null,
+            ));
+        logger.debug(
+            '✅ [DI] ReservationSharingService registered (Phase 10.4: Full AVRAI integration)');
 
         // Register LLM Service (Google Gemini) with connectivity check
         sl.registerLazySingleton<LLMService>(() => LLMService(

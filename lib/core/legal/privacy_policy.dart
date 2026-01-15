@@ -1,13 +1,13 @@
 /// Privacy Policy Class
-/// 
+///
 /// Contains the Privacy Policy document text and version information.
 /// Used for displaying privacy policy and tracking user acceptance.
-/// 
+///
 /// **Philosophy Alignment:**
 /// - Opens doors to legal compliance
 /// - Enables transparent privacy practices
 /// - Supports user data protection
-/// 
+///
 /// **Usage:**
 /// ```dart
 /// final policy = PrivacyPolicy.current();
@@ -18,10 +18,10 @@
 class PrivacyPolicy {
   /// Current version of Privacy Policy
   static const String version = '1.0.0';
-  
+
   /// Effective date of current version
   static final DateTime effectiveDate = DateTime(2025, 12, 1);
-  
+
   /// Privacy Policy content
   static const String content = '''
 SPOTS Privacy Policy
@@ -92,7 +92,7 @@ If you are outside the United States, your data may be transferred to and proces
 We may update this policy. We will notify you of material changes. Continued use constitutes acceptance.
 
 11. CONTACT US
-For privacy questions, contact: privacy@spots.app
+For privacy questions, contact: privacy@avrai.app
 ''';
 
   /// Get current Privacy Policy instance
@@ -110,4 +110,3 @@ For privacy questions, contact: privacy@spots.app
     return [version];
   }
 }
-

@@ -5,6 +5,10 @@ import 'package:avrai/core/services/onboarding_data_service.dart';
 import 'package:avrai/core/services/agent_id_service.dart';
 import 'package:avrai/core/services/legal_document_service.dart';
 import 'package:avrai/core/services/logger.dart';
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_knot/services/knot/personality_knot_service.dart';
+import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
 import 'package:get_it/get_it.dart';
 
 /// Onboarding Flow Controller
@@ -49,14 +53,38 @@ class OnboardingFlowController implements WorkflowController<OnboardingData, Onb
   final OnboardingDataService _onboardingDataService;
   final AgentIdService _agentIdService;
   final LegalDocumentService _legalDocumentService;
+  // ignore: unused_field
+  final AtomicClockService _atomicClock; // Reserved for future timestamp-based onboarding tracking
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final PersonalityKnotService? _personalityKnotService;
+  final KnotStorageService? _knotStorageService;
+  final LocationTimingQuantumStateService? _locationTimingService;
   
   OnboardingFlowController({
     OnboardingDataService? onboardingDataService,
     AgentIdService? agentIdService,
     LegalDocumentService? legalDocumentService,
+    AtomicClockService? atomicClock,
+    PersonalityKnotService? personalityKnotService,
+    KnotStorageService? knotStorageService,
+    LocationTimingQuantumStateService? locationTimingService,
   }) : _onboardingDataService = onboardingDataService ?? GetIt.instance<OnboardingDataService>(),
        _agentIdService = agentIdService ?? GetIt.instance<AgentIdService>(),
-       _legalDocumentService = legalDocumentService ?? GetIt.instance<LegalDocumentService>();
+       _legalDocumentService = legalDocumentService ?? GetIt.instance<LegalDocumentService>(),
+       _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+       _personalityKnotService = personalityKnotService ??
+           (GetIt.instance.isRegistered<PersonalityKnotService>()
+               ? GetIt.instance<PersonalityKnotService>()
+               : null),
+       _knotStorageService = knotStorageService ??
+           (GetIt.instance.isRegistered<KnotStorageService>()
+               ? GetIt.instance<KnotStorageService>()
+               : null),
+       _locationTimingService = locationTimingService ??
+           (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+               ? GetIt.instance<LocationTimingQuantumStateService>()
+               : null);
   
   @override
   Future<OnboardingFlowResult> execute(OnboardingData input) async {
@@ -159,7 +187,22 @@ class OnboardingFlowController implements WorkflowController<OnboardingData, Onb
         );
       }
       
-      // STEP 6: Return success
+      // STEP 6: AVRAI Core System Integration (optional, graceful degradation)
+      // Note: Most AVRAI integrations happen in AgentInitializationController
+      // after PersonalityProfile is created. This step is a placeholder for
+      // future early integrations if needed.
+      
+      // 6.1: Knot services check (deferred to AgentInitializationController)
+      if (_personalityKnotService != null && _knotStorageService != null) {
+        _logger.debug('ℹ️ Knot services available (knot generation deferred to AgentInitializationController)', tag: _logName);
+      }
+      
+      // 6.2: Location timing service check (deferred to AgentInitializationController)
+      if (_locationTimingService != null) {
+        _logger.debug('ℹ️ Location timing service available (4D quantum state creation deferred to AgentInitializationController)', tag: _logName);
+      }
+      
+      // STEP 7: Return success
       _logger.info('✅ Onboarding completion workflow successful', tag: _logName);
       return OnboardingFlowResult.success(
         agentId: agentId,

@@ -1,5 +1,5 @@
 // Knot Discovery Page
-// 
+//
 // Onboarding page for discovering knot tribes and onboarding groups
 // Part of Patent #31: Topological Knot Theory for Personality Representation
 // Phase 3: Onboarding Integration
@@ -21,7 +21,7 @@ import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
 /// Onboarding page for knot discovery
-/// 
+///
 /// Shows user's personality knot, finds knot tribes, and suggests onboarding groups
 class KnotDiscoveryPage extends StatefulWidget {
   final PersonalityProfile? personalityProfile;
@@ -74,7 +74,8 @@ class _KnotDiscoveryPageState extends State<KnotDiscoveryPage> {
       PersonalityProfile? profile = widget.personalityProfile;
       if (profile == null && widget.userId != null) {
         try {
-          profile = await _personalityLearning.getCurrentPersonality(widget.userId!);
+          profile =
+              await _personalityLearning.getCurrentPersonality(widget.userId!);
         } catch (e) {
           // Profile might not exist yet, continue with knot loading
         }
@@ -89,7 +90,7 @@ class _KnotDiscoveryPageState extends State<KnotDiscoveryPage> {
       }
 
       final agentId = profile.agentId;
-      
+
       // Try to load existing knot
       final knot = await _knotStorageService.loadKnot(agentId);
 
@@ -371,7 +372,7 @@ class _KnotDiscoveryPageState extends State<KnotDiscoveryPage> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Continue to SPOTS'),
+              child: const Text('Continue to avrai'),
             ),
           ),
         ),

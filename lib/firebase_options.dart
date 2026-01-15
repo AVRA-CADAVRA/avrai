@@ -38,7 +38,7 @@ class DefaultFirebaseOptions {
           messagingSenderId: '790357806819',
           projectId: 'spots-app-adea5',
           storageBucket: 'spots-app-adea5.firebasestorage.app',
-          iosBundleId: 'com.spots.app',
+          iosBundleId: 'com.avrai.app',
         );
       case TargetPlatform.macOS:
         return const FirebaseOptions(
@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
           messagingSenderId: '790357806819',
           projectId: 'spots-app-adea5',
           storageBucket: 'spots-app-adea5.firebasestorage.app',
-          iosBundleId: 'com.spots.app',
+          iosBundleId: 'com.avrai.app',
         );
       default:
         return const FirebaseOptions(

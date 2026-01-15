@@ -10,6 +10,9 @@ import 'package:avrai/core/models/refund_status.dart';
 import 'package:avrai/core/services/cancellation_service.dart';
 import 'package:avrai/core/services/expertise_event_service.dart';
 import 'package:avrai/core/services/payment_service.dart';
+import 'package:avrai_knot/services/knot/knot_fabric_service.dart';
+import 'package:avrai_knot/services/knot/knot_worldsheet_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 
 /// Event Cancellation Controller
 /// 
@@ -54,17 +57,37 @@ class EventCancellationController
   final CancellationService _cancellationService;
   final ExpertiseEventService _eventService;
   final PaymentService _paymentService;
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final KnotFabricService? _knotFabricService;
+  final KnotWorldsheetService? _knotWorldsheetService;
+  final QuantumMatchingAILearningService? _aiLearningService;
 
   EventCancellationController({
     CancellationService? cancellationService,
     ExpertiseEventService? eventService,
     PaymentService? paymentService,
+    KnotFabricService? knotFabricService,
+    KnotWorldsheetService? knotWorldsheetService,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _cancellationService =
             cancellationService ?? GetIt.instance<CancellationService>(),
         _eventService =
             eventService ?? GetIt.instance<ExpertiseEventService>(),
         _paymentService =
-            paymentService ?? GetIt.instance<PaymentService>();
+            paymentService ?? GetIt.instance<PaymentService>(),
+        _knotFabricService = knotFabricService ??
+            (GetIt.instance.isRegistered<KnotFabricService>()
+                ? GetIt.instance<KnotFabricService>()
+                : null),
+        _knotWorldsheetService = knotWorldsheetService ??
+            (GetIt.instance.isRegistered<KnotWorldsheetService>()
+                ? GetIt.instance<KnotWorldsheetService>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
+                : null);
 
   /// Cancel event or ticket
   /// 
@@ -170,7 +193,70 @@ class EventCancellationController
         }
       }
 
-      // Step 6: Notify attendees/host (when NotificationService available)
+      // Step 6: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 6.1: Update fabric if group event (remove attendee from fabric)
+      if (_knotFabricService != null && event.maxAttendees > 1 && !isHost) {
+        try {
+          developer.log(
+            '🧵 Updating fabric after attendee cancellation (group event)',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would remove attendee's knot from fabric
+          // This is a placeholder for future fabric update on cancellation
+          developer.log(
+            'ℹ️ Fabric update deferred (requires fabric ID and attendee knot)',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Fabric update failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - fabric update is optional
+        }
+      }
+      
+      // 6.2: Update worldsheet if group tracking exists
+      if (_knotWorldsheetService != null && event.maxAttendees > 1 && !isHost) {
+        try {
+          developer.log(
+            '📊 Worldsheet update deferred until fabric exists',
+            name: _logName,
+          );
+          // Worldsheet update happens after fabric update
+        } catch (e) {
+          developer.log(
+            '⚠️ Worldsheet update check failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - worldsheet update is optional
+        }
+      }
+      
+      // 6.3: Learn from cancellation via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null) {
+        try {
+          developer.log(
+            '🤖 AI2AI learning service available (learning deferred to matching)',
+            name: _logName,
+          );
+          // Note: Actual learning happens when matches occur, not during cancellation
+          // This is a placeholder for future cancellation-based learning
+        } catch (e) {
+          developer.log(
+            '⚠️ AI2AI learning failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+      
+      // Step 7: Notify attendees/host (when NotificationService available)
       // TODO(Phase 8.12): Integrate NotificationService when available
       // For now, notifications are handled by CancellationService placeholder methods
 

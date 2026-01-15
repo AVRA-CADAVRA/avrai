@@ -1,0 +1,794 @@
+### Page state
+- Page URL: https://primrose-lanternfish-439y.squarespace.com/config/website
+- Page Title: AVRAI
+- Page Snapshot:
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link [ref=e7] [cursor=pointer]:
+          - /url: /config/
+          - img [ref=e8]
+        - generic [ref=e11]:
+          - button "Search" [ref=e12] [cursor=pointer]:
+            - img [ref=e14]
+          - button "Notifications" [ref=e16] [cursor=pointer]:
+            - img [ref=e19]
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - link "Home" [ref=e32] [cursor=pointer]:
+            - /url: /config/
+            - paragraph [ref=e34]: Home
+          - generic [ref=e38]:
+            - link "Website" [ref=e43] [cursor=pointer]:
+              - /url: /config/website
+              - paragraph [ref=e45]: Website
+            - generic [ref=e307]:
+              - link "Pages" [ref=e309] [cursor=pointer]:
+                - /url: /config/pages
+                - paragraph [ref=e311]: Pages
+              - link "Styles" [ref=e313] [cursor=pointer]:
+                - /url: /config/site-styles
+                - paragraph [ref=e315]: Styles
+              - link "Assets" [ref=e317] [cursor=pointer]:
+                - /url: /config/asset-library
+                - paragraph [ref=e319]: Assets
+              - link "SEO / AIO" [ref=e321] [cursor=pointer]:
+                - /url: /config/seo
+                - paragraph [ref=e323]: SEO / AIO
+          - generic [ref=e68]:
+            - link "Products & Services" [ref=e75] [cursor=pointer]:
+              - /url: /config/commerce
+              - paragraph [ref=e77]: Products & Services
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e80]:
+            - link "Content & Memberships" [ref=e87] [cursor=pointer]:
+              - /url: /config/content-and-memberships
+              - paragraph [ref=e89]: Content & Memberships
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e92]:
+            - link "Scheduling" [ref=e99] [cursor=pointer]:
+              - /url: https://secure.acuityscheduling.com/oauth2/squarespace-attached?website_id=695ebce332861134575f4052
+              - paragraph [ref=e102]: Scheduling
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e105]:
+            - link "Donations" [ref=e112] [cursor=pointer]:
+              - /url: /config/donations
+              - paragraph [ref=e114]: Donations
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e117]:
+            - link "Invoicing" [ref=e124] [cursor=pointer]:
+              - /url: /config/invoicing
+              - paragraph [ref=e126]: Invoicing
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - status [ref=e127]
+        - generic [ref=e128]:
+          - link "Email Campaigns" [ref=e137] [cursor=pointer]:
+            - /url: /config/marketing/campaigns
+            - paragraph [ref=e139]: Email Campaigns
+          - link "Contacts" [ref=e148] [cursor=pointer]:
+            - /url: /config/profiles
+            - paragraph [ref=e150]: Contacts
+          - link "Analytics" [ref=e159] [cursor=pointer]:
+            - /url: /config/analytics
+            - paragraph [ref=e161]: Analytics
+          - link "Finance" [ref=e170] [cursor=pointer]:
+            - /url: /config/finance
+            - paragraph [ref=e172]: Finance
+      - generic [ref=e176]:
+        - button "Account" [ref=e177] [cursor=pointer]:
+          - generic [ref=e179]: RG
+        - list [ref=e180]:
+          - listitem [ref=e181]:
+            - button "Help" [ref=e182] [cursor=pointer]:
+              - img [ref=e184]
+          - listitem [ref=e187]:
+            - button "Customize Sidebar" [ref=e188] [cursor=pointer]:
+              - img [ref=e190]
+          - listitem [ref=e193]:
+            - button "Settings" [ref=e194] [cursor=pointer]:
+              - img [ref=e196]
+  - generic [ref=e206]:
+    - toolbar [ref=e207]:
+      - generic [ref=e208]:
+        - generic [ref=e209]:
+          - generic [ref=e326]:
+            - button "Save" [disabled] [ref=e327]:
+              - generic [ref=e328]: Save
+            - button "Exit" [ref=e329] [cursor=pointer]:
+              - generic [ref=e330]: Exit
+          - generic [ref=e332]:
+            - button "Undo" [ref=e333] [cursor=pointer]:
+              - img [ref=e335]
+            - button "Redo" [disabled] [ref=e337]:
+              - img [ref=e339]
+        - generic [ref=e341] [cursor=pointer]:
+          - generic [ref=e342]: Home
+          - generic [ref=e344]: Page · Published
+        - list [ref=e219]:
+          - listitem [ref=e220]:
+            - tablist [ref=e223]:
+              - tab [selected] [ref=e224] [cursor=pointer]:
+                - img [ref=e226]
+              - tab [ref=e228] [cursor=pointer]:
+                - img [ref=e230]
+          - listitem [ref=e233]:
+            - button "Toggle Site Styles editing" [ref=e235] [cursor=pointer]:
+              - img [ref=e237]
+    - iframe [active] [ref=e249]:
+      - generic [ref=f134e1]:
+        - generic [ref=f134e2]:
+          - banner:
+            - generic:
+              - generic:
+                - button "Edit Site Header":
+                  - generic:
+                    - img
+                    - generic: Edit Site Header
+            - generic [ref=f134e3]:
+              - link "Skip to Content" [ref=f134e4] [cursor=pointer]:
+                - /url: "#page"
+              - generic [ref=f134e8]:
+                - link "AVRAI" [ref=f134e11] [cursor=pointer]:
+                  - /url: /
+                - navigation [ref=f134e14]:
+                  - link "About" [ref=f134e16] [cursor=pointer]:
+                    - /url: /about
+                  - link "Tech" [ref=f134e18] [cursor=pointer]:
+                    - /url: /tech
+                  - link "Services" [ref=f134e20] [cursor=pointer]:
+                    - /url: /services
+                  - link "Legal" [ref=f134e22] [cursor=pointer]:
+                    - /url: /legal
+                  - link "Contact" [ref=f134e24] [cursor=pointer]:
+                    - /url: /contact
+            - text: Edit Header
+          - main [ref=f134e25]:
+            - article [ref=f134e26]:
+              - grid [ref=f134e32]:
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic [ref=f134e53]:
+                  - generic: Text
+                - gridcell "Text" [selected] [ref=f134e54]:
+                  - generic "Text" [ref=f134e56]:
+                    - generic [active] [ref=f134e59]:
+                      - heading "Discover Your People, Your Places, Your Life" [level=2] [ref=f134e60]
+                      - paragraph [ref=f134e61]:
+                        - strong [ref=f134e62]: AVRAI
+                        - text: is the revolutionary AI-powered mobile app that transforms how you discover meaningful places, build authentic communities, and find belonging in the real world—all while keeping your personal data completely private on your device.
+                        - strong [ref=f134e63]: No tracking. No surveillance. Just authentic connections.
+                      - paragraph [ref=f134e64]: Join the Waitlist
+                      - paragraph [ref=f134e65]: Technology protected by 31+ patent-pending innovations
+                      - paragraph [ref=f134e66]: There is no secret to life. Just doors that haven't been opened yet.
+                      - paragraph [ref=f134e67]:
+                        - strong [ref=f134e68]: AVRAI
+                        - text: is your personal AI companion that learns your preferences, matches you with compatible places and people, and helps you discover communities—all offline, all private, all authentic. Every spot is a door—to experiences, to communities, to people, to meaning, to more doors.
+                      - paragraph [ref=f134e69]:
+                        - strong [ref=f134e70]: "The Journey:"
+                        - text: Spots → Community → Life
+                      - paragraph [ref=f134e71]:
+                        - text: "Here's how it works: You discover your"
+                        - strong [ref=f134e72]: favorite spots
+                        - text: —coffee shops, bookstores, parks, venues that match your vibe. Those spots have
+                        - strong [ref=f134e73]: communities
+                        - text: —people who love the same places you do. Those communities have
+                        - strong [ref=f134e74]: events
+                        - text: —meetups, workshops, experiences that bring people together. Through AVRAI, you find your people and enrich your life, one door at a time.
+                      - paragraph [ref=f134e75]:
+                        - strong [ref=f134e76]: AVRAI just provides access. You decide which doors to open.
+                      - 'heading "How AVRAI Works: Privacy-First AI That Learns With You" [level=2] [ref=f134e77]'
+                      - paragraph [ref=f134e78]:
+                        - strong [ref=f134e79]: Your AI Learns On-Device
+                      - paragraph [ref=f134e80]:
+                        - text: Your personal AI lives on your phone and learns your preferences through every interaction—places you visit, events you attend, communities you join.
+                        - strong [ref=f134e81]: All learning happens on-device.
+                        - text: Your personality profile, preferences, and history never leave your device—never shared with servers, never sold to advertisers, never tracked by anyone.
+                      - paragraph [ref=f134e82]:
+                        - strong [ref=f134e83]: AIs Connect Peer-to-Peer
+                      - paragraph [ref=f134e84]:
+                        - text: When you're near other AVRAI users, your AI communicates directly with their AIs via Bluetooth or local Wi-Fi—no internet required. They exchange anonymous compatibility signals called "vibe signatures" to find compatible people and places, but
+                        - strong [ref=f134e85]: your identity stays completely private.
+                        - text: No profiles. No photos. No personal info exchanged. Just authentic compatibility matching.
+                      - paragraph [ref=f134e86]:
+                        - strong [ref=f134e87]: Discover in Real-Time
+                      - paragraph [ref=f134e88]:
+                        - text: Find compatible people and places instantly, anywhere—at a coffee shop, at a concert, walking through your neighborhood.
+                        - strong [ref=f134e89]: Works completely offline.
+                        - text: When you have internet, your AI syncs discoveries and updates, getting smarter about your preferences and expanding your network. The more you use AVRAI, the better it gets at finding your people and places—all while your data stays private on your device.
+                      - paragraph [ref=f134e90]:
+                        - emphasis [ref=f134e91]: All technologies described above are proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e92]: "The Science Behind the Magic: Quantum Knots & String Theory"
+                      - paragraph [ref=f134e93]: "AVRAI uses cutting-edge mathematics inspired by quantum physics and topological knot theory to create the most accurate personality matching system ever built. Here's how it works:"
+                      - paragraph [ref=f134e94]:
+                        - strong [ref=f134e95]: All features described below are proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e96]:
+                        - strong [ref=f134e97]: Your Personality as a Topological Knot
+                        - text: (Patent Pending)
+                      - paragraph [ref=f134e98]: Your personality isn't just numbers—it's a unique topological structure. AVRAI represents your personality dimensions as a mathematical knot, capturing how your traits connect and influence each other. Just like no two snowflakes are alike, no two personality knots are identical.
+                      - paragraph [ref=f134e99]: This topological representation reveals deeper compatibility patterns that simple matching can't detect.
+                      - paragraph [ref=f134e100]: This technology is proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e101]:
+                        - strong [ref=f134e102]: Personality Evolution Over Time
+                        - text: Patent Pending
+                      - paragraph [ref=f134e103]: Your personality evolves as you grow. AVRAI tracks this evolution using "knot strings"—mathematical representations that show how your personality changes over time. The system can predict how compatible you'll be with places and people in the future, not just today.
+                      - paragraph [ref=f134e104]: Think of it like a timeline of your personal growth, encoded in elegant mathematical structures.
+                      - paragraph [ref=f134e105]: This technology is proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e106]:
+                        - strong [ref=f134e107]: Community as Woven Fabric
+                        - text: Patent Pending
+                      - paragraph [ref=f134e108]: When groups of friends or communities form, their individual personality knots weave together into a "knot fabric"—a unified mathematical structure representing group compatibility. This helps AVRAI find spots where everyone in your group will enjoy going, not just where one person would like.
+                      - paragraph [ref=f134e109]: It's like seeing how individual threads create a beautiful tapestry of compatibility.
+                      - paragraph [ref=f134e110]: This technology is proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e111]:
+                        - strong [ref=f134e112]: Group Evolution in 4D Space
+                        - text: Patent Pending
+                      - paragraph [ref=f134e113]: For groups and communities, AVRAI uses 4-dimensional "quantum worldsheets" to track how group dynamics evolve over time. This advanced mathematical framework (inspired by string theory) allows the system to understand not just who you're compatible with now, but how groups form, grow, and evolve.
+                      - paragraph [ref=f134e114]: It's like having a time machine for understanding group compatibility.
+                      - paragraph [ref=f134e115]: This technology is proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e116]: These advanced mathematical frameworks—inspired by quantum physics, knot theory, and string theory—enable AVRAI to understand personality and compatibility at a deeper level than any other system. But you don't need to understand the math to benefit from it. You just need to know it works.
+                      - paragraph [ref=f134e117]:
+                        - strong [ref=f134e118]: All technologies, algorithms, and mathematical frameworks described above are proprietary intellectual property of AVRAI and are protected by 31+ patent-pending applications. Unauthorized use, copying, or implementation is strictly prohibited.
+                      - heading "What Makes AVRAI Different" [level=3] [ref=f134e119]
+                      - paragraph [ref=f134e120]:
+                        - strong [ref=f134e121]: Privacy-First AI2AI Network
+                      - paragraph [ref=f134e122]:
+                        - strong [ref=f134e123]: "The Future of Private AI:"
+                        - text: Your AI lives on your device and communicates directly with other AIs via Bluetooth or local network—no internet, no servers, no tracking.
+                        - strong [ref=f134e124]: 100% offline. 100% private.
+                        - text: Experience real-time discovery without sacrificing your privacy.
+                      - paragraph [ref=f134e125]:
+                        - strong [ref=f134e126]: Personalized Spot Recommendations
+                      - paragraph [ref=f134e127]:
+                        - strong [ref=f134e128]: "Discover Places You'll Actually Love:"
+                        - text: Your AI learns your vibe—from cozy coffee shops to vibrant bookstores to hidden neighborhood gems.
+                        - strong [ref=f134e129]: No sponsored results. No fake reviews.
+                        - text: Just authentic recommendations based on your personality, all curated by real people who know what makes a place special.
+                      - paragraph [ref=f134e130]:
+                        - strong [ref=f134e131]: Community Discovery
+                      - paragraph [ref=f134e132]:
+                        - strong [ref=f134e133]: "Find Your People at Your Places:"
+                        - text: Every spot has communities—writing groups at bookstores, food clubs at restaurants, local meetups at coffee shops.
+                        - strong [ref=f134e134]: Discover people who share your interests
+                        - text: and build authentic connections around the places you already love.
+                      - paragraph [ref=f134e135]:
+                        - strong [ref=f134e136]: Event Hosting
+                      - paragraph [ref=f134e137]:
+                        - strong [ref=f134e138]: "Become a Local Expert, Host Amazing Events:"
+                        - text: Share your knowledge and passion by becoming an expert at your favorite spots.
+                        - strong [ref=f134e139]: Once you're recognized, host events
+                        - text: —workshops, meetups, experiences—and optionally earn money doing what you love. Turn your expertise into opportunity.
+                      - paragraph [ref=f134e140]:
+                        - strong [ref=f134e141]: Doors, Not Badges
+                      - paragraph [ref=f134e142]:
+                        - strong [ref=f134e143]: "Authentic Contributions Unlock Real Features:"
+                        - text: No gamification. No pay-to-play.
+                        - strong [ref=f134e144]: Recommendations are never for sale.
+                        - text: Features unlock through genuine contributions—real reviews, authentic expertise, meaningful connections. This is about opening doors, not collecting badges.
+                      - paragraph [ref=f134e145]:
+                        - strong [ref=f134e146]: Group Matching
+                      - paragraph [ref=f134e147]:
+                        - strong [ref=f134e148]: "Find Places Everyone in Your Group Will Love:"
+                        - text: Planning with friends? AVRAI uses advanced compatibility mathematics to find spots where
+                        - strong [ref=f134e149]: everyone in your group will have a great time
+                        - text: —not just one person. No more endless group chats. No more compromising. Just places that work for everyone.
+                      - paragraph [ref=f134e150]: Solving America's Loneliness Crisis
+                      - heading "The Problems Avrai Solves" [level=3] [ref=f134e151]
+                      - paragraph [ref=f134e152]: 40% of Americans report feeling lonely. 60% of adults have fewer close friendships than before. Third places—coffee shops, libraries, community centers—are disappearing.
+                      - paragraph [ref=f134e153]:
+                        - strong [ref=f134e154]: "AVRAI helps you:"
+                      - paragraph [ref=f134e155]: "- Find your third place (that spot where you belong)"
+                      - paragraph [ref=f134e156]: "- Build authentic communities around shared interests"
+                      - paragraph [ref=f134e157]: "- Discover events and experiences that bring meaning"
+                      - paragraph [ref=f134e158]: "- Connect with people who could change your life (big or small) - Reconnect with the real world"
+                      - paragraph [ref=f134e159]: We use technology to help you disconnect from technology—by finding your people, your places, and your life in the real world.
+                      - paragraph [ref=f134e323]:
+                        - strong [ref=f134e324]: "The Seven Crises AVRAI Addresses:"
+                      - paragraph [ref=f134e325]:
+                        - text: "1."
+                        - strong [ref=f134e326]: Loneliness Epidemic
+                        - text: "- 40% of Americans report feeling lonely"
+                      - paragraph [ref=f134e327]:
+                        - text: "2."
+                        - strong [ref=f134e328]: Choice Paralysis
+                        - text: "- $650B in productivity lost to decision fatigue"
+                      - paragraph [ref=f134e329]:
+                        - text: "3."
+                        - strong [ref=f134e330]: Workforce Instability
+                        - text: "- AI displacing jobs, people need new income sources"
+                      - paragraph [ref=f134e331]:
+                        - text: "4."
+                        - strong [ref=f134e332]: Privacy Concerns
+                        - text: "- Growing distrust of data-harvesting platforms"
+                      - paragraph [ref=f134e333]:
+                        - text: "5."
+                        - strong [ref=f134e334]: Phone Addiction
+                        - text: "- 56.9% of adults are addicted, contributing to a mental health crisis"
+                      - paragraph [ref=f134e335]:
+                        - text: "6."
+                        - strong [ref=f134e336]: Dating App Fatigue and Ineffective Matching
+                        - text: "- 78% of Gen Z users feel emotionally exhausted by online dating. Only 11% believe their app is good at matching them with compatible people. 55% encounter threats or scams, with $141M+ in romance fraud losses annually. 63% of frequent dating app users feel lonely (compared to 48% offline daters)."
+                      - paragraph [ref=f134e337]:
+                        - text: "7."
+                        - strong [ref=f134e338]: Ineffective Employee Matching and Hiring Challenges
+                        - text: "- 76% of employers report talent shortages (all-time high). 89% of Fortune 500 companies don't effectively match candidates to jobs. 59.7% receive too many unqualified candidates through job boards. 50.7% experience candidate ghosting. 44% struggle with diversity and inclusion goals."
+                      - paragraph [ref=f134e174]:
+                        - strong [ref=f134e175]: "How AVRAI Solves These:"
+                      - paragraph [ref=f134e176]: "- Community connection through AI-powered matching"
+                      - paragraph [ref=f134e177]: "- Local knowledge through personalized recommendations - Group matching for friends and family"
+                      - paragraph [ref=f134e178]: "- Effortless discovery without emotional exhaustion - Optional economic enablement through expertise"
+                      - paragraph [ref=f134e179]: "- True data security through agent-only, anonymous data"
+                      - paragraph [ref=f134e180]: "- Real-world reconnection by using technology to disconnect from technology"
+                      - paragraph [ref=f134e346]: "- Accurate personality matching for dating and relationships using 12-dimensional quantum algorithms"
+                      - paragraph [ref=f134e347]: "- Privacy-first dating connections—your preferences stay on your device, never shared"
+                      - paragraph [ref=f134e348]: "- Real-world dating discovery at spots and events you already love"
+                      - paragraph [ref=f134e349]: "- Employee and team matching through personality and cultural fit, beyond resumes"
+                      - paragraph [ref=f134e350]: "- Quality hiring over quantity—fewer candidates, better matches"
+                      - paragraph [ref=f134e351]: "- Diverse talent discovery through communities and real-world connections"
+                      - paragraph [ref=f134e352]: "- Team compatibility algorithms for finding candidates who fit existing teams"
+                      - paragraph [ref=f134e353]: Advanced AI, Simple Experience
+                      - paragraph [ref=f134e354]: "AVRAI uses quantum-inspired AI algorithms combined with topological knot theory to match you with places and people you'll love. Our system includes:"
+                      - paragraph [ref=f134e355]:
+                        - text: "-"
+                        - strong [ref=f134e356]: "12-Dimensional Quantum Personality Matching:"
+                        - text: More accurate than traditional approaches (Patent Pending)
+                      - paragraph [ref=f134e357]:
+                        - text: "-"
+                        - strong [ref=f134e358]: "Topological Knot Theory:"
+                        - text: "Personality represented as mathematical knots for deeper insights (Patent #31, Patent Pending)"
+                      - paragraph [ref=f134e359]:
+                        - text: "-"
+                        - strong [ref=f134e360]: "String Evolution:"
+                        - text: Predicts how your personality will evolve over time (Patent Pending)
+                      - paragraph [ref=f134e361]:
+                        - text: "-"
+                        - strong [ref=f134e362]: "Knot Fabric Weaving:"
+                        - text: Understands group compatibility through mathematical fabric structures (Patent Pending)
+                      - paragraph [ref=f134e363]:
+                        - text: "-"
+                        - strong [ref=f134e364]: "4D Quantum Worldsheets:"
+                        - text: Tracks group evolution in four-dimensional space (Patent Pending)
+                      - paragraph [ref=f134e365]:
+                        - text: "-"
+                        - strong [ref=f134e366]: "Quantum Atomic Clock System:"
+                        - text: "Synchronizes all devices with atomic precision (Patent #30, Patent Pending)"
+                      - paragraph [ref=f134e367]:
+                        - text: "-"
+                        - strong [ref=f134e368]: "AI2AI Peer-to-Peer Learning:"
+                        - text: Privacy-preserving device-to-device AI learning (Patent Pending)
+                      - paragraph [ref=f134e369]:
+                        - text: "-"
+                        - strong [ref=f134e370]: "Multi-Entity Quantum Entanglement:"
+                        - text: "Advanced group matching algorithms (Patent #29, Patent Pending)"
+                      - paragraph [ref=f134e371]: But you don't need to understand the technology—you just need to know it works. Your AI learns your preferences, finds matches, and gets smarter over time—all while keeping your data private on your device.
+                      - paragraph [ref=f134e372]:
+                        - strong [ref=f134e373]: All technologies described above are proprietary and protected by patent-pending applications.
+                      - paragraph [ref=f134e374]: Ready to Find Your People, Your Places, Your Life?
+                      - paragraph [ref=f134e375]: AVRAI is coming soon. Join our waitlist to be notified at launch and get early access.
+                      - paragraph [ref=f134e376]:
+                        - strong [ref=f134e377]: Limited to first 1,000 users. Spots filling fast.
+                      - paragraph [ref=f134e378]: Join the Waitlist
+                    - toolbar
+              - grid [ref=f134e214]:
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+                - generic [ref=f134e215]:
+                  - generic: Text
+                - gridcell "Text" [ref=f134e216]:
+                  - generic "Text" [ref=f134e218]:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - heading "Contact Us" [level=1]
+                          - paragraph:
+                            - text: Have questions about AVRAI? Want to learn more?
+                            - text: Get in touch.
+                    - toolbar
+                - generic [ref=f134e221]:
+                  - generic: Form
+                - gridcell "Form" [ref=f134e222]:
+                  - generic:
+                    - generic "Form":
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - group "Name (required)":
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic: Name
+                                        - generic: (required)
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic: First Name
+                                    - textbox "First Name"
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic: Last Name
+                                    - textbox "Last Name"
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic: Email
+                                        - generic: (required)
+                                  - textbox "Email (required)":
+                                    - /placeholder: ""
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic: Message
+                                        - generic: (required)
+                                  - textbox "Message (required)":
+                                    - /placeholder: ""
+                              - generic:
+                                - button "Send"
+                      - toolbar
+              - text: Edit Page
+          - contentinfo [ref=f134e224]:
+            - generic [ref=f134e225]:
+              - generic:
+                - button "Edit Site Footer":
+                  - generic:
+                    - img
+                    - generic: Edit Site Footer
+            - generic [ref=f134e231]:
+              - generic [ref=f134e233]:
+                - generic:
+                  - generic:
+                    - heading "AVRAI" [level=2]
+              - generic [ref=f134e235]:
+                - generic:
+                  - generic:
+                    - heading "Location" [level=4]
+                    - paragraph: B’Ham, Alabama
+              - generic [ref=f134e237]:
+                - generic:
+                  - generic:
+                    - heading "Contact" [level=4]
+                    - paragraph: reis@avrai.org
+            - text: Edit Footer
+        - img
+        - generic [ref=f134e484]:
+          - button "Squarespace AI" [ref=f134e486] [cursor=pointer]:
+            - img [ref=f134e490]
+          - button "Paragraph 2" [ref=f134e502] [cursor=pointer]:
+            - generic [ref=f134e503]:
+              - generic [ref=f134e504]: Paragraph 2
+              - img [ref=f134e505]
+          - generic [ref=f134e507]:
+            - button "Bold (⌘B)" [ref=f134e508] [cursor=pointer]:
+              - img [ref=f134e509]
+            - button "Italic (⌘I)" [ref=f134e511] [cursor=pointer]:
+              - img [ref=f134e512]
+            - button "Text Color" [ref=f134e514] [cursor=pointer]
+            - button "Scale text" [ref=f134e518] [cursor=pointer]:
+              - img [ref=f134e519]
+            - button "Highlight" [ref=f134e522] [cursor=pointer]:
+              - img [ref=f134e523]
+            - button "Link icon" [ref=f134e526] [cursor=pointer]:
+              - img "Link icon" [ref=f134e527]
+          - button "Text Alignment" [ref=f134e529] [cursor=pointer]:
+            - img [ref=f134e530]
+          - button "Clear Formatting" [ref=f134e533] [cursor=pointer]:
+            - img [ref=f134e534]
+          - generic [ref=f134e536]:
+            - button "Remove Block" [ref=f134e537] [cursor=pointer]:
+              - img [ref=f134e538]
+            - button "Uncollapse" [ref=f134e540] [cursor=pointer]:
+              - img [ref=f134e541]
+```

@@ -1,5 +1,5 @@
 /// HybridSearchBloc Unit Tests - Phase 4: BLoC State Management Testing
-/// 
+///
 /// Comprehensive testing of HybridSearchBloc with AI-powered search, caching, and performance optimization
 /// Ensures optimal development stages and deployment optimization
 /// Tests current implementation as-is without modifying production code
@@ -25,6 +25,8 @@ void main() {
       BlocMockFactory.registerFallbacks();
       // Register fallback values for search-specific objects
       registerFallbackValue(HybridSearchResult.empty());
+      registerFallbackValue(SearchSortOption.relevance);
+      registerFallbackValue(const SearchFilters());
       registerFallbackValue(Position(
         latitude: 0.0,
         longitude: 0.0,
@@ -42,8 +44,9 @@ void main() {
     setUp(() {
       mockHybridSearchUseCase = BlocMockFactory.hybridSearchUseCase;
       mockSearchCacheService = BlocMockFactory.searchCacheService;
-      mockAISearchSuggestionsService = BlocMockFactory.aiSearchSuggestionsService;
-      
+      mockAISearchSuggestionsService =
+          BlocMockFactory.aiSearchSuggestionsService;
+
       BlocMockFactory.resetAll();
       MockBehaviorSetup.setupSuccessfulSearch();
 
@@ -56,6 +59,62 @@ void main() {
 
     tearDown(() {
       hybridSearchBloc.close();
+    });
+
+    group('Reservation Filter', () {
+      const testQuery = 'restaurant';
+
+      blocTest<HybridSearchBloc, HybridSearchState>(
+        'passes reservation filter to use case when filter is enabled',
+        build: () => hybridSearchBloc,
+        act: (bloc) => bloc.add(
+          SearchHybridSpots(
+            query: testQuery,
+            filters: const SearchFilters(reservationAvailable: true),
+          ),
+        ),
+        wait: const Duration(milliseconds: 10),
+        verify: (_) {
+          verify(() => mockHybridSearchUseCase.searchSpots(
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: true,
+                filters: any(
+                  named: 'filters',
+                  that: predicate<SearchFilters?>(
+                    (filters) =>
+                        filters != null && filters.reservationAvailable == true,
+                  ),
+                ),
+                sortOption: any(named: 'sortOption'),
+              )).called(1);
+        },
+      );
+
+      blocTest<HybridSearchBloc, HybridSearchState>(
+        'passes null filters when reservation filter is not enabled',
+        build: () => hybridSearchBloc,
+        act: (bloc) => bloc.add(
+          SearchHybridSpots(
+            query: testQuery,
+            filters: null,
+          ),
+        ),
+        wait: const Duration(milliseconds: 10),
+        verify: (_) {
+          verify(() => mockHybridSearchUseCase.searchSpots(
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: true,
+                filters: null,
+                sortOption: any(named: 'sortOption'),
+              )).called(1);
+        },
+      );
     });
 
     group('Initial State', () {
@@ -81,31 +140,34 @@ void main() {
               .having((state) => state.communityCount, 'community count', 5)
               .having((state) => state.externalCount, 'external count', 5)
               .having((state) => state.totalCount, 'total count', 10)
-              .having((state) => state.externalDataEnabled, 'external data enabled', true)
+              .having((state) => state.externalDataEnabled,
+                  'external data enabled', true)
               .having((state) => state.fromCache, 'from cache', false),
         ],
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
-            query: testQuery,
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: 50,
-            includeExternal: true,
-          )).called(1);
-          
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: true,
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).called(1);
+
           verify(() => mockSearchCacheService.cacheResult(
-            query: testQuery,
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: 50,
-            includeExternal: true,
-            result: any(named: 'result'),
-          )).called(1);
-          
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: true,
+                result: any(named: 'result'),
+              )).called(1);
+
           verify(() => mockAISearchSuggestionsService.learnFromSearch(
-            query: testQuery,
-            results: any(named: 'results'),
-          )).called(1);
+                query: testQuery,
+                results: any(named: 'results'),
+              )).called(1);
         },
       );
 
@@ -113,22 +175,23 @@ void main() {
         'uses cached results when available',
         build: () {
           when(() => mockSearchCacheService.getCachedResult(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).thenAnswer((_) async => HybridSearchResult(
-            spots: TestDataFactory.createTestSpots(5),
-            communityCount: 3,
-            externalCount: 2,
-            totalCount: 5,
-            searchDuration: const Duration(milliseconds: 50),
-            sources: {'community': 3, 'external': 2},
-          ));
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+              )).thenAnswer((_) async => HybridSearchResult(
+                spots: TestDataFactory.createTestSpots(5),
+                communityCount: 3,
+                externalCount: 2,
+                totalCount: 5,
+                searchDuration: const Duration(milliseconds: 50),
+                sources: {'community': 3, 'external': 2},
+              ));
           return hybridSearchBloc;
         },
-        act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery, useCache: true)),
+        act: (bloc) =>
+            bloc.add(SearchHybridSpots(query: testQuery, useCache: true)),
         // The bloc performs async work (location attempt + cache read). Give it a beat to emit.
         wait: const Duration(milliseconds: 10),
         expect: () => [
@@ -139,28 +202,31 @@ void main() {
         ],
         verify: (_) {
           verify(() => mockSearchCacheService.getCachedResult(
-            query: testQuery,
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: 50,
-            includeExternal: true,
-          )).called(1);
-          
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: true,
+              )).called(1);
+
           // Should not call actual search if cache hit
           verifyNever(() => mockHybridSearchUseCase.searchSpots(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          ));
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              ));
         },
       );
 
       blocTest<HybridSearchBloc, HybridSearchState>(
         'bypasses cache when useCache is false',
         build: () => hybridSearchBloc,
-        act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery, useCache: false)),
+        act: (bloc) =>
+            bloc.add(SearchHybridSpots(query: testQuery, useCache: false)),
         // Async: location attempt + search + cache write.
         wait: const Duration(milliseconds: 10),
         expect: () => [
@@ -170,20 +236,22 @@ void main() {
         ],
         verify: (_) {
           verifyNever(() => mockSearchCacheService.getCachedResult(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          ));
-          
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+              ));
+
           verify(() => mockHybridSearchUseCase.searchSpots(
-            query: testQuery,
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: 50,
-            includeExternal: true,
-          )).called(1);
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: true,
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).called(1);
         },
       );
 
@@ -198,12 +266,14 @@ void main() {
         wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
-            query: testQuery,
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: 25,
-            includeExternal: true,
-          )).called(1);
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 25,
+                includeExternal: true,
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).called(1);
         },
       );
 
@@ -218,12 +288,14 @@ void main() {
         wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
-            query: testQuery,
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: 50,
-            includeExternal: false,
-          )).called(1);
+                query: testQuery,
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: 50,
+                includeExternal: false,
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).called(1);
         },
       );
 
@@ -231,12 +303,14 @@ void main() {
         'emits [HybridSearchLoading, HybridSearchError] when search fails',
         build: () {
           when(() => mockHybridSearchUseCase.searchSpots(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).thenThrow(Exception('Search failed'));
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).thenThrow(Exception('Search failed'));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery)),
@@ -244,8 +318,8 @@ void main() {
         wait: const Duration(milliseconds: 10),
         expect: () => [
           isA<HybridSearchLoading>(),
-          isA<HybridSearchError>()
-              .having((state) => state.message, 'message', contains('Search failed')),
+          isA<HybridSearchError>().having(
+              (state) => state.message, 'message', contains('Search failed')),
         ],
       );
 
@@ -253,12 +327,14 @@ void main() {
         'handles empty search results',
         build: () {
           when(() => mockHybridSearchUseCase.searchSpots(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).thenAnswer((_) async => HybridSearchResult.empty());
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).thenAnswer((_) async => HybridSearchResult.empty());
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: testQuery)),
@@ -289,28 +365,29 @@ void main() {
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
-              .having((state) => state.searchQuery, 'search query', 'Nearby (${testRadius}m)')
+              .having((state) => state.searchQuery, 'search query',
+                  'Nearby (${testRadius}m)')
               .having((state) => state.spots.length, 'spots length', 5)
               .having((state) => state.communityCount, 'community count', 3)
               .having((state) => state.externalCount, 'external count', 2),
         ],
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchNearbySpots(
-            latitude: testLatitude,
-            longitude: testLongitude,
-            radius: testRadius,
-            maxResults: 50,
-            includeExternal: true,
-          )).called(1);
-          
+                latitude: testLatitude,
+                longitude: testLongitude,
+                radius: testRadius,
+                maxResults: 50,
+                includeExternal: true,
+              )).called(1);
+
           verify(() => mockSearchCacheService.cacheResult(
-            query: 'nearby',
-            latitude: testLatitude,
-            longitude: testLongitude,
-            maxResults: 50,
-            includeExternal: true,
-            result: any(named: 'result'),
-          )).called(1);
+                query: 'nearby',
+                latitude: testLatitude,
+                longitude: testLongitude,
+                maxResults: 50,
+                includeExternal: true,
+                result: any(named: 'result'),
+              )).called(1);
         },
       );
 
@@ -318,19 +395,19 @@ void main() {
         'uses cached results for nearby searches',
         build: () {
           when(() => mockSearchCacheService.getCachedResult(
-            query: 'nearby',
-            latitude: testLatitude,
-            longitude: testLongitude,
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).thenAnswer((_) async => HybridSearchResult(
-            spots: TestDataFactory.createTestSpots(3),
-            communityCount: 2,
-            externalCount: 1,
-            totalCount: 3,
-            searchDuration: const Duration(milliseconds: 25),
-            sources: {'community': 2, 'external': 1},
-          ));
+                query: 'nearby',
+                latitude: testLatitude,
+                longitude: testLongitude,
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+              )).thenAnswer((_) async => HybridSearchResult(
+                spots: TestDataFactory.createTestSpots(3),
+                communityCount: 2,
+                externalCount: 1,
+                totalCount: 3,
+                searchDuration: const Duration(milliseconds: 25),
+                sources: {'community': 2, 'external': 1},
+              ));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchNearbyHybridSpots(
@@ -356,12 +433,12 @@ void main() {
         )),
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchNearbySpots(
-            latitude: testLatitude,
-            longitude: testLongitude,
-            radius: 5000, // default
-            maxResults: 25,
-            includeExternal: false,
-          )).called(1);
+                latitude: testLatitude,
+                longitude: testLongitude,
+                radius: 5000, // default
+                maxResults: 25,
+                includeExternal: false,
+              )).called(1);
         },
       );
 
@@ -369,12 +446,12 @@ void main() {
         'emits [HybridSearchLoading, HybridSearchError] when nearby search fails',
         build: () {
           when(() => mockHybridSearchUseCase.searchNearbySpots(
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            radius: any(named: 'radius'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).thenThrow(Exception('Nearby search failed'));
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                radius: any(named: 'radius'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+              )).thenThrow(Exception('Nearby search failed'));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchNearbyHybridSpots(
@@ -383,15 +460,15 @@ void main() {
         )),
         expect: () => [
           isA<HybridSearchLoading>(),
-          isA<HybridSearchError>()
-              .having((state) => state.message, 'message', contains('Nearby search failed')),
+          isA<HybridSearchError>().having((state) => state.message, 'message',
+              contains('Nearby search failed')),
         ],
       );
     });
 
     group('GetSearchSuggestions Event', () {
       const testQuery = 'cof';
-      
+
       blocTest<HybridSearchBloc, HybridSearchState>(
         'emits [HybridSearchSuggestionsLoaded] when suggestions are generated successfully',
         build: () => hybridSearchBloc,
@@ -399,18 +476,21 @@ void main() {
         expect: () => [
           isA<HybridSearchSuggestionsLoaded>()
               .having((state) => state.query, 'query', testQuery)
-              .having((state) => state.suggestions.length, 'suggestions length', 2)
-              .having((state) => state.suggestions.first.text, 'first suggestion', 'coffee shop'),
+              .having(
+                  (state) => state.suggestions.length, 'suggestions length', 2)
+              .having((state) => state.suggestions.first.text,
+                  'first suggestion', 'coffee shop'),
         ],
         verify: (_) {
           verify(() => mockAISearchSuggestionsService.generateSuggestions(
-            query: testQuery,
-            userLocation: any(named: 'userLocation'),
-            communityTrends: any(named: 'communityTrends'),
-          )).called(1);
-          
+                query: testQuery,
+                userLocation: any(named: 'userLocation'),
+                communityTrends: any(named: 'communityTrends'),
+              )).called(1);
+
           verify(() => mockSearchCacheService.getCacheStatistics()).called(1);
-          verify(() => mockAISearchSuggestionsService.getSearchPatterns()).called(1);
+          verify(() => mockAISearchSuggestionsService.getSearchPatterns())
+              .called(1);
         },
       );
 
@@ -434,10 +514,10 @@ void main() {
         )),
         verify: (_) {
           verify(() => mockAISearchSuggestionsService.generateSuggestions(
-            query: testQuery,
-            userLocation: any(named: 'userLocation'),
-            communityTrends: any(named: 'communityTrends'),
-          )).called(1);
+                query: testQuery,
+                userLocation: any(named: 'userLocation'),
+                communityTrends: any(named: 'communityTrends'),
+              )).called(1);
         },
       );
 
@@ -445,16 +525,16 @@ void main() {
         'emits [HybridSearchError] when suggestions generation fails',
         build: () {
           when(() => mockAISearchSuggestionsService.generateSuggestions(
-            query: any(named: 'query'),
-            userLocation: any(named: 'userLocation'),
-            communityTrends: any(named: 'communityTrends'),
-          )).thenThrow(Exception('Suggestions failed'));
+                query: any(named: 'query'),
+                userLocation: any(named: 'userLocation'),
+                communityTrends: any(named: 'communityTrends'),
+              )).thenThrow(Exception('Suggestions failed'));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(GetSearchSuggestions(query: testQuery)),
         expect: () => [
-          isA<HybridSearchError>()
-              .having((state) => state.message, 'message', contains('Failed to get suggestions')),
+          isA<HybridSearchError>().having((state) => state.message, 'message',
+              contains('Failed to get suggestions')),
         ],
       );
     });
@@ -556,8 +636,8 @@ void main() {
         expect: () => [],
         verify: (_) {
           verify(() => mockSearchCacheService.prefetchPopularSearches(
-            searchFunction: any(named: 'searchFunction'),
-          )).called(1);
+                searchFunction: any(named: 'searchFunction'),
+              )).called(1);
         },
       );
 
@@ -581,14 +661,14 @@ void main() {
         expect: () => [],
         verify: (_) {
           verify(() => mockSearchCacheService.prefetchPopularSearches(
-            searchFunction: any(named: 'searchFunction'),
-          )).called(1);
-          
+                searchFunction: any(named: 'searchFunction'),
+              )).called(1);
+
           verify(() => mockSearchCacheService.warmLocationCache(
-            latitude: 37.7749,
-            longitude: -122.4194,
-            nearbySearchFunction: any(named: 'nearbySearchFunction'),
-          )).called(1);
+                latitude: 37.7749,
+                longitude: -122.4194,
+                nearbySearchFunction: any(named: 'nearbySearchFunction'),
+              )).called(1);
         },
       );
 
@@ -596,8 +676,8 @@ void main() {
         'handles cache warmup failures gracefully',
         build: () {
           when(() => mockSearchCacheService.prefetchPopularSearches(
-            searchFunction: any(named: 'searchFunction'),
-          )).thenThrow(Exception('Cache warmup failed'));
+                searchFunction: any(named: 'searchFunction'),
+              )).thenThrow(Exception('Cache warmup failed'));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(WarmupCache()),
@@ -614,10 +694,11 @@ void main() {
         expect: () => [],
         verify: (_) {
           verify(() => mockSearchCacheService.clearCache(
-            preserveOffline: true,
-          )).called(1);
-          
-          verify(() => mockAISearchSuggestionsService.clearLearningData()).called(1);
+                preserveOffline: true,
+              )).called(1);
+
+          verify(() => mockAISearchSuggestionsService.clearLearningData())
+              .called(1);
         },
       );
 
@@ -643,14 +724,14 @@ void main() {
         'emits error when cache clearing fails',
         build: () {
           when(() => mockSearchCacheService.clearCache(
-            preserveOffline: any(named: 'preserveOffline'),
-          )).thenThrow(Exception('Failed to clear cache'));
+                preserveOffline: any(named: 'preserveOffline'),
+              )).thenThrow(Exception('Failed to clear cache'));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(ClearSearchCache()),
         expect: () => [
-          isA<HybridSearchError>()
-              .having((state) => state.message, 'message', contains('Failed to clear cache')),
+          isA<HybridSearchError>().having((state) => state.message, 'message',
+              contains('Failed to clear cache')),
         ],
       );
     });
@@ -684,7 +765,8 @@ void main() {
         expect(state.isCommunityPrioritized, isTrue);
       });
 
-      test('HybridSearchLoaded identifies non-community prioritized results', () {
+      test('HybridSearchLoaded identifies non-community prioritized results',
+          () {
         final state = HybridSearchLoaded(
           spots: TestDataFactory.createTestSpots(10),
           communityCount: 3,
@@ -707,8 +789,10 @@ void main() {
         expect: () => [
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
-              .having((state) => state.searchDuration, 'search duration', isA<Duration>())
-              .having((state) => state.sources, 'sources breakdown', isNotEmpty),
+              .having((state) => state.searchDuration, 'search duration',
+                  isA<Duration>())
+              .having(
+                  (state) => state.sources, 'sources breakdown', isNotEmpty),
         ],
       );
     });
@@ -727,12 +811,14 @@ void main() {
         // Should handle rapid events without crashing
         verify: (_) {
           verify(() => mockHybridSearchUseCase.searchSpots(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).called(greaterThan(0));
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).called(greaterThan(0));
         },
       );
 
@@ -742,25 +828,28 @@ void main() {
         act: (bloc) async {
           bloc.add(SearchHybridSpots(query: 'coffee'));
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           bloc.add(GetSearchSuggestions(query: 'cof'));
           await Future.delayed(const Duration(milliseconds: 50));
-          
-          bloc.add(SearchNearbyHybridSpots(latitude: 37.7749, longitude: -122.4194));
+
+          bloc.add(
+              SearchNearbyHybridSpots(latitude: 37.7749, longitude: -122.4194));
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           bloc.add(ClearHybridSearch());
         },
         // Should handle mixed events gracefully
         verify: (_) {
           // Verify that various services were called
           verify(() => mockHybridSearchUseCase.searchSpots(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).called(greaterThan(0));
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+                filters: any(named: 'filters'),
+                sortOption: any(named: 'sortOption'),
+              )).called(greaterThan(0));
         },
       );
 
@@ -770,16 +859,17 @@ void main() {
         act: (bloc) async {
           bloc.add(SearchHybridSpots(query: 'test'));
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           bloc.add(WarmupCache());
           await Future.delayed(const Duration(milliseconds: 50));
-          
+
           bloc.add(SearchHybridSpots(query: 'test2'));
         },
         // Async: multiple events; allow last event to complete before verify.
         wait: const Duration(milliseconds: 50),
         verify: (_) {
-          verify(() => mockSearchCacheService.getCacheStatistics()).called(greaterThan(0));
+          verify(() => mockSearchCacheService.getCacheStatistics())
+              .called(greaterThan(0));
         },
       );
 
@@ -812,13 +902,14 @@ void main() {
       blocTest<HybridSearchBloc, HybridSearchState>(
         'integrates with AI suggestions service for learning',
         build: () => hybridSearchBloc,
-        act: (bloc) => bloc.add(SearchHybridSpots(query: 'machine learning test')),
+        act: (bloc) =>
+            bloc.add(SearchHybridSpots(query: 'machine learning test')),
         wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockAISearchSuggestionsService.learnFromSearch(
-            query: 'machine learning test',
-            results: any(named: 'results'),
-          )).called(1);
+                query: 'machine learning test',
+                results: any(named: 'results'),
+              )).called(1);
         },
       );
 
@@ -829,7 +920,8 @@ void main() {
         wait: const Duration(milliseconds: 10),
         verify: (_) {
           verify(() => mockSearchCacheService.getCacheStatistics()).called(1);
-          verify(() => mockAISearchSuggestionsService.getSearchPatterns()).called(1);
+          verify(() => mockAISearchSuggestionsService.getSearchPatterns())
+              .called(1);
         },
       );
     });
@@ -839,19 +931,20 @@ void main() {
         'prioritizes cache hits for better performance',
         build: () {
           when(() => mockSearchCacheService.getCachedResult(
-            query: any(named: 'query'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            maxResults: any(named: 'maxResults'),
-            includeExternal: any(named: 'includeExternal'),
-          )).thenAnswer((_) async => HybridSearchResult(
-            spots: TestDataFactory.createTestSpots(10),
-            communityCount: 6,
-            externalCount: 4,
-            totalCount: 10,
-            searchDuration: const Duration(milliseconds: 10), // Very fast from cache
-            sources: {'community': 6, 'external': 4},
-          ));
+                query: any(named: 'query'),
+                latitude: any(named: 'latitude'),
+                longitude: any(named: 'longitude'),
+                maxResults: any(named: 'maxResults'),
+                includeExternal: any(named: 'includeExternal'),
+              )).thenAnswer((_) async => HybridSearchResult(
+                spots: TestDataFactory.createTestSpots(10),
+                communityCount: 6,
+                externalCount: 4,
+                totalCount: 10,
+                searchDuration:
+                    const Duration(milliseconds: 10), // Very fast from cache
+                sources: {'community': 6, 'external': 4},
+              ));
           return hybridSearchBloc;
         },
         act: (bloc) => bloc.add(SearchHybridSpots(query: 'cached query')),
@@ -860,7 +953,8 @@ void main() {
           isA<HybridSearchLoading>(),
           isA<HybridSearchLoaded>()
               .having((state) => state.fromCache, 'from cache', true)
-              .having((state) => state.searchDuration.inMilliseconds, 'duration', lessThan(50)),
+              .having((state) => state.searchDuration.inMilliseconds,
+                  'duration', lessThan(50)),
         ],
       );
     });

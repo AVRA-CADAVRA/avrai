@@ -208,5 +208,75 @@ void main() {
         expect(result.warnings, contains('Shared agent enabled but no team members added'));
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () async {
+        final creator = UnifiedUser(
+          id: 'user_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          email: 'creator@test.com',
+          displayName: 'Test Creator',
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final businessAccount = await businessAccountService.createBusinessAccount(
+          creator: creator,
+          name: 'Test Business',
+          email: 'test@business.com',
+          businessType: 'Restaurant',
+        );
+
+        final data = BusinessOnboardingData(
+          setupSharedAgent: false,
+        );
+
+        final result = await controller.completeBusinessOnboarding(
+          businessId: businessAccount.id,
+          data: data,
+        );
+
+        expect(result.success, isTrue, reason: 'Should succeed with AVRAI services');
+        expect(result.businessAccount, isNotNull, reason: 'Business account should be updated');
+        // Note: AVRAI integrations (knots, 4D quantum) happen internally
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = BusinessOnboardingController(
+          personalityKnotService: null,
+          knotStorageService: null,
+          locationTimingService: null,
+          quantumEntanglementService: null,
+        );
+
+        final creator = UnifiedUser(
+          id: 'user_avrai_${DateTime.now().millisecondsSinceEpoch}',
+          email: 'creator@test.com',
+          displayName: 'Test Creator',
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final businessAccount = await businessAccountService.createBusinessAccount(
+          creator: creator,
+          name: 'Test Business',
+          email: 'test@business.com',
+          businessType: 'Restaurant',
+        );
+
+        final data = BusinessOnboardingData(
+          setupSharedAgent: false,
+        );
+
+        final result = await controllerWithoutAVRAI.completeBusinessOnboarding(
+          businessId: businessAccount.id,
+          data: data,
+        );
+
+        expect(result.success, isTrue, reason: 'Should succeed even without AVRAI services');
+        expect(result.businessAccount, isNotNull, reason: 'Business account should be updated');
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }

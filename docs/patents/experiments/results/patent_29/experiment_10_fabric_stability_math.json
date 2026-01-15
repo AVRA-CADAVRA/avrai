@@ -1,0 +1,46 @@
+{
+  "status": "complete",
+  "total_groups_tested": 83,
+  "correlation_with_satisfaction": {
+    "avrai": 0.6693127533620645,
+    "baseline": 0.6395774315983886,
+    "improvement": 0.02973532176367588
+  },
+  "prediction_error": {
+    "avg_avrai_error": 0.037534909081510956,
+    "avg_baseline_error": 0.06717218512400341,
+    "improvement_pct": 26.6511661266093
+  },
+  "formula_components": {
+    "density_factor_range": [
+      0.3,
+      0.7857142857142857
+    ],
+    "complexity_factor_range": [
+      0.6666666666666666,
+      0.9090909090909091
+    ],
+    "cohesion_factor_range": [
+      0.5017539323585919,
+      0.9996009078796751
+    ]
+  },
+  "prior_art_comparison": {
+    "avg_avrai_error": 0.037534909081510956,
+    "avg_prior_art_error": 0.08784283726666653,
+    "avg_improvement": 0.05030792818515556,
+    "improvement_pct": 57.27038168454717
+  },
+  "synergistic_effects": {
+    "avg_synergistic_improvement": 0.05018626133447316,
+    "positive_synergy_cases": 24,
+    "total_synergy_tests": 30
+  },
+  "success_criteria": {
+    "avrai_correlates_with_satisfaction": "True",
+    "avrai_better_than_baseline": "True",
+    "avrai_better_than_prior_art": "True",
+    "synergistic_effects_proven": "True",
+    "error_improvement": "True"
+  }
+}

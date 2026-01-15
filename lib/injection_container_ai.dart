@@ -30,6 +30,8 @@ import 'package:avrai/core/ai/continuous_learning/data_collector.dart';
 import 'package:avrai/core/ai/continuous_learning/data_processor.dart';
 import 'package:avrai/core/ai/continuous_learning/orchestrator.dart';
 import 'package:avrai/core/ai/continuous_learning_system.dart';
+import 'package:avrai/core/ai/unified_evolution_orchestrator.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 import 'package:avrai/core/ai/event_queue.dart';
 import 'package:avrai/core/ai/event_logger.dart';
 import 'package:avrai/core/ai/structured_facts_extractor.dart';
@@ -159,8 +161,7 @@ Future<void> registerAIServices(GetIt sl) async {
 
   // Personality Advertising Service
   sl.registerLazySingleton<PersonalityAdvertisingService>(() {
-    return PersonalityAdvertisingService(
-    );
+    return PersonalityAdvertisingService();
   });
 
   // PersonalityLearning (Philosophy: "Always Learning With You")
@@ -241,7 +242,8 @@ Future<void> registerAIServices(GetIt sl) async {
     final advertisingService = sl<PersonalityAdvertisingService>();
     final personalityLearning = sl<PersonalityLearning>();
     final ai2aiProtocol = sl<AI2AIProtocol>();
-    final signalKeyManager = sl<SignalKeyManager>();
+    final signalKeyManager =
+        sl.isRegistered<SignalKeyManager>() ? sl<SignalKeyManager>() : null;
     final prefs = sl<SharedPreferencesCompat>();
 
     final orchestrator = VibeConnectionOrchestrator(
@@ -263,13 +265,14 @@ Future<void> registerAIServices(GetIt sl) async {
       Future<void>(() async {
         // Update advertising (existing functionality)
         await orchestrator.updatePersonalityAdvertising(userId, evolvedProfile);
-        
+
         // NEW: Handle knot evolution (automatic regeneration and snapshot creation)
         // Knot services are registered before AI services, so coordinator should be available
         if (sl.isRegistered<KnotEvolutionCoordinatorService>()) {
           try {
             final knotCoordinator = sl<KnotEvolutionCoordinatorService>();
-            await knotCoordinator.handleProfileEvolution(userId, evolvedProfile);
+            await knotCoordinator.handleProfileEvolution(
+                userId, evolvedProfile);
           } catch (e) {
             // Log but don't fail - knot evolution is non-blocking
             developer.log(
@@ -281,12 +284,28 @@ Future<void> registerAIServices(GetIt sl) async {
       });
     });
     // Build realtime with orchestrator and register it for app-wide access
-    final realtimeBackend = sl<RealtimeBackend>();
-    final realtime = AI2AIBroadcastService(realtimeBackend);
-    orchestrator.setRealtimeService(realtime);
-    // Expose realtime service via DI for UI pages/debug tools
-    if (!sl.isRegistered<AI2AIBroadcastService>()) {
-      sl.registerSingleton<AI2AIBroadcastService>(realtime);
+    // Note: RealtimeBackend is registered during backend initialization (after AI services)
+    // So we check if it's available and only set realtime service if it is
+    if (sl.isRegistered<RealtimeBackend>()) {
+      try {
+        final realtimeBackend = sl<RealtimeBackend>();
+        final realtime = AI2AIBroadcastService(realtimeBackend);
+        orchestrator.setRealtimeService(realtime);
+        // Expose realtime service via DI for UI pages/debug tools
+        if (!sl.isRegistered<AI2AIBroadcastService>()) {
+          sl.registerSingleton<AI2AIBroadcastService>(realtime);
+        }
+      } catch (e) {
+        developer.log(
+          '⚠️ RealtimeBackend not available yet, VibeConnectionOrchestrator will work without realtime',
+          name: 'injection_container_ai',
+        );
+      }
+    } else {
+      developer.log(
+        'ℹ️ RealtimeBackend not registered yet, VibeConnectionOrchestrator will work without realtime',
+        name: 'injection_container_ai',
+      );
     }
     return orchestrator;
   });
@@ -587,14 +606,14 @@ Future<void> registerAIServices(GetIt sl) async {
   sl.registerLazySingleton(() => FriendChatService(
         encryptionService: sl<MessageEncryptionService>(),
         agentIdService: sl<AgentIdService>(),
-        realtimeBackend: sl<RealtimeBackend>(),
+        realtimeBackend: sl.isRegistered<RealtimeBackend>() ? sl<RealtimeBackend>() : null,
         atomicClock: sl<AtomicClockService>(),
         dmStore: sl<DmMessageStore>(),
       ));
   sl.registerLazySingleton(() => CommunityChatService(
         encryptionService: sl<MessageEncryptionService>(),
         agentIdService: sl<AgentIdService>(),
-        realtimeBackend: sl<RealtimeBackend>(),
+        realtimeBackend: sl.isRegistered<RealtimeBackend>() ? sl<RealtimeBackend>() : null,
         atomicClock: sl<AtomicClockService>(),
         dmStore: sl<DmMessageStore>(),
         senderKeyService: sl<CommunitySenderKeyService>(),
@@ -637,9 +656,13 @@ Future<void> registerAIServices(GetIt sl) async {
   // Anonymous Communication Protocol (Phase 14: Signal Protocol ready)
   sl.registerLazySingleton(() => ai2ai.AnonymousCommunicationProtocol(
         encryptionService: sl<MessageEncryptionService>(),
+        agentIdService:
+            sl.isRegistered<AgentIdService>() ? sl<AgentIdService>() : null,
         supabase: sl<SupabaseClient>(),
         atomicClock: sl<AtomicClockService>(),
         anonymizationService: sl<UserAnonymizationService>(),
+        supabaseService:
+            sl.isRegistered<SupabaseService>() ? sl<SupabaseService>() : null,
       ));
 
   // Business-Expert Chat Service (AI2AI routing)
@@ -725,9 +748,10 @@ Future<void> registerAIServices(GetIt sl) async {
       atomicClock: sl<AtomicClockService>(),
       agentIdService: sl<AgentIdService>(),
       knotStorage: sl<KnotStorageService>(),
-      knotCompatibilityService: sl.isRegistered<CrossEntityCompatibilityService>()
-          ? sl<CrossEntityCompatibilityService>()
-          : null,
+      knotCompatibilityService:
+          sl.isRegistered<CrossEntityCompatibilityService>()
+              ? sl<CrossEntityCompatibilityService>()
+              : null,
       personalityLearning: sl<PersonalityLearning>(),
       socialDiscovery: sl.isRegistered<SocialMediaDiscoveryService>()
           ? sl<SocialMediaDiscoveryService>()
@@ -740,6 +764,51 @@ Future<void> registerAIServices(GetIt sl) async {
           : null,
     ),
   );
+
+  // Unified Evolution Orchestrator
+  // Coordinates all evolution-related activities across the SPOTS ecosystem
+  sl.registerLazySingleton<UnifiedEvolutionOrchestrator>(() {
+    final personalityLearning = sl<PersonalityLearning>();
+    final agentIdService = sl<AgentIdService>();
+    final knotEvolutionCoordinator =
+        sl.isRegistered<KnotEvolutionCoordinatorService>()
+            ? sl<KnotEvolutionCoordinatorService>()
+            : null;
+    final quantumMatchingLearning =
+        sl.isRegistered<QuantumMatchingAILearningService>()
+            ? sl<QuantumMatchingAILearningService>()
+            : null;
+    final continuousLearningOrchestrator =
+        sl.isRegistered<ContinuousLearningOrchestrator>()
+            ? sl<ContinuousLearningOrchestrator>()
+            : null;
+    final ai2aiLearning =
+        sl.isRegistered<AI2AILearning>() ? sl<AI2AILearning>() : null;
+
+    return UnifiedEvolutionOrchestrator(
+      personalityLearning: personalityLearning,
+      agentIdService: agentIdService,
+      knotEvolutionCoordinator: knotEvolutionCoordinator,
+      quantumMatchingLearning: quantumMatchingLearning,
+      continuousLearningOrchestrator: continuousLearningOrchestrator,
+      ai2aiLearning: ai2aiLearning,
+    );
+  });
+
+  // Initialize Unified Evolution Orchestrator after registration
+  // This sets up the evolution callback to coordinate all evolution systems
+  Future.microtask(() async {
+    if (sl.isRegistered<UnifiedEvolutionOrchestrator>()) {
+      try {
+        final orchestrator = sl<UnifiedEvolutionOrchestrator>();
+        await orchestrator.initialize();
+        logger.debug('✅ [DI-AI] UnifiedEvolutionOrchestrator initialized');
+      } catch (e) {
+        logger.warning(
+            '⚠️ [DI-AI] Failed to initialize UnifiedEvolutionOrchestrator: $e');
+      }
+    }
+  });
 
   logger.debug('✅ [DI-AI] AI/network services registered');
 }

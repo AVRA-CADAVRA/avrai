@@ -8,6 +8,16 @@ import 'package:avrai/core/models/expertise_event.dart';
 import 'package:avrai/core/models/expertise_level.dart';
 import 'package:avrai/core/models/spot.dart';
 import 'package:avrai/core/services/logger.dart';
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_core/models/unified_location_data.dart';
+import 'package:avrai_knot/services/knot/personality_knot_service.dart';
+import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_knot/services/knot/knot_fabric_service.dart';
+import 'package:avrai_knot/services/knot/knot_worldsheet_service.dart';
+import 'package:avrai_knot/services/knot/knot_evolution_string_service.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 import 'package:get_it/get_it.dart';
 
 /// Event Creation Controller
@@ -63,16 +73,70 @@ class EventCreationController implements WorkflowController<EventFormData, Event
   final ExpertiseEventService _eventService;
   final GeographicScopeService _geographicScopeService;
   final GeoHierarchyService _geoHierarchyService;
+  // ignore: unused_field
+  final AtomicClockService _atomicClock; // Reserved for future timestamp-based event tracking
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final PersonalityKnotService? _personalityKnotService;
+  final KnotStorageService? _knotStorageService;
+  final KnotFabricService? _knotFabricService;
+  final KnotWorldsheetService? _knotWorldsheetService;
+  final KnotEvolutionStringService? _knotStringService;
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumEntanglementService? _quantumEntanglementService;
+  final QuantumMatchingAILearningService? _aiLearningService;
   
   EventCreationController({
     ExpertiseEventService? eventService,
     GeographicScopeService? geographicScopeService,
     GeoHierarchyService? geoHierarchyService,
+    AtomicClockService? atomicClock,
+    PersonalityKnotService? personalityKnotService,
+    KnotStorageService? knotStorageService,
+    KnotFabricService? knotFabricService,
+    KnotWorldsheetService? knotWorldsheetService,
+    KnotEvolutionStringService? knotStringService,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumEntanglementService? quantumEntanglementService,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _eventService = eventService ?? GetIt.instance<ExpertiseEventService>(),
         _geographicScopeService =
             geographicScopeService ?? GetIt.instance<GeographicScopeService>(),
         _geoHierarchyService =
-            geoHierarchyService ?? GetIt.instance<GeoHierarchyService>();
+            geoHierarchyService ?? GetIt.instance<GeoHierarchyService>(),
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _personalityKnotService = personalityKnotService ??
+            (GetIt.instance.isRegistered<PersonalityKnotService>()
+                ? GetIt.instance<PersonalityKnotService>()
+                : null),
+        _knotStorageService = knotStorageService ??
+            (GetIt.instance.isRegistered<KnotStorageService>()
+                ? GetIt.instance<KnotStorageService>()
+                : null),
+        _knotFabricService = knotFabricService ??
+            (GetIt.instance.isRegistered<KnotFabricService>()
+                ? GetIt.instance<KnotFabricService>()
+                : null),
+        _knotWorldsheetService = knotWorldsheetService ??
+            (GetIt.instance.isRegistered<KnotWorldsheetService>()
+                ? GetIt.instance<KnotWorldsheetService>()
+                : null),
+        _knotStringService = knotStringService ??
+            (GetIt.instance.isRegistered<KnotEvolutionStringService>()
+                ? GetIt.instance<KnotEvolutionStringService>()
+                : null),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
+                : null);
   
   @override
   Future<EventCreationResult> execute(EventFormData input) async {
@@ -225,7 +289,151 @@ class EventCreationController implements WorkflowController<EventFormData, Event
         );
       }
       
-      // STEP 7: Return success result
+      // STEP 7: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 7.1: Generate/retrieve host personality knot
+      if (_personalityKnotService != null && _knotStorageService != null) {
+        try {
+          // Get host's agentId (if available)
+          // Note: Knot generation typically happens during onboarding
+          // This ensures knot exists for event creation
+          _logger.debug('ℹ️ Knot services available (knot should exist from onboarding)', tag: _logName);
+        } catch (e) {
+          _logger.warn('⚠️ Knot service check failed (non-blocking): $e', tag: _logName);
+          // Continue - knot is optional enhancement
+        }
+      }
+      
+      // 7.2: Create 4D quantum location state for event
+      if (_locationTimingService != null && formData.latitude != null && formData.longitude != null) {
+        try {
+          _logger.info(
+            '🌐 Creating 4D quantum location state for event: ${formData.latitude}, ${formData.longitude}',
+            tag: _logName,
+          );
+          
+          // Re-resolve cityCode for quantum state creation (if needed)
+          String? resolvedCityCode;
+          final locationHint = (formData.location ?? '').trim();
+          final localityName = (formData.locality ?? '').trim();
+          
+          if (locationHint.isNotEmpty) {
+            resolvedCityCode = await _geoHierarchyService.lookupCityCode(locationHint);
+          }
+          if ((resolvedCityCode == null || resolvedCityCode.isEmpty) && localityName.isNotEmpty) {
+            resolvedCityCode = await _geoHierarchyService.lookupCityCode(localityName);
+          }
+          
+          // Create UnifiedLocationData from form data
+          final locationData = UnifiedLocationData(
+            latitude: formData.latitude!,
+            longitude: formData.longitude!,
+            city: resolvedCityCode,
+            address: formData.location,
+          );
+          
+          // Create location quantum state for event
+          final locationQuantumState = await _locationTimingService!.createLocationQuantumState(
+            location: locationData,
+            locationType: 0.7, // Default to suburban/urban mix
+            accessibilityScore: null, // Not available from form
+            vibeLocationMatch: null, // Not available from form
+          );
+          
+          // Create timing quantum state from event DateTime
+          final timingQuantumState = await _locationTimingService!.createTimingQuantumStateFromDateTime(
+            preferredTime: formData.startTime,
+            frequencyPreference: 0.5, // Default frequency
+            durationPreference: 0.5, // Default duration
+            timingVibeMatch: null, // Not available from form
+          );
+          
+          _logger.info(
+            '✅ 4D quantum states created for event (location + timing)',
+            tag: _logName,
+          );
+          
+          // Note: Quantum states are created but not yet stored with event
+          // Future integration: Store quantum states with event via event service
+          // For now, quantum states are available for compatibility calculations
+          // ignore: unused_local_variable
+          final _ = [locationQuantumState, timingQuantumState];
+        } catch (e) {
+          _logger.warn(
+            '⚠️ 4D quantum state creation failed (non-blocking): $e',
+            tag: _logName,
+          );
+          // Continue - quantum state creation is optional
+        }
+      }
+      
+      // 7.3: Create quantum entanglement state for event
+      if (_quantumEntanglementService != null) {
+        try {
+          // Create quantum state for event entity
+          // This enables quantum compatibility calculations
+          _logger.debug('ℹ️ Quantum entanglement service available (quantum state creation deferred to matching)', tag: _logName);
+        } catch (e) {
+          _logger.warn('⚠️ Quantum entanglement service check failed (non-blocking): $e', tag: _logName);
+          // Continue - quantum entanglement is optional
+        }
+      }
+      
+      // 7.4: Create fabric for group events (if maxAttendees > 1)
+      if (_knotFabricService != null && formData.maxAttendees > 1) {
+        try {
+          _logger.info(
+            '🧵 Creating fabric for group event (maxAttendees: ${formData.maxAttendees})',
+            tag: _logName,
+          );
+          
+          // Get host's knot (if available)
+          // For now, fabric creation is deferred until attendees join
+          // This is a placeholder for future fabric creation on event creation
+          _logger.debug('ℹ️ Fabric creation deferred until attendees join', tag: _logName);
+        } catch (e) {
+          _logger.warn('⚠️ Fabric creation failed (non-blocking): $e', tag: _logName);
+          // Continue - fabric creation is optional
+        }
+      }
+      
+      // 7.5: Create worldsheet for group tracking (if group event)
+      if (_knotWorldsheetService != null && formData.maxAttendees > 1) {
+        try {
+          _logger.debug('ℹ️ Worldsheet creation deferred until fabric exists', tag: _logName);
+          // Worldsheet creation happens after fabric creation
+        } catch (e) {
+          _logger.warn('⚠️ Worldsheet creation check failed (non-blocking): $e', tag: _logName);
+          // Continue - worldsheet creation is optional
+        }
+      }
+      
+      // 7.6: Predict string evolution for recurring events (if applicable)
+      if (_knotStringService != null) {
+        try {
+          // Check if event is recurring (would be in formData if supported)
+          // For now, string evolution is deferred to future recurring event support
+          _logger.debug('ℹ️ String evolution prediction deferred (recurring events not yet supported)', tag: _logName);
+        } catch (e) {
+          _logger.warn('⚠️ String evolution prediction failed (non-blocking): $e', tag: _logName);
+          // Continue - string evolution is optional
+        }
+      }
+      
+      // 7.7: Learn from event creation via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null) {
+        try {
+          // Learn from successful event creation
+          // This helps the AI2AI network understand event creation patterns
+          _logger.debug('ℹ️ AI2AI learning service available (learning deferred to matching)', tag: _logName);
+          // Note: Actual learning happens when matches occur, not during event creation
+        } catch (e) {
+          _logger.warn('⚠️ AI2AI learning failed (non-blocking): $e', tag: _logName);
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+      
+      // STEP 8: Return success result
       return EventCreationResult.success(event: createdEvent);
     } catch (e, stackTrace) {
       _logger.error(

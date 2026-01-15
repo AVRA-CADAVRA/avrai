@@ -7,9 +7,9 @@ import 'package:avrai/presentation/pages/events/event_details_page.dart';
 
 /// Event Published Page
 /// Agent 2: Event Discovery & Hosting UI (Week 3, Task 2.11)
-/// 
+///
 /// CRITICAL: Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// Features:
 /// - Success message
 /// - Event details
@@ -24,7 +24,7 @@ class EventPublishedPage extends StatelessWidget {
   });
 
   void _shareEvent(BuildContext context) {
-    final shareText = '''🎉 I just created an event on SPOTS!
+    final shareText = '''🎉 I just created an event on avrai!
 
 ${event.title}
 
@@ -35,8 +35,8 @@ ${event.description}
 ${event.isPaid ? '💰 \$${event.price}' : '🎫 Free'}
 👥 ${event.maxAttendees} max attendees
 
-Join me on SPOTS!
-SPOTS - know you belong.''';
+Join me on avrai!
+avrai - know you belong.''';
 
     SharePlus.instance.share(ShareParams(
       text: shareText,
@@ -86,7 +86,7 @@ SPOTS - know you belong.''';
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
-                
+
                 // Success Icon
                 Container(
                   padding: const EdgeInsets.all(24),
@@ -100,9 +100,9 @@ SPOTS - know you belong.''';
                     color: AppColors.electricGreen,
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Success Message
                 const Text(
                   'Event Published!',
@@ -113,9 +113,9 @@ SPOTS - know you belong.''';
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 const Text(
                   'Your event is now live and discoverable by others',
                   style: TextStyle(
@@ -124,9 +124,9 @@ SPOTS - know you belong.''';
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Event Preview Card
                 Card(
                   child: Padding(
@@ -139,7 +139,8 @@ SPOTS - know you belong.''';
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.electricGreen.withValues(alpha: 0.1),
+                                color: AppColors.electricGreen
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -173,9 +174,7 @@ SPOTS - know you belong.''';
                             ),
                           ],
                         ),
-                        
                         const SizedBox(height: 16),
-                        
                         Text(
                           event.description,
                           style: const TextStyle(
@@ -186,12 +185,11 @@ SPOTS - know you belong.''';
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        
                         const SizedBox(height: 16),
-                        
                         Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                            const Icon(Icons.calendar_today,
+                                size: 16, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -203,7 +201,8 @@ SPOTS - know you belong.''';
                               ),
                             ),
                             if (event.location != null) ...[
-                              const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+                              const Icon(Icons.location_on,
+                                  size: 16, color: AppColors.textSecondary),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -222,9 +221,9 @@ SPOTS - know you belong.''';
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Action Buttons
                 SizedBox(
                   width: double.infinity,
@@ -242,9 +241,9 @@ SPOTS - know you belong.''';
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -261,9 +260,9 @@ SPOTS - know you belong.''';
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 TextButton(
                   onPressed: () {
                     Navigator.popUntil(context, (route) => route.isFirst);
@@ -281,4 +280,3 @@ SPOTS - know you belong.''';
     );
   }
 }
-

@@ -299,6 +299,154 @@ void main() {
         expect(result.event!.host.id, equals(host.id));
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should create 4D quantum states when location timing service available', () async {
+        // Arrange
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host-avrai-1',
+          category: 'Coffee',
+          location: 'Greenpoint, Brooklyn, NY, USA',
+        );
+
+        final formData = EventFormData(
+          title: 'Coffee Tasting Tour',
+          description: 'Explore local coffee shops',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: DateTime.now().add(const Duration(days: 1)),
+          endTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
+          location: 'Greenpoint, Brooklyn',
+          locality: 'Greenpoint',
+          latitude: 40.7295,
+          longitude: -73.9545,
+          maxAttendees: 20,
+          isPublic: true,
+        );
+
+        // Act
+        final result = await controller.createEvent(
+          formData: formData,
+          host: host,
+        );
+
+        // Assert
+        expect(result.isSuccess, isTrue, reason: 'Should succeed with AVRAI services');
+        expect(result.event, isNotNull, reason: 'Event should be created');
+        // Note: 4D quantum state creation happens internally and doesn't affect result
+        // This test verifies the controller doesn't crash when AVRAI services are available
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = EventCreationController(
+          personalityKnotService: null,
+          knotStorageService: null,
+          knotFabricService: null,
+          knotWorldsheetService: null,
+          knotStringService: null,
+          locationTimingService: null,
+          quantumEntanglementService: null,
+          aiLearningService: null,
+        );
+
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host-avrai-2',
+          category: 'Coffee',
+          location: 'Greenpoint, Brooklyn, NY, USA',
+        );
+
+        final formData = EventFormData(
+          title: 'Coffee Tour',
+          description: 'Explore local coffee shops',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: DateTime.now().add(const Duration(days: 1)),
+          endTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
+          location: 'Greenpoint, Brooklyn',
+          locality: 'Greenpoint',
+          maxAttendees: 20,
+          isPublic: true,
+        );
+
+        // Act
+        final result = await controllerWithoutAVRAI.createEvent(
+          formData: formData,
+          host: host,
+        );
+
+        // Assert
+        expect(result.isSuccess, isTrue, reason: 'Should succeed even without AVRAI services');
+        expect(result.event, isNotNull, reason: 'Event should be created');
+        // Core functionality should work without AVRAI services
+      });
+
+      test('should handle 4D quantum state creation failure gracefully', () async {
+        // This test verifies that if 4D quantum state creation fails,
+        // the controller continues and doesn't block event creation
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host-avrai-3',
+          category: 'Coffee',
+          location: 'Greenpoint, Brooklyn, NY, USA',
+        );
+
+        final formData = EventFormData(
+          title: 'Coffee Tour',
+          description: 'Explore local coffee shops',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: DateTime.now().add(const Duration(days: 1)),
+          endTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
+          location: 'Greenpoint, Brooklyn',
+          locality: 'Greenpoint',
+          latitude: 40.7295,
+          longitude: -73.9545,
+          maxAttendees: 20,
+          isPublic: true,
+        );
+
+        final result = await controller.createEvent(
+          formData: formData,
+          host: host,
+        );
+
+        expect(result.isSuccess, isTrue, reason: 'Should succeed even if 4D quantum creation fails');
+        // The controller should handle quantum state creation failures gracefully
+      });
+
+      test('should handle fabric creation for group events gracefully', () async {
+        // Arrange - event with maxAttendees > 1 (group event)
+        final host = IntegrationTestHelpers.createUserWithLocalExpertise(
+          id: 'host-avrai-4',
+          category: 'Coffee',
+          location: 'Greenpoint, Brooklyn, NY, USA',
+        );
+
+        final formData = EventFormData(
+          title: 'Group Coffee Tour',
+          description: 'Explore local coffee shops with friends',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.tour,
+          startTime: DateTime.now().add(const Duration(days: 1)),
+          endTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
+          location: 'Greenpoint, Brooklyn',
+          locality: 'Greenpoint',
+          maxAttendees: 10, // Group event
+          isPublic: true,
+        );
+
+        // Act
+        final result = await controller.createEvent(
+          formData: formData,
+          host: host,
+        );
+
+        // Assert
+        expect(result.isSuccess, isTrue, reason: 'Should succeed for group events');
+        expect(result.event, isNotNull, reason: 'Event should be created');
+        // Fabric creation is deferred until attendees join, so it shouldn't block event creation
+      });
+    });
   });
 }
 

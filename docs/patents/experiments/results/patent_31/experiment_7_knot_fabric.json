@@ -3,11 +3,17 @@
   "total_knots": 50,
   "clusters_identified": 2,
   "bridge_strands": 0,
-  "fabric_stability": 0.9222557451160712,
+  "fabric_stability": 0.5964907188144037,
+  "fabric_stability_components": {
+    "density_factor": 0.32599999999999996,
+    "complexity_factor": 0.588235294117647,
+    "cohesion_factor": 0.9654004352636988
+  },
   "success_criteria": {
     "fabric_generated": true,
     "clusters_identified": true,
     "bridge_strands_detected": false,
-    "stability_calculated": true
+    "stability_calculated": true,
+    "stability_formula_applied": true
   }
 }

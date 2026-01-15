@@ -166,7 +166,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Configure how often SPOTS scans for nearby devices and how long to keep discovered devices in the list.',
+                'Configure how often avrai scans for nearby devices and how long to keep discovered devices in the list.',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,

@@ -130,6 +130,18 @@ class ActionHistoryEntry {
         'listId': intent.listId,
         'userId': intent.userId,
       };
+    } else if (intent is CreateEventIntent) {
+      return {
+        ...base,
+        'userId': intent.userId,
+        'templateId': intent.templateId,
+        'title': intent.title,
+        'description': intent.description,
+        'startTime': intent.startTime?.toIso8601String(),
+        'maxAttendees': intent.maxAttendees,
+        'price': intent.price,
+        'category': intent.category,
+      };
     }
 
     return base;
@@ -167,6 +179,21 @@ class ActionHistoryEntry {
           spotId: json['spotId'] as String,
           listId: json['listId'] as String,
           userId: json['userId'] as String,
+          confidence: json['confidence'] as double,
+          metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
+        );
+      case 'create_event':
+        return CreateEventIntent(
+          userId: json['userId'] as String,
+          templateId: json['templateId'] as String?,
+          title: json['title'] as String?,
+          description: json['description'] as String?,
+          startTime: json['startTime'] != null
+              ? DateTime.parse(json['startTime'] as String)
+              : null,
+          maxAttendees: json['maxAttendees'] as int?,
+          price: (json['price'] as num?)?.toDouble(),
+          category: json['category'] as String?,
           confidence: json['confidence'] as double,
           metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
         );

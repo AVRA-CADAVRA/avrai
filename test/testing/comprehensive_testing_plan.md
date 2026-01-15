@@ -380,6 +380,9 @@ mkdir -p test/testing/alerts
 - Android devices (various manufacturers)
 - Low-end devices (performance impact assessment)
 - High-end devices (baseline performance)
+- macOS devices (desktop/laptop)
+- Linux devices (desktop/laptop)
+- Windows devices (desktop/laptop)
 
 **Network Conditions:**
 - Good network (optimal quantum matching)
@@ -400,6 +403,91 @@ mkdir -p test/testing/alerts
 - Number of classical fallbacks
 - Error rate (quantum matching failures)
 - User satisfaction (if available via feedback)
+
+#### **Phase 14: Signal Protocol - Platform-Specific Testing Requirements:**
+
+**Platform Coverage:**
+- ✅ macOS (100% Complete - FFI bindings working)
+- ⏳ iOS devices (iPhone, iPad) - Pending platform-specific testing
+- ⏳ Android devices (various manufacturers) - Pending platform-specific testing
+- ⏳ Linux devices (desktop/laptop) - Pending platform-specific testing
+- ⏳ Windows devices (desktop/laptop) - Pending platform-specific testing
+
+**Platform-Specific Test Scenarios:**
+- FFI bindings compilation and loading on each platform
+- Signal Protocol initialization on each platform
+- X3DH key exchange across platforms (cross-platform compatibility)
+- Message encryption/decryption on each platform
+- Session management persistence across app restarts
+- Prekey bundle upload/download on each platform
+- Store callbacks (platform bridge + Rust wrapper) functionality
+
+**Performance Benchmarks:**
+- **Encryption Speed:** Measure encryption time for messages of various sizes (1KB, 10KB, 100KB, 1MB)
+  - Target: < 10ms for 1KB messages, < 100ms for 10KB messages
+  - Platform comparison: Compare performance across iOS, Android, macOS, Linux, Windows
+- **Decryption Speed:** Measure decryption time for messages of various sizes
+  - Target: < 10ms for 1KB messages, < 100ms for 10KB messages
+  - Platform comparison: Compare performance across platforms
+- **Key Exchange (X3DH):** Measure time to establish new session
+  - Target: < 500ms for initial key exchange
+  - Platform comparison: Compare X3DH performance across platforms
+- **Session Loading:** Measure time to load existing session from storage
+  - Target: < 50ms for session loading
+  - Platform comparison: Compare session loading performance
+- **Memory Usage:** Monitor memory footprint of Signal Protocol implementation
+  - Target: < 10MB additional memory usage
+  - Platform comparison: Compare memory usage across platforms
+- **Battery Impact:** Measure battery drain during active Signal Protocol usage
+  - Target: < 5% additional battery drain per hour of active use
+  - Platform comparison: Compare battery impact (mobile platforms)
+
+**Security Validation:**
+- **Cryptographic Correctness:**
+  - Verify Double Ratchet implementation correctness
+  - Verify X3DH key exchange security properties
+  - Verify perfect forward secrecy (old messages can't be decrypted with new keys)
+  - Verify post-quantum security (PQXDH) properties
+  - Verify message authentication (tamper detection)
+- **Key Management Security:**
+  - Verify identity keys are stored securely (Flutter Secure Storage)
+  - Verify prekey bundles are properly rotated
+  - Verify session keys are never exposed in logs or memory dumps
+  - Verify key deletion when sessions are closed
+- **Platform-Specific Security:**
+  - iOS: Verify keychain security for identity key storage
+  - Android: Verify Keystore security for identity key storage
+  - macOS: Verify Keychain security for identity key storage
+  - Linux: Verify secure storage implementation
+  - Windows: Verify secure storage implementation
+- **Attack Surface Analysis:**
+  - Verify protection against replay attacks
+  - Verify protection against man-in-the-middle attacks
+  - Verify protection against key compromise attacks
+  - Verify protection against timing attacks
+  - Verify protection against side-channel attacks
+- **Compliance Validation:**
+  - Verify Signal Protocol implementation matches official libsignal-ffi specification
+  - Verify no custom cryptographic modifications that weaken security
+  - Verify all security best practices are followed
+  - Verify proper error handling doesn't leak sensitive information
+
+**Testing Schedule:**
+- **Week 1-2:** iOS platform testing + benchmarks + security validation
+- **Week 3-4:** Android platform testing + benchmarks + security validation
+- **Week 5-6:** Linux platform testing + benchmarks + security validation
+- **Week 7-8:** Windows platform testing + benchmarks + security validation
+- **Week 9:** Cross-platform compatibility testing (iOS ↔ Android, macOS ↔ Linux, etc.)
+- **Week 10:** Final security audit and performance optimization
+
+**Success Criteria:**
+- ✅ All platforms pass FFI bindings compilation and loading
+- ✅ All platforms pass Signal Protocol initialization
+- ✅ All platforms meet performance benchmarks
+- ✅ All platforms pass security validation
+- ✅ Cross-platform message encryption/decryption works correctly
+- ✅ Zero security vulnerabilities identified
+- ✅ Performance meets or exceeds targets on all platforms
 
 #### **Automated Monitoring:**
 

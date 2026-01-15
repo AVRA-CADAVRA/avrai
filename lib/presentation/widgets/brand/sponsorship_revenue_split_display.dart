@@ -4,12 +4,12 @@ import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/app_theme.dart';
 
 /// Sponsorship Revenue Split Display Widget
-/// 
+///
 /// Displays revenue breakdown for events with brand sponsorships.
 /// Shows platform fees, processing fees, and N-way splits including sponsors.
-/// 
+///
 /// **CRITICAL:** Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// **Features:**
 /// - Total revenue display
 /// - Platform fee breakdown (10%)
@@ -77,7 +77,7 @@ class SponsorshipRevenueSplitDisplay extends StatelessWidget {
                 label: 'Platform Fee',
                 amount: split.platformFee,
                 percentage: split.platformFeePercentage,
-                description: '10% to SPOTS',
+                description: '10% to avrai',
               ),
               const SizedBox(height: 8),
 
@@ -258,7 +258,7 @@ class SponsorshipRevenueSplitDisplay extends StatelessWidget {
     final partyTypeLabel = party.type.displayName;
     final partyName = party.name ?? partyTypeLabel;
     final isSponsor = party.type == SplitPartyType.sponsor;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -284,7 +284,8 @@ class SponsorshipRevenueSplitDisplay extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: isSponsor
                               ? AppTheme.primaryColor.withValues(alpha: 0.2)
@@ -353,4 +354,3 @@ class SponsorshipRevenueSplitDisplay extends StatelessWidget {
     );
   }
 }
-

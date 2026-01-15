@@ -10,11 +10,11 @@ import 'package:avrai/core/theme/app_theme.dart';
 import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
 
 /// Tax Profile Page
-/// 
+///
 /// Agent 2: Phase 5, Week 18-19 - Tax UI
-/// 
+///
 /// CRITICAL: Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// Features:
 /// - W-9 form
 /// - Tax classification selection
@@ -75,7 +75,8 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
         _existingProfile = profile;
         _selectedClassification = profile.classification;
         if (profile.ssnLast4 != null) {
-          _ssnController.text = '****-**-${profile.ssnLast4!.substring(profile.ssnLast4!.length - 4)}';
+          _ssnController.text =
+              '****-**-${profile.ssnLast4!.substring(profile.ssnLast4!.length - 4)}';
         }
         if (profile.einMasked != null) {
           _einController.text = profile.einMasked!;
@@ -203,9 +204,11 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
                       const SizedBox(height: 24),
 
                       // SSN Input
-                      if (!_needsEIN(_selectedClassification ?? TaxClassification.individual))
+                      if (!_needsEIN(_selectedClassification ??
+                          TaxClassification.individual))
                         _buildSSNInput(),
-                      if (!_needsEIN(_selectedClassification ?? TaxClassification.individual))
+                      if (!_needsEIN(_selectedClassification ??
+                          TaxClassification.individual))
                         const SizedBox(height: 24),
 
                       // EIN Input (for businesses)
@@ -230,16 +233,19 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                            border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline, color: AppColors.error),
+                              const Icon(Icons.error_outline,
+                                  color: AppColors.error),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   _error!,
-                                  style: const TextStyle(color: AppColors.error),
+                                  style:
+                                      const TextStyle(color: AppColors.error),
                                 ),
                               ),
                             ],
@@ -263,7 +269,8 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.white),
                                   ),
                                 )
                               : const Text('Submit W-9'),
@@ -292,7 +299,7 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
               Icon(Icons.info, color: AppTheme.primaryColor),
               SizedBox(width: 8),
               Text(
-                'SPOTS Tax Service - Free & Easy',
+                'avrai Tax Service - Free & Easy',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -303,7 +310,7 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'If you earn \$600 or more in a calendar year, SPOTS will automatically handle your tax reporting. We\'ll generate your 1099-K form and file it with the IRS—all free, all easy.',
+            'If you earn \$600 or more in a calendar year, avrai will automatically handle your tax reporting. We\'ll generate your 1099-K form and file it with the IRS—all free, all easy.',
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textPrimary,
@@ -321,7 +328,8 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.check_circle, color: AppColors.electricGreen, size: 20),
+                    Icon(Icons.check_circle,
+                        color: AppColors.electricGreen, size: 20),
                     SizedBox(width: 8),
                     Text(
                       'Why choose SPOTS tax service?',
@@ -353,7 +361,8 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.warning_amber, color: AppColors.warning, size: 20),
+                    Icon(Icons.warning_amber,
+                        color: AppColors.warning, size: 20),
                     SizedBox(width: 8),
                     Text(
                       'Important: IRS Reporting Requirement',
@@ -380,7 +389,7 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
       ),
     );
   }
-  
+
   Widget _buildBenefitPoint(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -601,7 +610,8 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
       decoration: BoxDecoration(
         color: AppColors.electricGreen.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.electricGreen.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: AppColors.electricGreen.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -724,4 +734,3 @@ class _EINFormatter extends TextInputFormatter {
     );
   }
 }
-

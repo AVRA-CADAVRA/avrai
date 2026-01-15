@@ -88,6 +88,8 @@ import 'package:avrai/core/models/user.dart';
 import 'package:avrai/presentation/pages/reservations/my_reservations_page.dart';
 import 'package:avrai/presentation/pages/reservations/create_reservation_page.dart';
 import 'package:avrai/presentation/pages/reservations/reservation_detail_page.dart';
+import 'package:avrai/presentation/pages/reservations/user_reservation_analytics_page.dart';
+import 'package:avrai/presentation/pages/business/reservations/business_reservation_analytics_page.dart';
 import 'package:avrai/core/models/reservation.dart';
 
 class AppRouter {
@@ -152,15 +154,8 @@ class AppRouter {
           }
 
           // If authenticated, ensure onboarding completed for this specific user
-          // Add a small delay to allow database writes to complete (especially on web IndexedDB)
-          // The cache should prevent race conditions, but a small delay ensures consistency
-          if (kIsWeb) {
-            await Future.delayed(const Duration(milliseconds: 100));
-          } else {
-            // Small delay on mobile too to ensure cache is available
-            await Future.delayed(const Duration(milliseconds: 50));
-          }
-
+          // OnboardingCompletionService uses in-memory cache to prevent race conditions
+          // No delay needed - cache is checked first and is immediately available
           // Check onboarding completion status
           // Note: Logging is done in OnboardingCompletionService
           final onboardingDone =
@@ -380,6 +375,10 @@ class AppRouter {
                 final id = s.pathParameters['id']!;
                 return ReservationDetailPage(reservationId: id);
               },
+            ),
+            GoRoute(
+              path: 'reservations/analytics',
+              builder: (c, s) => const UserReservationAnalyticsPage(),
             ),
             GoRoute(
               path: 'profile/ai-status',
@@ -621,6 +620,17 @@ class AppRouter {
               path: 'business/dashboard',
               builder: (c, s) => const BusinessDashboardPage(),
             ),
+            GoRoute(
+              path: 'business/reservations/analytics',
+              builder: (c, s) {
+                final extra = s.extra as Map<String, dynamic>?;
+                return BusinessReservationAnalyticsPage(
+                  businessId: extra?['businessId'] as String? ?? '',
+                  type: extra?['type'] as ReservationType? ??
+                      ReservationType.business,
+                );
+              },
+            ),
             // Phase 1 Integration: Device Discovery & AI2AI Routes
             GoRoute(
               path: 'device-discovery',
@@ -763,7 +773,7 @@ class AppRouter {
               builder: (c, s) {
                 final extra = s.extra as Map<String, dynamic>?;
                 final userId = extra?['userId'] as String?;
-                
+
                 // Try to get personality profile from AgentInitializationController result
                 // For now, pass null - page will load it from storage
                 return KnotDiscoveryPage(

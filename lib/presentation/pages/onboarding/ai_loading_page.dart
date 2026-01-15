@@ -5,6 +5,7 @@ import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/app_theme.dart';
 import 'package:avrai/presentation/blocs/lists/lists_bloc.dart';
 import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
+import 'package:avrai/presentation/blocs/spots/spots_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:avrai/core/models/list.dart';
 import 'package:avrai/data/datasources/local/onboarding_completion_service.dart';
@@ -15,10 +16,10 @@ import 'package:avrai/domain/usecases/lists/create_list_usecase.dart';
 import 'package:avrai/core/services/onboarding_data_service.dart';
 import 'package:avrai/core/models/onboarding_data.dart';
 import 'package:avrai/core/services/agent_id_service.dart';
-import 'package:avrai/core/models/onboarding_suggestion_event.dart';
-import 'package:avrai/core/services/onboarding_suggestion_event_store.dart';
 import 'package:avrai/core/controllers/agent_initialization_controller.dart';
 import 'package:avrai/presentation/widgets/knot/knot_audio_loading_widget.dart';
+import 'package:avrai/core/models/spot.dart';
+import 'package:avrai/domain/usecases/spots/create_spot_usecase.dart';
 import 'dart:async';
 
 class _PendingDelay {
@@ -121,9 +122,9 @@ class _AILoadingPageState extends State<AILoadingPage>
   void _startLoading() async {
     _loadingController.repeat();
 
-    // Enable continue button after 2 seconds - allows users to proceed immediately
+    // Enable continue button after 500ms - allows users to proceed quickly
     // as the text says "You can start exploring immediately!"
-    _delay(const Duration(seconds: 2)).then((_) {
+    _delay(const Duration(milliseconds: 500)).then((_) {
       if (mounted) {
         setState(() {
           _canContinue = true;
@@ -135,7 +136,8 @@ class _AILoadingPageState extends State<AILoadingPage>
       // In widget tests, keep this screen deterministic and avoid background
       // DB/DI/network side-effects (which can leave pending timers).
       if (_isWidgetTestBinding) {
-        _logger.info('🧪 Widget test binding detected: skipping AI loading side-effects',
+        _logger.info(
+            '🧪 Widget test binding detected: skipping AI loading side-effects',
             tag: 'AILoadingPage');
         return;
       }
@@ -145,7 +147,8 @@ class _AILoadingPageState extends State<AILoadingPage>
           '🧪 Integration test mode: skipping AI loading',
           tag: 'AILoadingPage',
         );
-        developer.log('TEST: AILoadingPage short-circuit -> /home', name: 'AILoadingPage');
+        developer.log('TEST: AILoadingPage short-circuit -> /home',
+            name: 'AILoadingPage');
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -200,143 +203,8 @@ class _AILoadingPageState extends State<AILoadingPage>
             tag: 'AILoadingPage');
       }
 
-      // Use baseline lists if provided, otherwise generate personalized lists using AI
-      List<String> generatedLists;
-      if (widget.baselineLists.isNotEmpty) {
-        _logger.info('📋 Using ${widget.baselineLists.length} baseline lists from onboarding',
-            tag: 'AILoadingPage');
-        generatedLists = widget.baselineLists;
-      } else {
-        _logger.info('🔄 Generating AI lists...', tag: 'AILoadingPage');
-        _logger.debug('  Age: ${widget.age ?? 'not provided'}',
-            tag: 'AILoadingPage');
-        generatedLists =
-            await AIListGeneratorService.generatePersonalizedLists(
-          userName: userName,
-          age: widget.age,
-          homebase: homebase,
-          favoritePlaces: favoritePlaces,
-          preferences: preferences,
-        );
-      }
-
-      _logger.info(
-          '✅ Using ${generatedLists.length} lists: $generatedLists',
-          tag: 'AILoadingPage');
-
-      // Best-effort: log list suggestions used for onboarding bootstrap.
-      try {
-        if (!mounted) return;
-        final authState = context.read<AuthBloc>().state;
-        final userId = authState is Authenticated ? authState.user.id : null;
-        if (userId != null && userId.isNotEmpty && generatedLists.isNotEmpty) {
-          final store = OnboardingSuggestionEventStore(
-            agentIdService: di.sl<AgentIdService>(),
-          );
-          unawaited(
-            store.appendForUser(
-              userId: userId,
-              event: OnboardingSuggestionEvent(
-                eventId: OnboardingSuggestionEvent.newEventId(),
-                createdAtMs: DateTime.now().millisecondsSinceEpoch,
-                surface: 'ai_loading',
-                provenance: OnboardingSuggestionProvenance.heuristic,
-                promptCategory: widget.baselineLists.isNotEmpty
-                    ? 'ai_loading_baseline_lists'
-                    : 'ai_loading_generated_lists',
-                suggestions: generatedLists
-                    .take(12)
-                    .map((s) => OnboardingSuggestionItem(id: s, label: s))
-                    .toList(),
-                userAction: const OnboardingSuggestionUserAction(
-                  type: OnboardingSuggestionActionType.shown,
-                ),
-              ),
-            ),
-          );
-        }
-      } catch (e, st) {
-        developer.log('Failed to log AI loading list suggestions: $e',
-            name: 'AILoadingPage', error: e, stackTrace: st);
-      }
-
-      // Create the lists in the app - use use case directly to wait for completion
-      if (mounted && generatedLists.isNotEmpty) {
-        try {
-          _logger.info('📝 Getting CreateListUseCase from DI...',
-              tag: 'AILoadingPage');
-          final createListUseCase = di.sl<CreateListUseCase>();
-          final listsBloc = context.read<ListsBloc>();
-
-          _logger.info('📝 Creating ${generatedLists.length} lists...',
-              tag: 'AILoadingPage');
-
-          int successCount = 0;
-          // Create lists sequentially and wait for each to complete
-          for (int i = 0; i < generatedLists.length; i++) {
-            if (!mounted) break;
-
-            final listName = generatedLists[i];
-            final newList = SpotList(
-              id: '${DateTime.now().millisecondsSinceEpoch}_$i',
-              title: listName,
-              description: 'AI-generated list based on your preferences',
-              spots: [],
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              category: 'AI Generated',
-              isPublic: true,
-              spotIds: [],
-              respectCount: 0,
-            );
-
-            try {
-              _logger.debug(
-                  '📝 Creating list ${i + 1}/${generatedLists.length}: ${newList.title}',
-                  tag: 'AILoadingPage');
-
-              // Add timeout to prevent hanging
-              await createListUseCase(newList)
-                  .timeout(const Duration(seconds: 5), onTimeout: () {
-                _logger.warn('⏱️ Timeout creating list ${newList.title}',
-                    tag: 'AILoadingPage');
-                throw TimeoutException(
-                    'List creation timeout', const Duration(seconds: 5));
-              });
-
-              successCount++;
-              _logger.debug('✅ Created list: ${newList.title}',
-                  tag: 'AILoadingPage');
-            } catch (e) {
-              _logger.error('❌ Error creating list ${newList.title}',
-                  error: e, tag: 'AILoadingPage');
-              // Continue with other lists even if one fails
-            }
-          }
-
-          _logger.info(
-              '✅ Successfully created $successCount/${generatedLists.length} lists',
-              tag: 'AILoadingPage');
-
-          // Reload lists once after all are created
-          if (mounted) {
-            listsBloc.add(LoadLists());
-            // Small delay to ensure UI updates
-            await _delay(const Duration(milliseconds: 500));
-          }
-        } catch (e) {
-          _logger.error('❌ Error in list creation process',
-              error: e, tag: 'AILoadingPage');
-          // Continue anyway - don't block onboarding completion
-        }
-      } else {
-        _logger.warn('⚠️ No lists generated or widget not mounted',
-            tag: 'AILoadingPage');
-        // Still show loading animation even if no lists generated
-        await _delay(const Duration(seconds: 1));
-      }
-
-      // Initialize personalized agent/personality for user using controller
+      // Initialize personalized agent/personality for user using controller FIRST
+      // This generates place lists with actual spots from Google Places API
       try {
         if (!mounted) return;
         final authBloc = context.read<AuthBloc>();
@@ -351,9 +219,10 @@ class _AILoadingPageState extends State<AILoadingPage>
           try {
             final onboardingService = di.sl<OnboardingDataService>();
             onboardingData = await onboardingService.getOnboardingData(userId);
-            
+
             if (onboardingData != null) {
-              _logger.info('✅ Loaded onboarding data from service', tag: 'AILoadingPage');
+              _logger.info('✅ Loaded onboarding data from service',
+                  tag: 'AILoadingPage');
             } else {
               // Fallback: Use data from widget
               final agentIdService = di.sl<AgentIdService>();
@@ -370,10 +239,12 @@ class _AILoadingPageState extends State<AILoadingPage>
                 socialMediaConnected: {},
                 completedAt: DateTime.now(),
               );
-              _logger.warn('⚠️ Using fallback onboarding data from widget', tag: 'AILoadingPage');
+              _logger.warn('⚠️ Using fallback onboarding data from widget',
+                  tag: 'AILoadingPage');
             }
           } catch (e) {
-            _logger.warn('⚠️ Could not load onboarding data: $e', tag: 'AILoadingPage');
+            _logger.warn('⚠️ Could not load onboarding data: $e',
+                tag: 'AILoadingPage');
             // Fallback to widget data
             try {
               final agentIdService = di.sl<AgentIdService>();
@@ -391,7 +262,8 @@ class _AILoadingPageState extends State<AILoadingPage>
                 completedAt: DateTime.now(),
               );
             } catch (e2) {
-              _logger.error('❌ Could not create fallback onboarding data: $e2', tag: 'AILoadingPage');
+              _logger.error('❌ Could not create fallback onboarding data: $e2',
+                  tag: 'AILoadingPage');
               // Continue without onboarding data - controller will handle gracefully
             }
           }
@@ -425,15 +297,29 @@ class _AILoadingPageState extends State<AILoadingPage>
                     tag: 'AILoadingPage',
                   );
                 }
-                if (result.generatedPlaceLists != null && result.generatedPlaceLists!.isNotEmpty) {
+                // Save spots from Google Places API and create lists with actual spots
+                if (result.generatedPlaceLists != null &&
+                    result.generatedPlaceLists!.isNotEmpty) {
+                  final totalPlaces = result.generatedPlaceLists!.fold<int>(
+                      0,
+                      (sum, list) =>
+                          sum + ((list['places'] as List?)?.length ?? 0));
                   _logger.info(
-                    '📍 Generated ${result.generatedPlaceLists!.length} place lists',
+                    '📍 Generated ${result.generatedPlaceLists!.length} place lists with $totalPlaces places',
                     tag: 'AILoadingPage',
                   );
+
+                  // Save spots and create lists (non-blocking - don't wait)
+                  unawaited(_saveSpotsAndCreateLists(result.generatedPlaceLists!));
+                } else {
+                  // Fallback: Use baseline lists or generate list names if no place lists
+                  unawaited(_createFallbackLists());
                 }
                 if (result.recommendations != null) {
-                  final listCount = result.recommendations!['lists']?.length ?? 0;
-                  final accountCount = result.recommendations!['accounts']?.length ?? 0;
+                  final listCount =
+                      result.recommendations!['lists']?.length ?? 0;
+                  final accountCount =
+                      result.recommendations!['accounts']?.length ?? 0;
                   _logger.info(
                     '💡 Found $listCount list recommendations and $accountCount account recommendations',
                     tag: 'AILoadingPage',
@@ -456,7 +342,8 @@ class _AILoadingPageState extends State<AILoadingPage>
               // Continue anyway - don't block onboarding completion
             }
           } else {
-            _logger.warn('⚠️ No onboarding data available, skipping agent initialization',
+            _logger.warn(
+                '⚠️ No onboarding data available, skipping agent initialization',
                 tag: 'AILoadingPage');
           }
         } else {
@@ -600,213 +487,218 @@ class _AILoadingPageState extends State<AILoadingPage>
       body: Stack(
         children: [
           SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                'Welcome to SPOTS!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'We\'re setting up your personalized experience',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.grey600,
-                    ),
-              ),
-              const SizedBox(height: 48),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Text(
+                    'Welcome to avrai!',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'We\'re setting up your personalized experience',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.grey600,
+                        ),
+                  ),
+                  const SizedBox(height: 48),
 
-              // Loading content
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Avoid RenderFlex overflow in small viewports (including widget tests).
-                    // This stays centered when there's space, and scrolls when there isn't.
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // AI Processing Animation
-                              AnimatedBuilder(
-                                animation: _loadingAnimation,
-                                builder: (context, child) {
-                                  return Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor,
-                                      borderRadius: BorderRadius.circular(40),
-                                    ),
-                                    child: const Icon(
-                                      Icons.psychology,
-                                      color: AppColors.white,
-                                      size: 40,
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 32),
-                              Text(
-                                _isLoading
-                                    ? 'AI is creating your personalized lists...'
-                                    : 'Finishing up...',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Analyzing your preferences and favorite places to curate the perfect spots just for you.',
-                                style:
-                                    Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  // Loading content
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Avoid RenderFlex overflow in small viewports (including widget tests).
+                        // This stays centered when there's space, and scrolls when there isn't.
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // AI Processing Animation
+                                  AnimatedBuilder(
+                                    animation: _loadingAnimation,
+                                    builder: (context, child) {
+                                      return Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor,
+                                          borderRadius:
+                                              BorderRadius.circular(40),
+                                        ),
+                                        child: const Icon(
+                                          Icons.psychology,
+                                          color: AppColors.white,
+                                          size: 40,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 32),
+                                  Text(
+                                    _isLoading
+                                        ? 'AI is creating your personalized lists...'
+                                        : 'Finishing up...',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Analyzing your preferences and favorite places to curate the perfect spots just for you.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
                                           color: AppColors.grey600,
                                         ),
-                                textAlign: TextAlign.center,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  // Progress dots
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: List.generate(3, (index) {
+                                      return Container(
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 4),
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: AppTheme.primaryColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 24),
-                              // Progress dots
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(3, (index) {
-                                  return Container(
-                                    margin:
-                                        const EdgeInsets.symmetric(horizontal: 4),
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Info section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.lightbulb_outline,
+                          color: AppTheme.primaryColor,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Personalized Lists',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
                                       color: AppTheme.primaryColor,
-                                      shape: BoxShape.circle,
                                     ),
-                                  );
-                                }),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Based on your homebase, favorite places, and preferences, we\'ll create lists tailored just for you.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: AppColors.grey700,
+                                    ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                      ],
+                    ),
+                  ),
 
-              // Info section
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.lightbulb_outline,
-                      color: AppTheme.primaryColor,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Personalized Lists',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.primaryColor,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Based on your homebase, favorite places, and preferences, we\'ll create lists tailored just for you.',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.grey700,
-                                    ),
-                          ),
-                        ],
+                  // Continue button - allow users to proceed immediately
+                  // The text says "You can start exploring immediately!" so let's honor that
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: ElevatedButton(
+                      onPressed: _canContinue
+                          ? () {
+                              // Allow user to skip remaining processing
+                              _logger.info('User chose to continue immediately',
+                                  tag: 'AILoadingPage');
+                              // Mark onboarding as complete before navigating
+                              _logger.info(
+                                  '🔄 [AI_LOADING_BUTTON] User clicked Continue, marking onboarding complete...',
+                                  tag: 'AILoadingPage');
+                              _markOnboardingCompleted().then((_) {
+                                _logger.info(
+                                    '✅ [AI_LOADING_BUTTON] Onboarding marked complete, calling onLoadingComplete...',
+                                    tag: 'AILoadingPage');
+                                if (mounted) {
+                                  widget.onLoadingComplete();
+                                }
+                              }).catchError((e) {
+                                _logger.error(
+                                    '❌ [AI_LOADING_BUTTON] Error marking onboarding complete: $e',
+                                    tag: 'AILoadingPage');
+                                // Still call callback to allow navigation
+                                if (mounted) {
+                                  widget.onLoadingComplete();
+                                }
+                              });
+                            }
+                          : null, // Disable until ready
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        _canContinue ? 'Continue' : 'Setting up...',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-              // Continue button - allow users to proceed immediately
-              // The text says "You can start exploring immediately!" so let's honor that
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: ElevatedButton(
-                  onPressed: _canContinue
-                      ? () {
-                          // Allow user to skip remaining processing
-                          _logger.info('User chose to continue immediately',
-                              tag: 'AILoadingPage');
-                          // Mark onboarding as complete before navigating
-                          _logger.info(
-                              '🔄 [AI_LOADING_BUTTON] User clicked Continue, marking onboarding complete...',
-                              tag: 'AILoadingPage');
-                          _markOnboardingCompleted().then((_) {
-                            _logger.info(
-                                '✅ [AI_LOADING_BUTTON] Onboarding marked complete, calling onLoadingComplete...',
-                                tag: 'AILoadingPage');
-                            if (mounted) {
-                              widget.onLoadingComplete();
-                            }
-                          }).catchError((e) {
-                            _logger.error(
-                                '❌ [AI_LOADING_BUTTON] Error marking onboarding complete: $e',
-                                tag: 'AILoadingPage');
-                            // Still call callback to allow navigation
-                            if (mounted) {
-                              widget.onLoadingComplete();
-                            }
-                          });
-                        }
-                      : null, // Disable until ready
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
-                  child: Text(
-                    _canContinue ? 'Continue' : 'Setting up...',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
           // Knot audio (optional, plays in background)
           if (userId != null)
             KnotAudioLoadingWidget(
@@ -883,6 +775,252 @@ class _AILoadingPageState extends State<AILoadingPage>
       _logger.error('❌ Error marking onboarding completed',
           error: e, tag: 'AILoadingPage');
       _logger.debug('Stack trace: $stackTrace', tag: 'AILoadingPage');
+    }
+  }
+
+  /// Save spots from Google Places API and create lists with actual spots
+  /// This ensures places show up on the map/home page
+  Future<void> _saveSpotsAndCreateLists(
+      List<Map<String, dynamic>> generatedPlaceLists) async {
+    try {
+      if (!mounted) return;
+
+      _logger.info('💾 Saving spots from Google Places API...',
+          tag: 'AILoadingPage');
+
+      final createSpotUseCase = di.sl<CreateSpotUseCase>();
+      final createListUseCase = di.sl<CreateListUseCase>();
+      final listsBloc = context.read<ListsBloc>();
+      final spotsBloc = context.read<SpotsBloc>();
+
+      int totalSpotsSaved = 0;
+      int listsCreated = 0;
+
+      // Process each place list
+      for (int i = 0; i < generatedPlaceLists.length; i++) {
+        if (!mounted) break;
+
+        final placeList = generatedPlaceLists[i];
+        final listName = placeList['name'] as String? ?? 'Places';
+        final places = placeList['places'] as List<dynamic>? ?? [];
+
+        if (places.isEmpty) {
+          _logger.warn('⚠️ Place list "$listName" has no places, skipping',
+              tag: 'AILoadingPage');
+          continue;
+        }
+
+        _logger.info(
+            '💾 Processing list "$listName" with ${places.length} places...',
+            tag: 'AILoadingPage');
+
+        // Save all spots from this list
+        final List<String> spotIds = [];
+        for (final placeData in places) {
+          try {
+            // Convert place data to Spot (preserve original Spot data if available)
+            Spot spot;
+            if (placeData is Map<String, dynamic> && placeData.containsKey('id')) {
+              // Full Spot JSON - reconstruct from JSON
+              try {
+                spot = Spot.fromJson(placeData);
+              } catch (e) {
+                _logger.warn('⚠️ Error parsing Spot from JSON: $e', tag: 'AILoadingPage');
+                // Fallback to creating new spot
+                spot = Spot(
+                  id: placeData['id'] as String? ?? 'google_${DateTime.now().millisecondsSinceEpoch}_${spotIds.length}',
+                  name: placeData['name'] as String? ?? 'Unknown Place',
+                  description: placeData['description'] as String? ?? placeData['address'] as String? ?? '',
+                  latitude: (placeData['latitude'] as num?)?.toDouble() ?? 0.0,
+                  longitude: (placeData['longitude'] as num?)?.toDouble() ?? 0.0,
+                  category: placeData['category'] as String? ?? 'Other',
+                  rating: (placeData['rating'] as num?)?.toDouble() ?? 0.0,
+                  createdBy: placeData['createdBy'] as String? ?? 'google_places_api',
+                  createdAt: placeData['createdAt'] != null
+                      ? DateTime.parse(placeData['createdAt'] as String)
+                      : DateTime.now(),
+                  updatedAt: placeData['updatedAt'] != null
+                      ? DateTime.parse(placeData['updatedAt'] as String)
+                      : DateTime.now(),
+                  address: placeData['address'] as String?,
+                  tags: (placeData['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? ['external_data', 'google_places'],
+                  metadata: (placeData['metadata'] as Map<String, dynamic>?) ?? {
+                    'source': 'google_places',
+                    'is_external': true,
+                  },
+                  googlePlaceId: placeData['googlePlaceId'] as String?,
+                  googlePlaceIdSyncedAt: placeData['googlePlaceIdSyncedAt'] != null
+                      ? DateTime.parse(placeData['googlePlaceIdSyncedAt'] as String)
+                      : null,
+                );
+              }
+            } else {
+              // Simple place data - create new Spot
+              spot = Spot(
+                id: 'google_${DateTime.now().millisecondsSinceEpoch}_${spotIds.length}',
+                name: placeData['name'] as String? ?? 'Unknown Place',
+                description: placeData['address'] as String? ?? '',
+                latitude: (placeData['latitude'] as num?)?.toDouble() ?? 0.0,
+                longitude: (placeData['longitude'] as num?)?.toDouble() ?? 0.0,
+                category: 'Other',
+                rating: 0.0,
+                createdBy: 'google_places_api',
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                address: placeData['address'] as String?,
+                tags: ['external_data', 'google_places'],
+                metadata: {
+                  'source': 'google_places',
+                  'is_external': true,
+                },
+              );
+            }
+
+            // Save spot to database
+            try {
+              final savedSpot = await createSpotUseCase(spot)
+                  .timeout(const Duration(seconds: 3), onTimeout: () {
+                _logger.warn('⏱️ Timeout saving spot: ${spot.name}',
+                    tag: 'AILoadingPage');
+                return spot; // Return original spot on timeout
+              });
+              spotIds.add(savedSpot.id);
+              totalSpotsSaved++;
+            } catch (e) {
+              _logger.warn('⚠️ Error saving spot ${spot.name}: $e',
+                  tag: 'AILoadingPage');
+              // Continue with other spots
+            }
+          } catch (e) {
+            _logger.warn('⚠️ Error processing place: $e', tag: 'AILoadingPage');
+            // Continue with other places
+          }
+        }
+
+        // Create list with saved spot IDs
+        if (spotIds.isNotEmpty && mounted) {
+          try {
+            final newList = SpotList(
+              id: '${DateTime.now().millisecondsSinceEpoch}_$i',
+              title: listName,
+              description: 'AI-generated list based on your preferences',
+              spots: [],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              category: 'AI Generated',
+              isPublic: true,
+              spotIds: spotIds,
+              respectCount: 0,
+            );
+
+            await createListUseCase(newList)
+                .timeout(const Duration(seconds: 5), onTimeout: () {
+              _logger.warn('⏱️ Timeout creating list ${newList.title}',
+                  tag: 'AILoadingPage');
+              return newList;
+            });
+
+            listsCreated++;
+            _logger.debug('✅ Created list "${newList.title}" with ${spotIds.length} spots',
+                tag: 'AILoadingPage');
+          } catch (e) {
+            _logger.error('❌ Error creating list "$listName": $e',
+                tag: 'AILoadingPage');
+            // Continue with other lists
+          }
+        }
+      }
+
+      _logger.info(
+          '✅ Saved $totalSpotsSaved spots and created $listsCreated lists',
+          tag: 'AILoadingPage');
+
+      // Reload spots and lists to update UI
+      if (mounted) {
+        spotsBloc.add(LoadSpots());
+        listsBloc.add(LoadLists());
+      }
+    } catch (e, stackTrace) {
+      _logger.error('❌ Error saving spots and creating lists',
+          error: e, stackTrace: stackTrace, tag: 'AILoadingPage');
+      // Continue anyway - don't block onboarding
+    }
+  }
+
+  /// Create fallback lists when no place lists are generated
+  Future<void> _createFallbackLists() async {
+    try {
+      if (!mounted) return;
+
+      // Use baseline lists if provided, otherwise generate list names
+      List<String> generatedLists;
+      if (widget.baselineLists.isNotEmpty) {
+        _logger.info(
+            '📋 Using ${widget.baselineLists.length} baseline lists from onboarding',
+            tag: 'AILoadingPage');
+        generatedLists = widget.baselineLists;
+      } else {
+        _logger.info('🔄 Generating AI list names...', tag: 'AILoadingPage');
+        final userName = widget.userName;
+        final homebase = widget.homebase ?? 'New York';
+        final favoritePlaces = widget.favoritePlaces;
+        final preferences = widget.preferences;
+
+        generatedLists = await AIListGeneratorService.generatePersonalizedLists(
+          userName: userName,
+          age: widget.age,
+          homebase: homebase,
+          favoritePlaces: favoritePlaces,
+          preferences: preferences,
+        );
+      }
+
+      if (generatedLists.isEmpty) return;
+
+      _logger.info('📝 Creating ${generatedLists.length} fallback lists...',
+          tag: 'AILoadingPage');
+
+      final createListUseCase = di.sl<CreateListUseCase>();
+      final listsBloc = context.read<ListsBloc>();
+
+      // Create lists (without spots for now)
+      for (int i = 0; i < generatedLists.length; i++) {
+        if (!mounted) break;
+
+        final listName = generatedLists[i];
+        final newList = SpotList(
+          id: '${DateTime.now().millisecondsSinceEpoch}_$i',
+          title: listName,
+          description: 'AI-generated list based on your preferences',
+          spots: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          category: 'AI Generated',
+          isPublic: true,
+          spotIds: [],
+          respectCount: 0,
+        );
+
+        try {
+          await createListUseCase(newList)
+              .timeout(const Duration(seconds: 3), onTimeout: () {
+            _logger.warn('⏱️ Timeout creating list ${newList.title}',
+                tag: 'AILoadingPage');
+            return newList;
+          });
+        } catch (e) {
+          _logger.warn('⚠️ Error creating fallback list ${newList.title}: $e',
+              tag: 'AILoadingPage');
+          // Continue with other lists
+        }
+      }
+
+      if (mounted) {
+        listsBloc.add(LoadLists());
+      }
+    } catch (e) {
+      _logger.warn('⚠️ Error creating fallback lists: $e', tag: 'AILoadingPage');
+      // Continue anyway - don't block onboarding
     }
   }
 

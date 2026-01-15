@@ -661,9 +661,9 @@ ${widget.list.description.isNotEmpty ? '${widget.list.description}\n' : ''}Categ
 Spots: ${widget.list.spotIds.length}
 Respects: ${widget.list.respectCount}
 
-${widget.list.isPublic ? 'This is a public list on SPOTS' : 'Shared from SPOTS'}
+${widget.list.isPublic ? 'This is a public list on avrai' : 'Shared from avrai'}
 
-SPOTS - know you belong.''';
+avrai - know you belong.''';
 
     SharePlus.instance.share(ShareParams(
       text: shareText,
@@ -673,7 +673,7 @@ SPOTS - know you belong.''';
 
   void _copyListLink(BuildContext context) {
     // Generate a shareable link (this would normally be a deep link to the app)
-    final listLink = 'https://spots.app/list/${widget.list.id}';
+    final listLink = 'https://avrai.app/list/${widget.list.id}';
 
     Clipboard.setData(ClipboardData(text: listLink));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -690,9 +690,9 @@ ${widget.list.description}
 
 This curated list has ${widget.list.respectCount} respects from the community and features ${widget.list.spotIds.length} amazing spots.
 
-View on SPOTS: https://spots.app/list/${widget.list.id}
+View on avrai: https://avrai.app/list/${widget.list.id}
 
-SPOTS - know you belong.''';
+avrai - know you belong.''';
 
     SharePlus.instance.share(ShareParams(text: publicText));
   }

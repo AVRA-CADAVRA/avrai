@@ -25,10 +25,43 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<local.User?> signUp(String email, String password, String name) async {
     final auth = _auth;
-    if (auth == null) return null;
-    final coreUser =
-        await auth.registerWithEmailPassword(email, password, name);
-    return coreUser == null ? null : _toLocalUser(coreUser);
+    if (auth == null) {
+      throw Exception(
+          'Authentication backend not available. Please check your Supabase configuration.');
+    }
+    try {
+      final coreUser =
+          await auth.registerWithEmailPassword(email, password, name);
+      return coreUser == null ? null : _toLocalUser(coreUser);
+    } catch (e) {
+      // Re-throw with more context for common Supabase errors
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('user already registered') ||
+          errorString.contains('email already exists')) {
+        throw Exception(
+            'An account with this email already exists. Please sign in instead.');
+      } else if (errorString.contains('password') &&
+          errorString.contains('weak')) {
+        throw Exception(
+            'Password is too weak. Please use a stronger password.');
+      } else if (errorString.contains('rate limit') ||
+          errorString.contains('over_email_send_rate_limit') ||
+          errorString.contains('429')) {
+        throw Exception(
+            'Too many signup attempts. Please wait a few minutes before trying again. If you continue to see this error, try using a different email address.');
+      } else if (errorString.contains('email') &&
+          (errorString.contains('invalid') || errorString.contains('format'))) {
+        // Show the actual Supabase error for email validation issues
+        throw Exception(
+            'Invalid email address: ${e.toString()}. Please check your email format and try again.');
+      } else if (errorString.contains('network') ||
+          errorString.contains('connection')) {
+        throw Exception(
+            'Network error. Please check your internet connection and try again.');
+      }
+      // Re-throw original error for other cases to see actual error
+      rethrow;
+    }
   }
 
   @override

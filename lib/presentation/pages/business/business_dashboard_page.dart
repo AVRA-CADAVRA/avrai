@@ -8,6 +8,10 @@ import 'package:get_it/get_it.dart';
 import 'package:avrai/presentation/pages/business/business_login_page.dart';
 import 'package:avrai/presentation/pages/business/business_conversations_list_page.dart';
 import 'package:avrai/presentation/pages/business/business_expert_discovery_page.dart';
+import 'package:avrai/presentation/pages/business/reservations/reservation_dashboard_page.dart';
+import 'package:avrai/presentation/pages/business/reservations/reservation_settings_page.dart';
+import 'package:avrai/presentation/pages/business/reservations/business_reservation_analytics_page.dart';
+import 'package:avrai/core/models/reservation.dart';
 
 /// Business Dashboard Page
 /// Main dashboard for business accounts after login
@@ -128,7 +132,8 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                const Icon(Icons.error_outline,
+                    size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text(
                   _errorMessage!,
@@ -177,7 +182,8 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.business, color: AppTheme.primaryColor),
+                            const Icon(Icons.business,
+                                color: AppTheme.primaryColor),
                             const SizedBox(width: 8),
                             Text(
                               _businessAccount!.name,
@@ -316,6 +322,25 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
                   ),
                   _buildActionCard(
                     context,
+                    icon: Icons.event_available,
+                    title: 'Reservations',
+                    subtitle: 'Manage reservations',
+                    onTap: () {
+                      final businessId = _businessAccount?.id;
+                      if (businessId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReservationDashboardPage(
+                              businessId: businessId,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  _buildActionCard(
+                    context,
                     icon: Icons.event,
                     title: 'Events',
                     subtitle: 'Manage events',
@@ -334,15 +359,83 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
                     title: 'Analytics',
                     subtitle: 'View insights',
                     onTap: () {
-                      // TODO: Navigate to analytics
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Analytics feature coming soon'),
-                        ),
-                      );
+                      final businessId = _businessAccount?.id;
+                      if (businessId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BusinessReservationAnalyticsPage(
+                              businessId: businessId,
+                              type: ReservationType.business,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ],
+              ),
+
+              // Reservation Settings Section
+              const SizedBox(height: 24),
+              Text(
+                'Reservation Settings',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.settings,
+                            color: AppTheme.primaryColor,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Reservation Preferences',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Manage reservation hours, capacity, time slots, and cancellation policies.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => ReservationSettingsPage(
+                                businessId: _businessAccount?.id ?? '',
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.arrow_forward),
+                        label: const Text('Configure Settings'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
               const SizedBox(height: 24),

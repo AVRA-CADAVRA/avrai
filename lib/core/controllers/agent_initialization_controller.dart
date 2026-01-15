@@ -19,6 +19,11 @@ import 'package:avrai_core/models/personality_profile.dart';
 import 'package:avrai/core/models/preferences_profile.dart';
 import 'package:avrai_knot/services/knot/personality_knot_service.dart';
 import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_core/models/unified_location_data.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 import 'package:get_it/get_it.dart';
 
 /// Agent Initialization Controller
@@ -89,6 +94,14 @@ class AgentInitializationController
   final GeoHierarchyService _geoHierarchyService;
   final SharedPreferencesCompat? _prefs;
 
+  // AVRAI Core System Integration (optional, graceful degradation)
+  // ignore: unused_field
+  final AtomicClockService
+      _atomicClock; // Reserved for future 4D quantum state timestamps
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumEntanglementService? _quantumEntanglementService;
+  final QuantumMatchingAILearningService? _aiLearningService;
+
   AgentInitializationController({
     SocialMediaDataCollectionController? socialMediaDataController,
     SocialMediaConnectionService?
@@ -104,6 +117,10 @@ class AgentInitializationController
     KnotStorageService? knotStorageService,
     GeoHierarchyService? geoHierarchyService,
     SharedPreferencesCompat? prefs,
+    AtomicClockService? atomicClock,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumEntanglementService? quantumEntanglementService,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _socialMediaDataController = socialMediaDataController ??
             GetIt.instance<SocialMediaDataCollectionController>(),
         _personalityLearning =
@@ -133,6 +150,19 @@ class AgentInitializationController
         _prefs = prefs ??
             (GetIt.instance.isRegistered<SharedPreferencesCompat>()
                 ? GetIt.instance<SharedPreferencesCompat>()
+                : null),
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
                 : null);
 
   @override
@@ -430,12 +460,8 @@ class AgentInitializationController
                 .map((list) => {
                       'name': list.name,
                       'places': list.places
-                          .map((place) => {
-                                'name': place.name,
-                                'address': place.address,
-                                'latitude': place.latitude,
-                                'longitude': place.longitude,
-                              })
+                          .map((place) => place
+                              .toJson()) // Preserve full Spot data including ID
                           .toList(),
                       'relevanceScore': list.relevanceScore,
                       'metadata': {
@@ -550,7 +576,107 @@ class AgentInitializationController
         }
       }
 
-      // STEP 8: Return success result
+      // STEP 8: AVRAI Core System Integration (optional, graceful degradation)
+
+      // 8.1: Create 4D quantum location state if homebase provided
+      if (_locationTimingService != null &&
+          onboardingData.homebase != null &&
+          onboardingData.homebase!.isNotEmpty) {
+        try {
+          // Try to get coordinates from geo context (if available from place list generation)
+          final geo = await OnboardingGeoContextService(
+            geoHierarchyService: _geoHierarchyService,
+            prefs: _prefs,
+          ).resolveHomebaseGeoContextBestEffort();
+
+          if (geo.hasCoordinates) {
+            _logger.info(
+              '🌐 Creating 4D quantum location state for homebase: ${geo.latitude}, ${geo.longitude}',
+              tag: _logName,
+            );
+
+            // Create UnifiedLocationData from geo context
+            final locationData = UnifiedLocationData(
+              latitude: geo.latitude!,
+              longitude: geo.longitude!,
+              city: geo.cityCode,
+              address: geo.displayName,
+            );
+
+            // Create location quantum state for homebase
+            final locationQuantumState =
+                await _locationTimingService!.createLocationQuantumState(
+              location: locationData,
+              locationType: 0.7, // Default to suburban/urban mix
+              accessibilityScore: null, // Not available from onboarding
+              vibeLocationMatch: null, // Not available from onboarding
+            );
+
+            _logger.info(
+              '✅ 4D quantum location state created for homebase',
+              tag: _logName,
+            );
+
+            // Store quantum state (if storage service available)
+            // Note: Quantum state storage would be handled by a dedicated service
+            // This is a placeholder for future integration
+            // ignore: unused_local_variable
+            final _ = locationQuantumState;
+          } else {
+            _logger.debug(
+              'ℹ️ Homebase coordinates not available - skipping 4D quantum state creation',
+              tag: _logName,
+            );
+          }
+        } catch (e) {
+          _logger.warn(
+            '⚠️ 4D quantum location state creation failed (non-blocking): $e',
+            tag: _logName,
+          );
+          // Continue - 4D quantum state creation is optional
+        }
+      }
+
+      // 8.2: Calculate initial quantum compatibility (optional)
+      if (_quantumEntanglementService != null && personalityProfile != null) {
+        try {
+          // Create quantum state from personality profile
+          // This is a placeholder for future quantum compatibility calculation
+          // during initialization
+          _logger.debug(
+            'ℹ️ Quantum entanglement service available (compatibility calculation deferred to matching)',
+            tag: _logName,
+          );
+        } catch (e) {
+          _logger.warn(
+            '⚠️ Quantum compatibility calculation failed (non-blocking): $e',
+            tag: _logName,
+          );
+          // Continue - quantum compatibility is optional
+        }
+      }
+
+      // 8.3: Learn from successful initialization via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null && personalityProfile != null) {
+        try {
+          // Learn from successful agent initialization
+          // This helps the AI2AI network understand successful initialization patterns
+          _logger.debug(
+            '🤖 AI2AI learning service available (learning from initialization deferred to matching)',
+            tag: _logName,
+          );
+          // Note: Actual learning happens when matches occur, not during initialization
+          // This is a placeholder for future initialization-based learning
+        } catch (e) {
+          _logger.warn(
+            '⚠️ AI2AI learning failed (non-blocking): $e',
+            tag: _logName,
+          );
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+
+      // STEP 9: Return success result
       _logger.info('✅ Agent initialization workflow completed successfully',
           tag: _logName);
 

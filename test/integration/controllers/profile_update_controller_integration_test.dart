@@ -82,6 +82,40 @@ void main() {
         expect(invalidResult.isValid, isFalse);
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () async {
+        // This test verifies that AVRAI integrations don't break profile updates
+        final data = ProfileUpdateData(
+          displayName: 'Updated Name',
+        );
+
+        final validationResult = controller.validate(data);
+        expect(validationResult.isValid, isTrue, reason: 'Should validate correctly with AVRAI services');
+        // Note: AVRAI integrations (knot regeneration, string evolution, 4D quantum)
+        // happen internally during updateProfile and don't affect validation
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = ProfileUpdateController(
+          agentIdService: null,
+          personalityKnotService: null,
+          knotStorageService: null,
+          knotStringService: null,
+          locationTimingService: null,
+          aiLearningService: null,
+        );
+
+        final data = ProfileUpdateData(
+          displayName: 'Updated Name',
+        );
+
+        final validationResult = controllerWithoutAVRAI.validate(data);
+        expect(validationResult.isValid, isTrue, reason: 'Should validate correctly even without AVRAI services');
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }
 

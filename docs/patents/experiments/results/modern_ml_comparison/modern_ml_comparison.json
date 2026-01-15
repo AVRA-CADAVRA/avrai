@@ -1,0 +1,76 @@
+{
+  "status": "complete",
+  "total_profiles": 100,
+  "total_test_pairs": 450,
+  "results": [
+    {
+      "method": "Collaborative Filtering",
+      "avg_score": 0.2650542776182886
+    },
+    {
+      "method": "Matrix Factorization (SVD)",
+      "avg_score": 0.4707773477390418
+    },
+    {
+      "method": "Matrix Factorization (NMF)",
+      "avg_score": 0.34697422927829363
+    },
+    {
+      "method": "Graph Neural Network (GCN)",
+      "avg_score": 0.9990990537743427
+    },
+    {
+      "method": "Neural Collaborative Filtering (NCF)",
+      "avg_score": -0.02748516585909433
+    },
+    {
+      "method": "Quantum-Based Matching (Simple)",
+      "avg_score": 0.7432630511985682
+    },
+    {
+      "method": "AVRAI Quantum + Knot",
+      "avg_score": 0.8204319623063621
+    }
+  ],
+  "improvements": [
+    {
+      "baseline": "Graph Neural Network (GCN)",
+      "baseline_score": 0.9990990537743427,
+      "avrai_score": 0.8204319623063621,
+      "improvement_pct": -17.882820606527623
+    },
+    {
+      "baseline": "Quantum-Based Matching (Simple)",
+      "baseline_score": 0.7432630511985682,
+      "avrai_score": 0.8204319623063621,
+      "improvement_pct": 10.382449522191795
+    },
+    {
+      "baseline": "Matrix Factorization (SVD)",
+      "baseline_score": 0.4707773477390418,
+      "avrai_score": 0.8204319623063621,
+      "improvement_pct": 74.27175845366683
+    },
+    {
+      "baseline": "Matrix Factorization (NMF)",
+      "baseline_score": 0.34697422927829363,
+      "avrai_score": 0.8204319623063621,
+      "improvement_pct": 136.4532847332381
+    },
+    {
+      "baseline": "Collaborative Filtering",
+      "baseline_score": 0.2650542776182886,
+      "avrai_score": 0.8204319623063621,
+      "improvement_pct": 209.5335678709125
+    },
+    {
+      "baseline": "Neural Collaborative Filtering (NCF)",
+      "baseline_score": -0.02748516585909433,
+      "avrai_score": 0.8204319623063621,
+      "improvement_pct": -3084.999131940462
+    }
+  ],
+  "avrai_score": 0.8204319623063621,
+  "best_baseline": "Graph Neural Network (GCN)",
+  "best_baseline_score": 0.9990990537743427
+}

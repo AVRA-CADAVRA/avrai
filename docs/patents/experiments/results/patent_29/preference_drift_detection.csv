@@ -1,5 +1,5 @@
 scenario,drift_detected,correct,drift_value,accuracy,correct_count,total_count
-no_drift,False,True,0.9999999999999996,,,
-gradual_drift,True,True,0.9532520984566697,,,
-sudden_drift,True,True,0.6936611092013079,,,
+no_drift,False,True,1.0000000000000004,,,
+gradual_drift,True,True,0.9419606464547295,,,
+sudden_drift,True,True,0.6219151038256563,,,
 overall,,,,1.0,3.0,3.0

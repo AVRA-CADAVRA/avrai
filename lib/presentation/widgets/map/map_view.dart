@@ -26,6 +26,7 @@ import 'package:avrai/presentation/widgets/map/geo_synco_summary_card.dart';
 import 'package:avrai/core/services/neighborhood_boundary_service.dart';
 import 'package:avrai/core/models/neighborhood_boundary.dart';
 import 'package:avrai/core/services/geohash_service.dart';
+import 'package:avrai/presentation/widgets/map/spot_reservation_marker.dart';
 import 'dart:developer' as developer;
 
 class MapView extends StatefulWidget {
@@ -383,7 +384,8 @@ class _MapViewState extends State<MapView> {
       if (locality != null) {
         // Best-effort: cache the city pack for offline use.
         // ignore: unawaited_futures
-        unawaited(GeoCityPackService().ensureLatestInstalled(locality.cityCode));
+        unawaited(
+            GeoCityPackService().ensureLatestInstalled(locality.cityCode));
 
         setState(() {
           _selectedBoundaryCityCode = locality.cityCode;
@@ -833,12 +835,14 @@ class _MapViewState extends State<MapView> {
                         // TODO: Refactor to expose methods via callback or public interface
 
                         // Get boundary polylines/polygons if boundaries are shown (Google Maps only).
-                        final polylines = (_showBoundaries && _shouldUseGoogleMaps)
-                            ? _boundaryPolylines
-                            : <gmap.Polyline>{};
-                        final polygons = (_showBoundaries && _shouldUseGoogleMaps)
-                            ? _boundaryPolygons
-                            : <gmap.Polygon>{};
+                        final polylines =
+                            (_showBoundaries && _shouldUseGoogleMaps)
+                                ? _boundaryPolylines
+                                : <gmap.Polyline>{};
+                        final polygons =
+                            (_showBoundaries && _shouldUseGoogleMaps)
+                                ? _boundaryPolygons
+                                : <gmap.Polygon>{};
 
                         final showSynco = _showBoundaries &&
                             _selectedBoundaryCityCode != null &&
@@ -890,7 +894,7 @@ class _MapViewState extends State<MapView> {
                                   TileLayer(
                                     urlTemplate: _getTileUrlTemplate(),
                                     subdomains: const ['a', 'b', 'c', 'd'],
-                                    userAgentPackageName: 'com.spots.app',
+                                    userAgentPackageName: 'com.avrai.app',
                                   ),
                                   MarkerLayer(
                                     markers: [
@@ -913,13 +917,13 @@ class _MapViewState extends State<MapView> {
                                           ),
                                           width: 40,
                                           height: 40,
-                                          child: GestureDetector(
+                                          child: SpotReservationMarker(
+                                            spot: spot,
+                                            // For map view, show that reservations are supported
+                                            // Actual availability can be checked on spot details page
+                                            isReservationAvailable: true,
                                             onTap: () =>
                                                 _showSpotInfo(context, spot),
-                                            child: const Icon(
-                                              Icons.location_on,
-                                              color: AppTheme.primaryColor,
-                                            ),
                                           ),
                                         ),
                                       ),

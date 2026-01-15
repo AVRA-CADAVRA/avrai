@@ -2,8 +2,8 @@
   "status": "complete",
   "total_cross_entity_pairs": 75,
   "integrated_improvement_rate": 0.0,
-  "average_integrated_compatibility": 0.8164858299112231,
-  "average_quantum_compatibility": 0.8164858299112231,
+  "average_integrated_compatibility": 0.8146728022891537,
+  "average_quantum_compatibility": 0.8146728022891537,
   "average_topological_compatibility": 1.0,
   "success_criteria": {
     "integrated_better_than_quantum": false,

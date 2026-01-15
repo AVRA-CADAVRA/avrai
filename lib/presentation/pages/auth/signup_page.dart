@@ -74,6 +74,7 @@ class _SignupPageState extends State<SignupPage> {
               child: IntrinsicHeight(
                 child: Form(
                   key: _formKey,
+                  autovalidateMode: AutovalidateMode.disabled,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -86,7 +87,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Join SPOTS',
+                        'Join avrai',
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
@@ -110,6 +111,10 @@ class _SignupPageState extends State<SignupPage> {
                       TextFormField(
                         key: const Key('name_field'),
                         controller: _nameController,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Full Name',
                           prefixIcon: Icon(Icons.person),
@@ -128,6 +133,10 @@ class _SignupPageState extends State<SignupPage> {
                         key: const Key('email_field'),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email),
@@ -136,8 +145,12 @@ class _SignupPageState extends State<SignupPage> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your email';
                           }
-                          if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                          // More robust email validation
+                          final emailRegex = RegExp(
+                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                          );
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return 'Please enter a valid email address';
                           }
                           return null;
                         },
@@ -149,6 +162,10 @@ class _SignupPageState extends State<SignupPage> {
                         key: const Key('password_field'),
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock),
@@ -182,6 +199,10 @@ class _SignupPageState extends State<SignupPage> {
                         key: const Key('confirm_password_field'),
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Confirm Password',
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -193,7 +214,8 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -216,8 +238,7 @@ class _SignupPageState extends State<SignupPage> {
                           final isLoading =
                               state is AuthLoading || _isSubmitting;
                           return ElevatedButton(
-                            onPressed:
-                                isLoading ? null : _handleSignUp,
+                            onPressed: isLoading ? null : _handleSignUp,
                             child: isLoading
                                 ? const SizedBox(
                                     height: 20,
@@ -268,7 +289,8 @@ class _SignupPageState extends State<SignupPage> {
         _isSubmitting = true;
       });
       context.read<AuthBloc>().add(
-            SignUpRequested(_emailController.text.trim(), _passwordController.text, _nameController.text.trim()),
+            SignUpRequested(_emailController.text.trim(),
+                _passwordController.text, _nameController.text.trim()),
           );
     }
   }

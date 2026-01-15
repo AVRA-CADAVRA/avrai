@@ -1,0 +1,11 @@
+battery_level,is_charging,avrai_max_hops,baseline_max_hops,adaptive_advantage
+0.1,False,1,2,-1
+0.1,True,2,2,0
+0.3,False,1,2,-1
+0.3,True,2,2,0
+0.5,False,2,2,0
+0.5,True,3,2,1
+0.7,False,2,2,0
+0.7,True,3,2,1
+0.9,False,2,2,0
+0.9,True,3,2,1

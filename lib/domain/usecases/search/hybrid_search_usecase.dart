@@ -1,5 +1,8 @@
 import 'package:avrai/data/repositories/hybrid_search_repository.dart';
 
+export 'package:avrai/data/repositories/hybrid_search_repository.dart'
+    show SearchFilters, SearchSortOption;
+
 /// Hybrid Search Use Case
 /// OUR_GUTS.md: "Authenticity Over Algorithms" - Community data prioritized over external sources
 class HybridSearchUseCase {
@@ -15,6 +18,8 @@ class HybridSearchUseCase {
     double? longitude,
     int maxResults = 50,
     bool includeExternal = true,
+    SearchFilters? filters,
+    SearchSortOption sortOption = SearchSortOption.relevance,
   }) async {
     return await repository.searchSpots(
       query: query,
@@ -22,6 +27,8 @@ class HybridSearchUseCase {
       longitude: longitude,
       maxResults: maxResults,
       includeExternal: includeExternal,
+      filters: filters,
+      sortOption: sortOption,
     );
   }
 

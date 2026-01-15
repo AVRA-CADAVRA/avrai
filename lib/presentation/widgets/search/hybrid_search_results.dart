@@ -7,6 +7,9 @@ import 'package:avrai/presentation/pages/spots/spot_details_page.dart';
 import 'package:avrai/presentation/widgets/common/standard_error_widget.dart';
 import 'package:avrai/presentation/widgets/common/standard_loading_widget.dart';
 import 'package:avrai/presentation/widgets/common/source_indicator_widget.dart';
+import 'package:avrai/presentation/widgets/reservations/spot_reservation_badge_widget.dart';
+import 'package:avrai/core/models/reservation.dart';
+import 'package:go_router/go_router.dart';
 
 class HybridSearchResults extends StatelessWidget {
   const HybridSearchResults({super.key});
@@ -191,6 +194,9 @@ class HybridSearchResults extends StatelessWidget {
 
   Widget _buildSpotCard(BuildContext context, Spot spot) {
     final indicator = spot.getSourceIndicator();
+    // Check if spot accepts reservations (community spots can, external spots can't)
+    final isReservable = !spot.metadata.containsKey('is_external') ||
+        spot.metadata['is_external'] != true;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -270,9 +276,49 @@ class HybridSearchResults extends StatelessWidget {
                 ],
               ],
             ),
+            // Reservation badge
+            if (isReservable) ...[
+              const SizedBox(height: 8),
+              SpotReservationBadgeWidget(
+                isAvailable: true,
+                compact: true,
+                onTap: () {
+                  // Quick reservation action
+                  context.push(
+                    '/reservations/create',
+                    extra: {
+                      'type': ReservationType.spot,
+                      'targetId': spot.id,
+                      'targetTitle': spot.name,
+                    },
+                  );
+                },
+              ),
+            ],
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Quick reservation button (if reservable)
+            if (isReservable)
+              IconButton(
+                icon: const Icon(Icons.event_available, size: 20),
+                tooltip: 'Quick Reserve',
+                onPressed: () {
+                  context.push(
+                    '/reservations/create',
+                    extra: {
+                      'type': ReservationType.spot,
+                      'targetId': spot.id,
+                      'targetTitle': spot.name,
+                    },
+                  );
+                },
+              ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
         onTap: () {
           Navigator.push(
             context,

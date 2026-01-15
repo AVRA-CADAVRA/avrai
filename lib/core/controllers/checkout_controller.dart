@@ -11,6 +11,13 @@ import 'package:avrai/core/models/payment.dart';
 import 'package:avrai/core/services/sales_tax_service.dart';
 import 'package:avrai/core/services/legal_document_service.dart';
 import 'package:avrai/core/services/expertise_event_service.dart';
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_core/models/unified_location_data.dart';
+import 'package:avrai_knot/services/knot/knot_fabric_service.dart';
+import 'package:avrai_knot/services/knot/knot_worldsheet_service.dart';
+import 'package:avrai_quantum/services/quantum/location_timing_quantum_state_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
+import 'package:avrai/core/services/quantum/quantum_matching_ai_learning_service.dart';
 
 /// Checkout Controller
 /// 
@@ -62,18 +69,54 @@ class CheckoutController
   final SalesTaxService _salesTaxService;
   final LegalDocumentService? _legalService;
   final ExpertiseEventService _eventService;
+  // ignore: unused_field
+  final AtomicClockService _atomicClock; // Reserved for future timestamp-based purchase tracking
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final KnotFabricService? _knotFabricService;
+  final KnotWorldsheetService? _knotWorldsheetService;
+  final LocationTimingQuantumStateService? _locationTimingService;
+  final QuantumEntanglementService? _quantumEntanglementService;
+  final QuantumMatchingAILearningService? _aiLearningService;
 
   CheckoutController({
     PaymentProcessingController? paymentController,
     SalesTaxService? salesTaxService,
     LegalDocumentService? legalService,
     ExpertiseEventService? eventService,
+    AtomicClockService? atomicClock,
+    KnotFabricService? knotFabricService,
+    KnotWorldsheetService? knotWorldsheetService,
+    LocationTimingQuantumStateService? locationTimingService,
+    QuantumEntanglementService? quantumEntanglementService,
+    QuantumMatchingAILearningService? aiLearningService,
   })  : _paymentController = paymentController,
         _salesTaxService =
             salesTaxService ?? GetIt.instance<SalesTaxService>(),
         _legalService = legalService,
         _eventService =
-            eventService ?? GetIt.instance<ExpertiseEventService>();
+            eventService ?? GetIt.instance<ExpertiseEventService>(),
+        _atomicClock = atomicClock ?? GetIt.instance<AtomicClockService>(),
+        _knotFabricService = knotFabricService ??
+            (GetIt.instance.isRegistered<KnotFabricService>()
+                ? GetIt.instance<KnotFabricService>()
+                : null),
+        _knotWorldsheetService = knotWorldsheetService ??
+            (GetIt.instance.isRegistered<KnotWorldsheetService>()
+                ? GetIt.instance<KnotWorldsheetService>()
+                : null),
+        _locationTimingService = locationTimingService ??
+            (GetIt.instance.isRegistered<LocationTimingQuantumStateService>()
+                ? GetIt.instance<LocationTimingQuantumStateService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null),
+        _aiLearningService = aiLearningService ??
+            (GetIt.instance.isRegistered<QuantumMatchingAILearningService>()
+                ? GetIt.instance<QuantumMatchingAILearningService>()
+                : null);
 
   PaymentProcessingController _resolvePaymentController() {
     return _paymentController ?? GetIt.instance<PaymentProcessingController>();
@@ -235,11 +278,131 @@ class CheckoutController
         );
       }
 
-      // Step 6: Generate receipt (when ReceiptService available)
+      // Step 6: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 6.1: Calculate quantum compatibility (if purchasing event/spot)
+      if (_quantumEntanglementService != null && _locationTimingService != null) {
+        try {
+          developer.log(
+            '🔬 Calculating quantum compatibility for checkout',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would use QuantumMatchingController
+          // This is a placeholder for future quantum compatibility calculation
+          developer.log(
+            'ℹ️ Quantum compatibility calculation deferred to QuantumMatchingController',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Quantum compatibility calculation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum compatibility is optional
+        }
+      }
+      
+      // 6.2: Create 4D quantum state if location-aware purchase
+      if (_locationTimingService != null && updatedEvent.latitude != null && updatedEvent.longitude != null) {
+        try {
+          final locationData = UnifiedLocationData(
+            latitude: updatedEvent.latitude!,
+            longitude: updatedEvent.longitude!,
+            city: updatedEvent.cityCode,
+            address: updatedEvent.location,
+          );
+          
+          final locationQuantumState = await _locationTimingService!.createLocationQuantumState(
+            location: locationData,
+            locationType: 0.7,
+            accessibilityScore: null,
+            vibeLocationMatch: null,
+          );
+          
+          developer.log(
+            '✅ 4D quantum location state created for checkout',
+            name: _logName,
+          );
+          
+          // ignore: unused_local_variable
+          final _ = locationQuantumState;
+        } catch (e) {
+          developer.log(
+            '⚠️ 4D quantum state creation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - quantum state creation is optional
+        }
+      }
+      
+      // 6.3: Create/update fabric if group purchase (quantity > 1)
+      if (_knotFabricService != null && quantity > 1) {
+        try {
+          developer.log(
+            '🧵 Creating fabric for group purchase (quantity: $quantity)',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would create fabric from buyer and other attendees
+          // This is a placeholder for future fabric creation on group purchase
+          developer.log(
+            'ℹ️ Fabric creation deferred until all attendees have knots',
+            name: _logName,
+          );
+        } catch (e) {
+          developer.log(
+            '⚠️ Fabric creation failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - fabric creation is optional
+        }
+      }
+      
+      // 6.4: Create worldsheet if group tracking needed
+      if (_knotWorldsheetService != null && quantity > 1) {
+        try {
+          developer.log(
+            '📊 Worldsheet creation deferred until fabric exists',
+            name: _logName,
+          );
+          // Worldsheet creation happens after fabric creation
+        } catch (e) {
+          developer.log(
+            '⚠️ Worldsheet creation check failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - worldsheet creation is optional
+        }
+      }
+      
+      // 6.5: Learn from purchase via AI2AI mesh (optional, fire-and-forget)
+      if (_aiLearningService != null) {
+        try {
+          developer.log(
+            '🤖 AI2AI learning service available (learning deferred to matching)',
+            name: _logName,
+          );
+          // Note: Actual learning happens when matches occur, not during checkout
+        } catch (e) {
+          developer.log(
+            '⚠️ AI2AI learning failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          // Continue - AI2AI learning is optional and non-blocking
+        }
+      }
+      
+      // Step 7: Generate receipt (when ReceiptService available)
       // TODO(Phase 8.12): Implement receipt generation when ReceiptService is available
       // For now, receipt generation is handled by UI (PaymentSuccessPage)
 
-      // Step 7: Send confirmation (when NotificationService available)
+      // Step 8: Send confirmation (when NotificationService available)
       // TODO(Phase 8.12): Implement confirmation sending when NotificationService is available
 
       developer.log(

@@ -1,4 +1,4 @@
 scenario,match_rate,avg_match_quality,match_count,timing_override_rate,match_rate_improvement_percent,quality_improvement
 without_flexibility,0.0,0.0,0.0,,,
-with_flexibility,0.5333333333333333,0.8639559761037534,16.0,0.5333333333333333,,
-improvement,,,,,53.333333333333336,0.8639559761037534
+with_flexibility,0.5666666666666667,0.8680005803254727,17.0,0.5666666666666667,,
+improvement,,,,,56.666666666666664,0.8680005803254727

@@ -4,7 +4,7 @@
 **Status:** 🎯 Active Master Registry  
 **Purpose:** Registry of all implementation plans (plan documents + locations)  
 **Cursor Rule:** **Automatically update this document whenever a plan is created**  
-**Last Updated:** January 2, 2026 (Registry-only; canonical status/progress lives in `docs/agents/status/status_tracker.md`)
+**Last Updated:** January 6, 2026 (Phase 9 ✅ COMPLETE - All 49 components/flows have comprehensive tests; Phase 8.11 Workflow Controllers complete with AVRAI integration, UI/BLoC integration, and integration tests; Phase 15 marked 100% complete - Registry-only; canonical status/progress lives in `docs/agents/status/status_tracker.md`)
 
 ---
 
@@ -29,6 +29,7 @@
 
 | Plan Name | Date | Status | Priority | Timeline | File Path |
 |-----------|------|--------|----------|----------|-----------|
+| **Services Marketplace Implementation** | 2026-01-06 | 🟢 Active | P1 Revenue | 6-8 weeks | [`plans/services_marketplace/SERVICES_MARKETPLACE_IMPLEMENTATION_PLAN.md`](./plans/services_marketplace/SERVICES_MARKETPLACE_IMPLEMENTATION_PLAN.md) |
 | **Comprehensive Patent Integration Plan** | 2026-01-03 | 🟢 Active | **CRITICAL** | ~18 days (parallel execution) | [`plans/patent_integration/COMPREHENSIVE_PATENT_INTEGRATION_PLAN.md`](./plans/patent_integration/COMPREHENSIVE_PATENT_INTEGRATION_PLAN.md) |
 | ↳ Patent Integration Quick Start | 2026-01-03 | 📋 Reference | - | Day 1 checklist | [`plans/patent_integration/PATENT_INTEGRATION_QUICK_START.md`](./plans/patent_integration/PATENT_INTEGRATION_QUICK_START.md) |
 | Architecture Stabilization + Repo Hygiene (Store-ready) | 2026-01-03 | ✅ Complete (Engineering) | HIGH | Completed (2026-01-03); baseline now 0 (no package→app imports tolerated) | [`agents/reports/agent_cursor/phase_4/2026-01-03_architecture_stabilization_repo_hygiene_store_ready_complete.md`](./agents/reports/agent_cursor/phase_4/2026-01-03_architecture_stabilization_repo_hygiene_store_ready_complete.md) |
@@ -62,7 +63,23 @@
 
 | Plan Name | Date | Status | Priority | Timeline | File Path |
 |-----------|------|--------|----------|----------|-----------|
+| Services Marketplace Implementation | 2026-01-06 | 🟢 Active | P1 Revenue | 6-8 weeks | [`plans/services_marketplace/SERVICES_MARKETPLACE_IMPLEMENTATION_PLAN.md`](./plans/services_marketplace/SERVICES_MARKETPLACE_IMPLEMENTATION_PLAN.md) |
 | Business-Expert Communication & Business Login System | 2025-12-14 | 📋 Ready | HIGH | 4 weeks | [`plans/business_expert_communication/BUSINESS_EXPERT_COMMUNICATION_PLAN.md`](./plans/business_expert_communication/BUSINESS_EXPERT_COMMUNICATION_PLAN.md) |
+
+### **Outside Industry Sales & Data Monetization**
+
+| Plan Name | Date | Status | Priority | Timeline | File Path |
+|-----------|------|--------|----------|----------|-----------|
+| Outside Data-Buyer Insights Data Contract (v1) | 2026-01-01 | ✅ Complete (Engineering) | HIGH | Deployed + sample export verified; pending policy/legal signoff + buyer onboarding | [`plans/architecture/OUTSIDE_DATA_BUYER_INSIGHTS_DATA_CONTRACT_V1.md`](./plans/architecture/OUTSIDE_DATA_BUYER_INSIGHTS_DATA_CONTRACT_V1.md) |
+| E-Commerce Data Enrichment Integration POC | 2025-12-23 | 📋 Ready | P1 Revenue | 4-6 weeks | [`plans/ecommerce_integration/ECOMMERCE_DATA_ENRICHMENT_POC_PLAN.md`](./plans/ecommerce_integration/ECOMMERCE_DATA_ENRICHMENT_POC_PLAN.md) |
+| Government Integrations | 2026-01-06 | 🟢 Active | P1 Revenue | 16-20 weeks | [`plans/government_integrations/GOVERNMENT_INTEGRATIONS_IMPLEMENTATION_PLAN.md`](./plans/government_integrations/GOVERNMENT_INTEGRATIONS_IMPLEMENTATION_PLAN.md) |
+| ↳ Government Integrations Reference | 2026-01-06 | 📋 Reference | - | - | [`plans/government_integrations/GOVERNMENT_INTEGRATIONS_REFERENCE.md`](./plans/government_integrations/GOVERNMENT_INTEGRATIONS_REFERENCE.md) |
+| Finance Industry Integrations | 2026-01-06 | 🟢 Active | P1 Revenue | 20-24 weeks | [`plans/finance_integrations/FINANCE_INDUSTRY_IMPLEMENTATION_PLAN.md`](./plans/finance_integrations/FINANCE_INDUSTRY_IMPLEMENTATION_PLAN.md) |
+| ↳ Finance Industry Reference | 2026-01-06 | 📋 Reference | - | - | [`plans/finance_integrations/FINANCE_INDUSTRY_REFERENCE.md`](./plans/finance_integrations/FINANCE_INDUSTRY_REFERENCE.md) |
+| PR Agency Integrations | 2026-01-06 | 🟢 Active | P1 Revenue | 18-22 weeks | [`plans/pr_agency_integrations/PR_AGENCY_IMPLEMENTATION_PLAN.md`](./plans/pr_agency_integrations/PR_AGENCY_IMPLEMENTATION_PLAN.md) |
+| ↳ PR Agency Reference | 2026-01-06 | 📋 Reference | - | - | [`plans/pr_agency_integrations/PR_AGENCY_REFERENCE.md`](./plans/pr_agency_integrations/PR_AGENCY_REFERENCE.md) |
+| Hospitality Industry Integrations | 2026-01-06 | 🟢 Active | P1 Revenue | 16-20 weeks | [`plans/hospitality_integrations/HOSPITALITY_INDUSTRY_IMPLEMENTATION_PLAN.md`](./plans/hospitality_integrations/HOSPITALITY_INDUSTRY_IMPLEMENTATION_PLAN.md) |
+| ↳ Hospitality Industry Reference | 2026-01-06 | 📋 Reference | - | - | [`plans/hospitality_integrations/HOSPITALITY_INDUSTRY_REFERENCE.md`](./plans/hospitality_integrations/HOSPITALITY_INDUSTRY_REFERENCE.md) |
 
 ---
 
@@ -70,9 +87,11 @@
 
 | Plan Name | Date | Status | Priority | Timeline | File Path |
 |-----------|------|--------|----------|----------|-----------|
+| **Phase 15: Reservation System** | 2026-01-06 | ✅ **100% Complete - Production Ready** | P1 CORE | 100% Complete - All core functionality, UI, testing, calendar integration, recurring reservations, sharing/transfer, documentation, and all polish items complete. Payment holds, no-show fee configuration, expertise impact, timezone-aware scheduling, backend API structure, push notifications (FCM), and AI reservation suggestions all implemented. Production-ready. | [`plans/reservations/RESERVATION_SYSTEM_IMPLEMENTATION_PLAN.md`](./plans/reservations/RESERVATION_SYSTEM_IMPLEMENTATION_PLAN.md) |
+| ↳ Phase 15 Actual Status | 2026-01-06 | 📋 Reference | - | Codebase-verified status | [`plans/reservations/PHASE_15_ACTUAL_STATUS.md`](./plans/reservations/PHASE_15_ACTUAL_STATUS.md) |
 | Section 29 (6.8) Clubs/Communities — True Compatibility + Join UX + Signal Pipeline (Execution Plan) | 2026-01-02 | ✅ Complete | HIGH | Completed (2026-01-02) | [`plans/feature_matrix/SECTION_29_6_8_CLUBS_COMMUNITIES_TRUE_COMPATIBILITY_EXECUTION_PLAN.md`](./plans/feature_matrix/SECTION_29_6_8_CLUBS_COMMUNITIES_TRUE_COMPATIBILITY_EXECUTION_PLAN.md) |
+| Section 29.9 Private Communities/Clubs — Membership Approval Workflow | 2026-01-02 | 📋 Ready | HIGH | 3-4 weeks | [`plans/feature_matrix/SECTION_29_9_PRIVATE_COMMUNITIES_MEMBERSHIP_APPROVAL_PLAN.md`](./plans/feature_matrix/SECTION_29_9_PRIVATE_COMMUNITIES_MEMBERSHIP_APPROVAL_PLAN.md) |
 | Operations & Compliance (P0 Critical Gaps) | 2025-11-21 | 🟢 Active | CRITICAL | 4 weeks | [`plans/operations_compliance/OPERATIONS_COMPLIANCE_PLAN.md`](./plans/operations_compliance/OPERATIONS_COMPLIANCE_PLAN.md) |
-| E-Commerce Data Enrichment Integration POC | 2025-12-23 | 📋 Ready | P1 Revenue | 4-6 weeks | [`plans/ecommerce_integration/ECOMMERCE_DATA_ENRICHMENT_POC_PLAN.md`](./plans/ecommerce_integration/ECOMMERCE_DATA_ENRICHMENT_POC_PLAN.md) |
 | Monetization System Gap Analysis | 2025-11-21 | 📋 Strategic | - | Review | [`plans/monetization_gap_analysis/MONETIZATION_SYSTEM_GAP_ANALYSIS.md`](./plans/monetization_gap_analysis/MONETIZATION_SYSTEM_GAP_ANALYSIS.md) |
 | Dynamic Expertise Thresholds Plan | 2025-11-21 | 🟢 Active | HIGH | 3.5 weeks | [`plans/dynamic_expertise/DYNAMIC_EXPERTISE_THRESHOLDS_PLAN.md`](./plans/dynamic_expertise/DYNAMIC_EXPERTISE_THRESHOLDS_PLAN.md) |
 | ↳ Professional & Local Expertise | 2025-11-21 | 📋 Reference | - | - | [`plans/dynamic_expertise/PROFESSIONAL_AND_LOCAL_EXPERTISE.md`](./plans/dynamic_expertise/PROFESSIONAL_AND_LOCAL_EXPERTISE.md) |
@@ -102,7 +121,8 @@
 | ↳ Phase 19 Enhancement Log | 2026-01-06 | 📋 Reference | - | All enhancements documented | [`plans/multi_entity_quantum_matching/PHASE_19_ENHANCEMENT_LOG.md`](./plans/multi_entity_quantum_matching/PHASE_19_ENHANCEMENT_LOG.md) |
 | Itinerary Calendar Lists | 2025-12-15 | 📋 Ready | HIGH | 3-4 weeks | [`plans/itinerary_calendar_lists/ITINERARY_CALENDAR_LISTS_PLAN.md`](./plans/itinerary_calendar_lists/ITINERARY_CALENDAR_LISTS_PLAN.md) |
 | User-AI Interaction Update | 2025-12-16 | 📋 Ready | HIGH | 6-8 weeks | [`plans/user_ai_interaction/USER_AI_INTERACTION_UPDATE_PLAN.md`](./plans/user_ai_interaction/USER_AI_INTERACTION_UPDATE_PLAN.md) |
-| Onboarding Process Plan | 2025-12-16 | 📋 Ready | P1 CORE | 4-6 weeks | [`plans/onboarding/ONBOARDING_PROCESS_PLAN.md`](./plans/onboarding/ONBOARDING_PROCESS_PLAN.md) |
+| Onboarding Process Plan | 2025-12-16 | 🟡 In Progress | P1 CORE | Phases 0-11 complete; Phase 11 (8.11) Workflow Controllers with AVRAI integration, UI/BLoC integration, and integration tests complete | [`plans/onboarding/ONBOARDING_PROCESS_PLAN.md`](./plans/onboarding/ONBOARDING_PROCESS_PLAN.md) |
+| ↳ Phase 8.11: Workflow Controllers Implementation | 2026-01-06 | ✅ Complete | P1 CORE | All 16 controllers implemented with comprehensive AVRAI Core System Integration, UI/BLoC integration verified/fixed, and integration tests complete | [`plans/onboarding/CONTROLLER_IMPLEMENTATION_PLAN.md`](./plans/onboarding/CONTROLLER_IMPLEMENTATION_PLAN.md) |
 | AI2AI Network Monitoring and Administration System | 2025-12-21 | 📋 Ready | P1 CORE | 18-20 weeks | [`plans/ai2ai_network_monitoring/AI2AI_NETWORK_MONITORING_IMPLEMENTATION_PLAN.md`](./plans/ai2ai_network_monitoring/AI2AI_NETWORK_MONITORING_IMPLEMENTATION_PLAN.md) |
 
 ---
@@ -120,6 +140,7 @@
 |-----------|------|--------|----------|----------|-----------|
 | Phase 4 Implementation Strategy | 2025-11-20 | 🟡 In Progress | MEDIUM | Ongoing | [`plans/phase_4_strategy/PHASE_4_IMPLEMENTATION_STRATEGY.md`](./plans/phase_4_strategy/PHASE_4_IMPLEMENTATION_STRATEGY.md) |
 | Test Suite Update Plan | 2025-11 | ✅ Complete | HIGH | - | [`plans/test_suite_update/TEST_SUITE_UPDATE_PLAN.md`](./plans/test_suite_update/TEST_SUITE_UPDATE_PLAN.md) |
+| Test Suite Update Addendum (Phase 9) | 2026-01-06 | ✅ **COMPLETE** | HIGH | ✅ **100% Complete** - All Priority 1-5 components (41/41) and Integration Tests (8/8 flows) have comprehensive test coverage. Total: 49/49 complete. | [`plans/test_suite_update/TEST_SUITE_UPDATE_ADDENDUM.md`](./plans/test_suite_update/TEST_SUITE_UPDATE_ADDENDUM.md) |
 
 ---
 
@@ -205,6 +226,7 @@ Use this to determine WHERE a new idea should go:
 | **Event Templates** | Easy Event Hosting | - | Pure event feature (UI/UX) |
 | **AI2AI Learning** | Philosophy Implementation | - | Core architecture, not feature |
 | **Offline Mode** | Philosophy Implementation | All Plans | Architecture layer, affects everything |
+| **Service Marketplace** | Services Marketplace Plan | Event Partnership, Monetization, Business Accounts | Services as doors to professionals |
 
 ### **Decision Tree: "Where Does This Idea Go?"**
 

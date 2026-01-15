@@ -4,10 +4,11 @@ import 'package:avrai/core/models/expertise_event.dart';
 import 'package:avrai/core/models/unified_user.dart';
 import 'package:avrai/core/models/spot.dart';
 import 'package:avrai/core/services/event_template_service.dart';
-import 'package:avrai/core/services/expertise_event_service.dart';
+import 'package:avrai/core/controllers/event_creation_controller.dart';
 import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/app_theme.dart';
 import 'package:avrai/presentation/pages/events/event_published_page.dart';
+import 'package:get_it/get_it.dart';
 
 /// OUR_GUTS.md: "The key opens doors to events"
 /// Easy Event Hosting - Phase 2: Quick Event Builder
@@ -32,7 +33,7 @@ class QuickEventBuilderPage extends StatefulWidget {
 
 class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
   final _templateService = EventTemplateService();
-  final _eventService = ExpertiseEventService();
+  late final EventCreationController _eventCreationController;
   
   int _currentStep = 0;
   EventTemplate? _selectedTemplate;
@@ -48,6 +49,7 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
   @override
   void initState() {
     super.initState();
+    _eventCreationController = GetIt.instance<EventCreationController>();
     
     // Pre-select template if provided
     if (widget.preselectedTemplate != null) {
@@ -744,9 +746,8 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
         customPrice: _price,
       );
 
-      // Create event via service
-      final event = await _eventService.createEvent(
-        host: widget.currentUser,
+      // Use EventCreationController for event creation
+      final formData = EventFormData(
         title: templateEvent.title,
         description: templateEvent.description,
         category: templateEvent.category,
@@ -762,16 +763,37 @@ class _QuickEventBuilderPageState extends State<QuickEventBuilderPage> {
         isPublic: templateEvent.isPublic,
       );
 
+      final result = await _eventCreationController.createEvent(
+        formData: formData,
+        host: widget.currentUser,
+      );
+
       setState(() {
         _isLoading = false;
       });
 
-      if (mounted) {
+      if (!result.isSuccess) {
+        setState(() {
+          _error = result.error ?? 'Failed to publish event';
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_error!),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted && result.event != null) {
         // Navigate to success page
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => EventPublishedPage(event: event),
+            builder: (context) => EventPublishedPage(event: result.event!),
           ),
         );
       }

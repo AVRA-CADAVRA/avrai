@@ -1,0 +1,362 @@
+### Page state
+- Page URL: https://primrose-lanternfish-439y.squarespace.com/config/website
+- Page Title: AVRAI
+- Page Snapshot:
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - link [ref=e15] [cursor=pointer]:
+          - /url: /config/
+          - img [ref=e16]
+        - generic [ref=e19]:
+          - button "Search" [ref=e20] [cursor=pointer]:
+            - img [ref=e22]
+          - button "Notifications" [ref=e24] [cursor=pointer]:
+            - img [ref=e27]
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - link "Home" [ref=e40] [cursor=pointer]:
+            - /url: /config/
+            - paragraph [ref=e42]: Home
+          - generic [ref=e46]:
+            - link "Website" [ref=e51] [cursor=pointer]:
+              - /url: /config/website
+              - paragraph [ref=e53]: Website
+            - generic [ref=e57]:
+              - link "Pages" [ref=e59] [cursor=pointer]:
+                - /url: /config/pages
+                - paragraph [ref=e61]: Pages
+              - link "Styles" [ref=e63] [cursor=pointer]:
+                - /url: /config/site-styles
+                - paragraph [ref=e65]: Styles
+              - link "Assets" [ref=e67] [cursor=pointer]:
+                - /url: /config/asset-library
+                - paragraph [ref=e69]: Assets
+              - link "SEO / AIO" [ref=e71] [cursor=pointer]:
+                - /url: /config/seo
+                - paragraph [ref=e73]: SEO / AIO
+          - generic [ref=e76]:
+            - link "Products & Services" [ref=e83] [cursor=pointer]:
+              - /url: /config/commerce
+              - paragraph [ref=e85]: Products & Services
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e88]:
+            - link "Content & Memberships" [ref=e95] [cursor=pointer]:
+              - /url: /config/content-and-memberships
+              - paragraph [ref=e97]: Content & Memberships
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e100]:
+            - link "Scheduling" [ref=e107] [cursor=pointer]:
+              - /url: https://secure.acuityscheduling.com/oauth2/squarespace-attached?website_id=695ebce332861134575f4052
+              - paragraph [ref=e110]: Scheduling
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e113]:
+            - link "Donations" [ref=e120] [cursor=pointer]:
+              - /url: /config/donations
+              - paragraph [ref=e122]: Donations
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - generic [ref=e125]:
+            - link "Invoicing" [ref=e132] [cursor=pointer]:
+              - /url: /config/invoicing
+              - paragraph [ref=e134]: Invoicing
+            - generic:
+              - generic:
+                - checkbox [checked]
+          - status [ref=e135]
+        - generic [ref=e136]:
+          - link "Email Campaigns" [ref=e145] [cursor=pointer]:
+            - /url: /config/marketing/campaigns
+            - paragraph [ref=e147]: Email Campaigns
+          - link "Contacts" [ref=e156] [cursor=pointer]:
+            - /url: /config/profiles
+            - paragraph [ref=e158]: Contacts
+          - link "Analytics" [ref=e167] [cursor=pointer]:
+            - /url: /config/analytics
+            - paragraph [ref=e169]: Analytics
+          - link "Finance" [ref=e178] [cursor=pointer]:
+            - /url: /config/finance
+            - paragraph [ref=e180]: Finance
+      - generic [ref=e184]:
+        - button "Account" [ref=e185] [cursor=pointer]:
+          - generic [ref=e187]: RG
+        - list [ref=e188]:
+          - listitem [ref=e189]:
+            - button "Help" [ref=e190] [cursor=pointer]:
+              - img [ref=e192]
+          - listitem [ref=e195]:
+            - button "Customize Sidebar" [ref=e196] [cursor=pointer]:
+              - img [ref=e198]
+          - listitem [ref=e201]:
+            - button "Settings" [ref=e202] [cursor=pointer]:
+              - img [ref=e204]
+  - generic [ref=e6]:
+    - generic [ref=e207]:
+      - toolbar [ref=e208]:
+        - generic [ref=e209]:
+          - button "Edit" [ref=e211] [cursor=pointer]:
+            - generic [ref=e212]: Edit
+          - generic [ref=e215]:
+            - generic [ref=e216]: Home
+            - generic [ref=e218]: Page · Published
+          - list [ref=e220]:
+            - listitem [ref=e221]:
+              - tablist [ref=e224]:
+                - tab [selected] [ref=e225] [cursor=pointer]:
+                  - img [ref=e227]
+                - tab [ref=e229] [cursor=pointer]:
+                  - img [ref=e231]
+            - listitem [ref=e234]:
+              - button "Toggle Site Styles editing" [ref=e236] [cursor=pointer]:
+                - img [ref=e238]
+            - listitem [ref=e240]:
+              - button "Preview" [ref=e242] [cursor=pointer]:
+                - img [ref=e244]
+      - generic [ref=e246]:
+        - generic "Shrink page preview" [ref=e247] [cursor=pointer]
+        - iframe [ref=e250]:
+          - generic [ref=f46e2]:
+            - banner:
+              - generic:
+                - generic:
+                  - button "Edit Site Header":
+                    - generic:
+                      - img
+                      - generic: Edit Site Header
+              - generic [ref=f46e3]:
+                - link "Skip to Content" [ref=f46e4] [cursor=pointer]:
+                  - /url: "#page"
+                - generic [ref=f46e8]:
+                  - link "AVRAI" [ref=f46e11] [cursor=pointer]:
+                    - /url: /
+                  - navigation [ref=f46e14]:
+                    - link "About" [ref=f46e16] [cursor=pointer]:
+                      - /url: /about
+                    - link "Tech" [ref=f46e18] [cursor=pointer]:
+                      - /url: /tech
+                    - link "Services" [ref=f46e20] [cursor=pointer]:
+                      - /url: /services
+                    - link "Legal" [ref=f46e22] [cursor=pointer]:
+                      - /url: /legal
+                    - link "Contact" [ref=f46e24] [cursor=pointer]:
+                      - /url: /contact
+              - text: Edit Header
+            - main [ref=f46e25]:
+              - article [ref=f46e26]:
+                - generic [ref=f46e36]:
+                  - heading "Find Your People, Your Places, Your Life" [level=2] [ref=f46e37]
+                  - paragraph [ref=f46e39]: AVRAI is an AI-powered app that helps you discover meaningful places, build authentic communities, and find belonging—all while keeping your personal data private on your device.
+                  - paragraph [ref=f46e41]: Join the Waitlist
+                  - paragraph [ref=f46e43]:
+                    - strong [ref=f46e396]: Technology protected by 31+ patent-pending innovations
+                  - paragraph [ref=f46e47]: There is no secret to life. Just doors that haven't been opened yet.
+                  - paragraph [ref=f46e49]: AVRAI (Authentic Value Recognition Application) is the key that helps you open those doors. Every spot is a door—to experiences, to communities, to people, to meaning, to more doors.
+                  - paragraph [ref=f46e51]:
+                    - strong [ref=f46e397]: "The Journey:"
+                    - text: Spots → Community → Life
+                  - paragraph [ref=f46e53]: You discover your favorite spots. Those spots have communities. Those communities have events. Through AVRAI, you find your people and enrich your life.
+                  - heading "AVRAI just provides access. You decide which doors to open." [level=3] [ref=f46e295]
+                  - heading "Privacy-First AI That Learns With You" [level=2] [ref=f46e296]
+                  - heading "Your AI Learns On-Device" [level=3] [ref=f46e297]
+                  - paragraph [ref=f46e63]: Your personal AI learns your preferences privately on your phone. All your personal data stays on your device—never shared, never sold.
+                  - heading "AIs Connect Peer-to-Peer" [level=3] [ref=f46e298]
+                  - paragraph [ref=f46e67]: Your AI communicates with other AIs via Bluetooth or local network (no internet required). They exchange anonymous "vibe signatures" to find compatible people and places—but never share your identity.
+                  - heading "Discover in Real-Time" [level=3] [ref=f46e299]
+                  - paragraph [ref=f46e71]: Find compatible people and places instantly, anywhere. Works offline, syncs when connected. The more you use it, the smarter it gets—without compromising your privacy.
+                  - paragraph [ref=f46e73]:
+                    - emphasis [ref=f46e398]:
+                      - emphasis [ref=f46e399]: All technologies described above are proprietary and protected by patent-pending applications.
+                  - 'heading "The Science Behind the Magic: Quantum Knots & String Theory" [level=2] [ref=f46e300]'
+                  - paragraph [ref=f46e80]: "AVRAI uses cutting-edge mathematics inspired by quantum physics and topological knot theory to create the most accurate personality matching system ever built. Here's how it works:"
+                  - paragraph [ref=f46e82]:
+                    - strong [ref=f46e400]: All features described below are proprietary and protected by patent-pending applications.
+                  - heading "Your Personality as a Topological Knot" [level=3] [ref=f46e302]
+                  - paragraph [ref=f46e85]: "Patent #31 (Patent Pending)"
+                  - paragraph [ref=f46e87]: Your personality isn't just numbers—it's a unique topological structure. AVRAI represents your personality dimensions as a mathematical knot, capturing how your traits connect and influence each other. Just like no two snowflakes are alike, no two personality knots are identical.
+                  - paragraph [ref=f46e89]: This topological representation reveals deeper compatibility patterns that simple matching can't detect.
+                  - paragraph [ref=f46e91]:
+                    - strong [ref=f46e401]: This technology is proprietary and protected by patent-pending applications.
+                  - heading "Personality Evolution Over Time" [level=3] [ref=f46e304]
+                  - paragraph [ref=f46e94]: Patent Pending
+                  - paragraph [ref=f46e96]: Your personality evolves as you grow. AVRAI tracks this evolution using "knot strings"—mathematical representations that show how your personality changes over time. The system can predict how compatible you'll be with places and people in the future, not just today.
+                  - paragraph [ref=f46e98]: Think of it like a timeline of your personal growth, encoded in elegant mathematical structures.
+                  - paragraph [ref=f46e100]:
+                    - strong [ref=f46e402]: This technology is proprietary and protected by patent-pending applications.
+                  - heading "Community as Woven Fabric" [level=3] [ref=f46e306]
+                  - paragraph [ref=f46e103]: Patent Pending
+                  - paragraph [ref=f46e105]: When groups of friends or communities form, their individual personality knots weave together into a "knot fabric"—a unified mathematical structure representing group compatibility. This helps AVRAI find spots where everyone in your group will enjoy going, not just where one person would like.
+                  - paragraph [ref=f46e107]: It's like seeing how individual threads create a beautiful tapestry of compatibility.
+                  - paragraph [ref=f46e109]:
+                    - strong [ref=f46e403]: This technology is proprietary and protected by patent-pending applications.
+                  - heading "Group Evolution in 4D Space" [level=3] [ref=f46e308]
+                  - paragraph [ref=f46e112]: Patent Pending
+                  - paragraph [ref=f46e114]: For groups and communities, AVRAI uses 4-dimensional "quantum worldsheets" to track how group dynamics evolve over time. This advanced mathematical framework (inspired by string theory) allows the system to understand not just who you're compatible with now, but how groups form, grow, and evolve.
+                  - paragraph [ref=f46e116]: It's like having a time machine for understanding group compatibility.
+                  - paragraph [ref=f46e118]:
+                    - strong [ref=f46e404]: This technology is proprietary and protected by patent-pending applications.
+                  - paragraph [ref=f46e120]: These advanced mathematical frameworks—inspired by quantum physics, knot theory, and string theory—enable AVRAI to understand personality and compatibility at a deeper level than any other system. But you don't need to understand the math to benefit from it. You just need to know it works.
+                  - paragraph [ref=f46e122]:
+                    - strong [ref=f46e405]: All technologies, algorithms, and mathematical frameworks described above are proprietary intellectual property of AVRAI and are protected by 31+ patent-pending applications. Unauthorized use, copying, or implementation is strictly prohibited.
+                  - heading "What Makes AVRAI Different" [level=2] [ref=f46e311]
+                  - heading "Privacy-First AI2AI Network" [level=3] [ref=f46e312]
+                  - list [ref=f46e313]:
+                    - listitem [ref=f46e314]: Works offline—no internet required for core features
+                    - listitem [ref=f46e315]: All personal data stays on your device
+                    - listitem [ref=f46e316]: No surveillance, no data harvesting
+                    - listitem [ref=f46e317]: Real-time discovery without compromising privacy
+                  - heading "Personalized Spot Recommendations" [level=3] [ref=f46e318]
+                  - list [ref=f46e319]:
+                    - listitem [ref=f46e320]: AI learns your preferences and suggests places you'll love
+                    - listitem [ref=f46e321]: Discover coffee shops, bookstores, restaurants that match your personality
+                    - listitem [ref=f46e322]: Find hidden gems through authentic recommendations (never for sale)
+                  - heading "Community Discovery" [level=3] [ref=f46e323]
+                  - list [ref=f46e324]:
+                    - listitem [ref=f46e325]: Find writing groups, food clubs, local meetups at your spots
+                    - listitem [ref=f46e326]: Connect with people who share your interests
+                    - listitem [ref=f46e327]: Build authentic communities around places you love
+                  - heading "Event Hosting" [level=3] [ref=f46e328]
+                  - list [ref=f46e329]:
+                    - listitem [ref=f46e330]: Become a local expert through genuine contributions
+                    - listitem [ref=f46e331]: Host events once you become an expert
+                    - listitem [ref=f46e332]: Make money doing what you're passionate about (optional)
+                  - heading "\"Doors, Not Badges\"" [level=3] [ref=f46e333]
+                  - list [ref=f46e334]:
+                    - listitem [ref=f46e335]: Authentic contributions unlock features, not gamification
+                    - listitem [ref=f46e336]: No pay-to-play—recommendations never for sale
+                    - listitem [ref=f46e337]: Expertise recognition through real contributions
+                  - heading "Group Matching" [level=3] [ref=f46e338]
+                  - list [ref=f46e339]:
+                    - listitem [ref=f46e340]: Find spots where everyone in your group will enjoy
+                    - listitem [ref=f46e341]: Uses advanced knot fabric technology for group compatibility
+                    - listitem [ref=f46e342]: No more endless group chats trying to decide where to go
+                  - heading "Solving America's Loneliness Crisis" [level=2] [ref=f46e343]
+                  - paragraph [ref=f46e163]: 40% of Americans report feeling lonely. 60% of adults have fewer close friendships than before. Third places—coffee shops, libraries, community centers—are disappearing.
+                  - heading "AVRAI helps you:" [level=3] [ref=f46e344]
+                  - list [ref=f46e345]:
+                    - listitem [ref=f46e346]: Find your third place (that spot where you belong)
+                    - listitem [ref=f46e347]: Build authentic communities around shared interests
+                    - listitem [ref=f46e348]: Discover events and experiences that bring meaning
+                    - listitem [ref=f46e349]: Connect with people who could change your life (big or small)
+                    - listitem [ref=f46e350]: Reconnect with the real world
+                  - paragraph [ref=f46e172]: We use technology to help you disconnect from technology—by finding your people, your places, and your life in the real world.
+                  - heading "The Five Crises AVRAI Addresses:" [level=3] [ref=f46e351]
+                  - list [ref=f46e352]:
+                    - listitem [ref=f46e353]:
+                      - strong [ref=f46e354]: Loneliness Epidemic
+                      - text: "- 40% of Americans report feeling lonely"
+                    - listitem [ref=f46e355]:
+                      - strong [ref=f46e356]: Choice Paralysis
+                      - text: "- $650B in productivity lost to decision fatigue"
+                    - listitem [ref=f46e357]:
+                      - strong [ref=f46e358]: Workforce Instability
+                      - text: "- AI displacing jobs, people need new income sources"
+                    - listitem [ref=f46e359]:
+                      - strong [ref=f46e360]: Privacy Concerns
+                      - text: "- Growing distrust of data-harvesting platforms"
+                    - listitem [ref=f46e361]:
+                      - strong [ref=f46e362]: Phone Addiction
+                      - text: "- 56.9% of adults addicted, contributing to mental health crisis"
+                  - heading "How AVRAI Solves These:" [level=3] [ref=f46e363]
+                  - list [ref=f46e364]:
+                    - listitem [ref=f46e365]: Community connection through AI-powered matching
+                    - listitem [ref=f46e366]: Local knowledge through personalized recommendations
+                    - listitem [ref=f46e367]: Group matching for friends and family
+                    - listitem [ref=f46e368]: Effortless discovery without emotional exhaustion
+                    - listitem [ref=f46e369]: Optional economic enablement through expertise
+                    - listitem [ref=f46e370]: True data security through agent-only, anonymous data
+                    - listitem [ref=f46e371]: Real-world reconnection by using technology to disconnect from technology
+                  - heading "Advanced AI, Simple Experience" [level=2] [ref=f46e372]
+                  - paragraph [ref=f46e194]: "AVRAI uses quantum-inspired AI algorithms combined with topological knot theory to match you with places and people you'll love. Our system includes:"
+                  - list [ref=f46e373]:
+                    - listitem [ref=f46e374]:
+                      - strong [ref=f46e406]: "12-Dimensional Quantum Personality Matching:"
+                      - text: More accurate than traditional approaches (Patent Pending)
+                    - listitem [ref=f46e375]:
+                      - strong [ref=f46e407]: "Topological Knot Theory:"
+                      - text: "Personality represented as mathematical knots for deeper insights (Patent #31, Patent Pending)"
+                    - listitem [ref=f46e376]:
+                      - strong [ref=f46e408]: "String Evolution:"
+                      - text: Predicts how your personality will evolve over time (Patent Pending)
+                    - listitem [ref=f46e377]:
+                      - strong [ref=f46e409]: "Knot Fabric Weaving:"
+                      - text: Understands group compatibility through mathematical fabric structures (Patent Pending)
+                    - listitem [ref=f46e378]:
+                      - strong [ref=f46e410]: "4D Quantum Worldsheets:"
+                      - text: Tracks group evolution in four-dimensional space (Patent Pending)
+                    - listitem [ref=f46e379]:
+                      - strong [ref=f46e411]: "Quantum Atomic Clock System:"
+                      - text: "Synchronizes all devices with atomic precision (Patent #30, Patent Pending)"
+                    - listitem [ref=f46e380]:
+                      - strong [ref=f46e412]: "AI2AI Peer-to-Peer Learning:"
+                      - text: Privacy-preserving device-to-device AI learning (Patent Pending)
+                    - listitem [ref=f46e381]:
+                      - strong [ref=f46e413]: "Multi-Entity Quantum Entanglement:"
+                      - text: "Advanced group matching algorithms (Patent #29, Patent Pending)"
+                  - paragraph [ref=f46e205]: But you don't need to understand the technology—you just need to know it works. Your AI learns your preferences, finds matches, and gets smarter over time—all while keeping your data private on your device.
+                  - paragraph [ref=f46e207]:
+                    - strong [ref=f46e414]: All technologies described above are proprietary and protected by patent-pending applications.
+                  - heading "Ready to Find Your People, Your Places, Your Life?" [level=2] [ref=f46e383]
+                  - paragraph [ref=f46e213]: AVRAI is coming soon. Join our waitlist to be notified at launch and get early access.
+                  - heading "Limited to first 1,000 users. Spots filling fast." [level=3] [ref=f46e384]
+                  - paragraph [ref=f46e217]: Join the Waitlist
+                - generic [ref=f46e223]:
+                  - generic [ref=f46e227]:
+                    - heading "Contact Us" [level=1] [ref=f46e228]
+                    - paragraph [ref=f46e229]:
+                      - text: Have questions about AVRAI? Want to learn more?
+                      - text: Get in touch.
+                  - generic [ref=f46e235]:
+                    - generic [ref=f46e236]:
+                      - group "Name (required)" [ref=f46e237]:
+                        - generic [ref=f46e240]:
+                          - generic [ref=f46e241]: Name
+                          - generic [ref=f46e242]: (required)
+                        - generic [ref=f46e243]:
+                          - generic [ref=f46e246]: First Name
+                          - textbox "First Name" [ref=f46e247]
+                        - generic [ref=f46e248]:
+                          - generic [ref=f46e251]: Last Name
+                          - textbox "Last Name" [ref=f46e252]
+                      - generic [ref=f46e253]:
+                        - generic [ref=f46e256] [cursor=pointer]:
+                          - generic [ref=f46e257]: Email
+                          - generic [ref=f46e258]: (required)
+                        - textbox "Email (required)" [ref=f46e259]:
+                          - /placeholder: ""
+                      - generic [ref=f46e260]:
+                        - generic [ref=f46e263]:
+                          - generic [ref=f46e264]: Message
+                          - generic [ref=f46e265]: (required)
+                        - textbox "Message (required)" [ref=f46e266]:
+                          - /placeholder: ""
+                    - button "Send" [ref=f46e268] [cursor=pointer]
+                - text: Edit Page
+            - contentinfo [ref=f46e269]:
+              - generic [ref=f46e293]:
+                - generic:
+                  - button "Edit Site Footer":
+                    - generic:
+                      - img
+                      - generic: Edit Site Footer
+              - generic [ref=f46e275]:
+                - heading "AVRAI" [level=2] [ref=f46e280]
+                - generic [ref=f46e284]:
+                  - heading "Location" [level=4] [ref=f46e285]
+                  - paragraph [ref=f46e286]: B’Ham, Alabama
+                - generic [ref=f46e290]:
+                  - heading "Contact" [level=4] [ref=f46e291]
+                  - paragraph [ref=f46e292]: reis@avrai.org
+              - text: Edit Footer
+    - generic [ref=e252]:
+      - generic [ref=e253]: Your trial ends in 10 days. Upgrade now to get the most out of your site.
+      - button "Subscribe" [ref=e255] [cursor=pointer]
+```

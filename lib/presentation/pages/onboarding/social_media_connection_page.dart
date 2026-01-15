@@ -59,7 +59,7 @@ class _SocialMediaConnectionPageState extends State<SocialMediaConnectionPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Connect your social accounts to enhance your AI personality and discover friends who use SPOTS. You can skip this step and connect later in settings.',
+            'Connect your social accounts to enhance your AI personality and discover friends who use avrai. You can skip this step and connect later in settings.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.grey600,
                 ),
@@ -76,7 +76,8 @@ class _SocialMediaConnectionPageState extends State<SocialMediaConnectionPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
+                        const Icon(Icons.auto_awesome,
+                            color: AppTheme.primaryColor),
                         const SizedBox(width: 8),
                         Text(
                           'Quick Connect',

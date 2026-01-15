@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "total_users_tested": 30,
+  "total_fabric_compositions": 80,
+  "correlation_with_satisfaction": {
+    "avrai": 0.9998850213755638,
+    "baseline": 0.9999999999999996,
+    "improvement": -0.00011497862443576867
+  },
+  "prediction_error": {
+    "avg_avrai_error": 3.0139095349025373,
+    "avg_baseline_error": 7.466666666666667,
+    "improvement_pct": 59.6351401575553
+  },
+  "optimization_performance": {
+    "avrai_better_cases": 0,
+    "total_cases": 30,
+    "success_rate": 0.0
+  },
+  "success_criteria": {
+    "avrai_correlates_with_satisfaction": "True",
+    "avrai_better_than_baseline": "False",
+    "error_improvement": "True",
+    "optimization_works": "False"
+  }
+}

@@ -5,12 +5,12 @@ import 'package:avrai/core/theme/colors.dart';
 import 'package:avrai/core/theme/app_theme.dart';
 
 /// Revenue Split Display Widget
-/// 
+///
 /// Displays transparent revenue breakdown for partnerships.
 /// Shows platform fees, processing fees, and N-way partner splits.
-/// 
+///
 /// **CRITICAL:** Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// **Features:**
 /// - Total revenue display
 /// - Platform fee breakdown (10%)
@@ -46,153 +46,154 @@ class RevenueSplitDisplay extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            // Header
-            Row(
-              children: [
-                const Icon(
-                  Icons.account_balance_wallet,
-                  color: AppTheme.primaryColor,
-                  size: 24,
+              // Header
+              Row(
+                children: [
+                  const Icon(
+                    Icons.account_balance_wallet,
+                    color: AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Revenue Breakdown',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (showLockStatus && split.isLocked) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.electricGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.electricGreen.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            size: 12,
+                            color: AppColors.electricGreen,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Locked',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.electricGreen,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Total Revenue
+              _buildRevenueRow(
+                label: 'Total Revenue',
+                amount: split.totalAmount,
+                isTotal: true,
+                ticketsSold: split.ticketsSold,
+              ),
+              const SizedBox(height: 12),
+
+              if (showDetails) ...[
+                // Platform Fee
+                _buildFeeRow(
+                  label: 'Platform Fee',
+                  amount: split.platformFee,
+                  percentage: split.platformFeePercentage,
+                  description: '10% to avrai',
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(height: 8),
+
+                // Processing Fee
+                _buildFeeRow(
+                  label: 'Processing Fee',
+                  amount: split.processingFee,
+                  percentage: split.processingFeePercentage,
+                  description: '~3% to Stripe (2.9% + \$0.30 per ticket)',
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: AppColors.grey300),
+                const SizedBox(height: 12),
+              ],
+
+              // Net Revenue
+              _buildRevenueRow(
+                label: 'Net Revenue',
+                amount: split.splitAmount,
+                isTotal: false,
+                isHighlighted: true,
+              ),
+              const SizedBox(height: 16),
+
+              // Partner Splits (N-way)
+              if (split.parties.isNotEmpty) ...[
                 const Text(
-                  'Revenue Breakdown',
+                  'Partner Distribution',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (showLockStatus && split.isLocked) ...[
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.electricGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.electricGreen.withValues(alpha: 0.3),
-                      ),
+                const SizedBox(height: 8),
+                ...split.parties.map((party) => _buildPartyRow(party)),
+              ] else if (split.hostPayout != null) ...[
+                // Solo event (legacy)
+                _buildRevenueRow(
+                  label: 'Host Payout',
+                  amount: split.hostPayout!,
+                  isTotal: false,
+                  isHighlighted: true,
+                ),
+              ],
+
+              if (showLockStatus && !split.isLocked) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.3),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.lock,
-                          size: 12,
-                          color: AppColors.electricGreen,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Locked',
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 20,
+                        color: AppColors.warning,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Revenue split must be locked before event starts',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.electricGreen,
-                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Total Revenue
-            _buildRevenueRow(
-              label: 'Total Revenue',
-              amount: split.totalAmount,
-              isTotal: true,
-              ticketsSold: split.ticketsSold,
-            ),
-            const SizedBox(height: 12),
-
-            if (showDetails) ...[
-              // Platform Fee
-              _buildFeeRow(
-                label: 'Platform Fee',
-                amount: split.platformFee,
-                percentage: split.platformFeePercentage,
-                description: '10% to SPOTS',
-              ),
-              const SizedBox(height: 8),
-
-              // Processing Fee
-              _buildFeeRow(
-                label: 'Processing Fee',
-                amount: split.processingFee,
-                percentage: split.processingFeePercentage,
-                description: '~3% to Stripe (2.9% + \$0.30 per ticket)',
-              ),
-              const SizedBox(height: 12),
-              const Divider(color: AppColors.grey300),
-              const SizedBox(height: 12),
-            ],
-
-            // Net Revenue
-            _buildRevenueRow(
-              label: 'Net Revenue',
-              amount: split.splitAmount,
-              isTotal: false,
-              isHighlighted: true,
-            ),
-            const SizedBox(height: 16),
-
-            // Partner Splits (N-way)
-            if (split.parties.isNotEmpty) ...[
-              const Text(
-                'Partner Distribution',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...split.parties.map((party) => _buildPartyRow(party)),
-            ] else if (split.hostPayout != null) ...[
-              // Solo event (legacy)
-              _buildRevenueRow(
-                label: 'Host Payout',
-                amount: split.hostPayout!,
-                isTotal: false,
-                isHighlighted: true,
-              ),
-            ],
-
-            if (showLockStatus && !split.isLocked) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.warning.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      size: 20,
-                      color: AppColors.warning,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Revenue split must be locked before event starts',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textPrimary,
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
             ],
           ),
         ),
@@ -292,7 +293,7 @@ class RevenueSplitDisplay extends StatelessWidget {
   Widget _buildPartyRow(SplitParty party) {
     final partyTypeLabel = party.type.displayName;
     final partyName = party.name ?? partyTypeLabel;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -314,7 +315,8 @@ class RevenueSplitDisplay extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
@@ -379,4 +381,3 @@ class RevenueSplitDisplay extends StatelessWidget {
     );
   }
 }
-

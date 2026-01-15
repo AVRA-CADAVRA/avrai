@@ -9,11 +9,11 @@ import 'package:avrai/core/theme/app_theme.dart';
 import 'package:avrai/presentation/blocs/auth/auth_bloc.dart';
 
 /// Event Waiver Page
-/// 
+///
 /// Agent 2: Phase 5, Week 18-19 - Legal Document UI
-/// 
+///
 /// CRITICAL: Uses AppColors/AppTheme (100% adherence required)
-/// 
+///
 /// Features:
 /// - Event-specific waiver
 /// - Acknowledgment checkboxes
@@ -33,7 +33,8 @@ class EventWaiverPage extends StatefulWidget {
 }
 
 class _EventWaiverPageState extends State<EventWaiverPage> {
-  final LegalDocumentService _legalService = GetIt.instance<LegalDocumentService>();
+  final LegalDocumentService _legalService =
+      GetIt.instance<LegalDocumentService>();
 
   bool _acknowledgeRisks = false;
   bool _acknowledgeRelease = false;
@@ -178,14 +179,16 @@ class _EventWaiverPageState extends State<EventWaiverPage> {
                     ),
                     if (_hasAccepted)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.electricGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.check_circle, size: 16, color: AppColors.electricGreen),
+                            Icon(Icons.check_circle,
+                                size: 16, color: AppColors.electricGreen),
                             SizedBox(width: 4),
                             Text(
                               'Accepted',
@@ -250,7 +253,7 @@ class _EventWaiverPageState extends State<EventWaiverPage> {
                     ),
                     CheckboxListTile(
                       title: const Text(
-                        'I release SPOTS and all parties from liability',
+                        'I release avrai and all parties from liability',
                         style: TextStyle(color: AppColors.textPrimary),
                       ),
                       value: _acknowledgeRelease,
@@ -299,16 +302,19 @@ class _EventWaiverPageState extends State<EventWaiverPage> {
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                          const Icon(Icons.error_outline,
+                              color: AppColors.error, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _error!,
-                              style: const TextStyle(color: AppColors.error, fontSize: 12),
+                              style: const TextStyle(
+                                  color: AppColors.error, fontSize: 12),
                             ),
                           ),
                         ],
@@ -328,7 +334,8 @@ class _EventWaiverPageState extends State<EventWaiverPage> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.white),
                             ),
                           )
                         : const Text('I Agree'),
@@ -346,4 +353,3 @@ class _EventWaiverPageState extends State<EventWaiverPage> {
     return '${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
-

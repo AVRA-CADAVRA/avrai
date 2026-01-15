@@ -9,6 +9,13 @@ import 'package:avrai/core/services/personality_sync_service.dart';
 import 'package:avrai/core/services/storage_service.dart';
 import 'package:avrai_core/models/personality_profile.dart';
 import 'package:avrai/core/ai/personality_learning.dart';
+import 'package:avrai/core/services/agent_id_service.dart';
+import 'package:avrai_knot/services/knot/personality_knot_service.dart';
+import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_knot/services/knot/knot_fabric_service.dart';
+import 'package:avrai_knot/services/knot/knot_worldsheet_service.dart';
+import 'package:avrai_quantum/services/quantum/quantum_entanglement_service.dart';
+import 'package:avrai/core/ai2ai/anonymous_communication.dart';
 
 // Import for SharedPreferencesCompat (matches injection_container.dart)
 import 'package:avrai/core/services/storage_service.dart'
@@ -54,11 +61,27 @@ class SyncController implements WorkflowController<SyncInput, SyncResult> {
   final EnhancedConnectivityService _connectivityService;
   final PersonalitySyncService _personalitySyncService;
   final PersonalityLearning _personalityLearning;
+  final AgentIdService? _agentIdService;
+  
+  // AVRAI Core System Integration (optional, graceful degradation)
+  final PersonalityKnotService? _personalityKnotService;
+  final KnotStorageService? _knotStorageService;
+  final KnotFabricService? _knotFabricService;
+  final KnotWorldsheetService? _knotWorldsheetService;
+  final QuantumEntanglementService? _quantumEntanglementService;
+  final AnonymousCommunicationProtocol? _ai2aiProtocol;
 
   SyncController({
     EnhancedConnectivityService? connectivityService,
     PersonalitySyncService? personalitySyncService,
     PersonalityLearning? personalityLearning,
+    AgentIdService? agentIdService,
+    PersonalityKnotService? personalityKnotService,
+    KnotStorageService? knotStorageService,
+    KnotFabricService? knotFabricService,
+    KnotWorldsheetService? knotWorldsheetService,
+    QuantumEntanglementService? quantumEntanglementService,
+    AnonymousCommunicationProtocol? ai2aiProtocol,
   })  : _connectivityService = connectivityService ??
             GetIt.instance<EnhancedConnectivityService>(),
         _personalitySyncService =
@@ -68,7 +91,35 @@ class SyncController implements WorkflowController<SyncInput, SyncResult> {
               // Use same pattern as injection_container.dart
               final prefs = GetIt.instance<SharedPreferencesCompat>();
               return PersonalityLearning.withPrefs(prefs);
-            })();
+            })(),
+        _agentIdService = agentIdService ??
+            (GetIt.instance.isRegistered<AgentIdService>()
+                ? GetIt.instance<AgentIdService>()
+                : null),
+        _personalityKnotService = personalityKnotService ??
+            (GetIt.instance.isRegistered<PersonalityKnotService>()
+                ? GetIt.instance<PersonalityKnotService>()
+                : null),
+        _knotStorageService = knotStorageService ??
+            (GetIt.instance.isRegistered<KnotStorageService>()
+                ? GetIt.instance<KnotStorageService>()
+                : null),
+        _knotFabricService = knotFabricService ??
+            (GetIt.instance.isRegistered<KnotFabricService>()
+                ? GetIt.instance<KnotFabricService>()
+                : null),
+        _knotWorldsheetService = knotWorldsheetService ??
+            (GetIt.instance.isRegistered<KnotWorldsheetService>()
+                ? GetIt.instance<KnotWorldsheetService>()
+                : null),
+        _quantumEntanglementService = quantumEntanglementService ??
+            (GetIt.instance.isRegistered<QuantumEntanglementService>()
+                ? GetIt.instance<QuantumEntanglementService>()
+                : null),
+        _ai2aiProtocol = ai2aiProtocol ??
+            (GetIt.instance.isRegistered<AnonymousCommunicationProtocol>()
+                ? GetIt.instance<AnonymousCommunicationProtocol>()
+                : null);
 
   /// Sync user data to/from cloud
   ///
@@ -153,6 +204,147 @@ class SyncController implements WorkflowController<SyncInput, SyncResult> {
       // if (scope == SyncScope.preferences || scope == SyncScope.all) {
       //   // Sync preferences profile
       // }
+
+      // Step 4: AVRAI Core System Integration (optional, graceful degradation)
+      
+      // 4.1: Sync knot data if available
+      if ((scope == SyncScope.personality || scope == SyncScope.all) &&
+          _personalityKnotService != null &&
+          _knotStorageService != null &&
+          _agentIdService != null) {
+        try {
+          developer.log(
+            '🎯 Syncing personality knot data',
+            name: _logName,
+          );
+          
+          // Get agentId for knot sync (reserved for future implementation)
+          // final agentId = await _agentIdService!.getUserAgentId(userId);
+          
+          // Note: Full implementation would sync knot data to/from cloud
+          // This is a placeholder for future knot data sync
+          developer.log(
+            'ℹ️ Knot data sync deferred (requires cloud knot storage)',
+            name: _logName,
+          );
+          
+          syncDetails['knot'] = 'deferred';
+        } catch (e) {
+          developer.log(
+            '⚠️ Knot data sync failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          syncDetails['knot'] = 'failed: ${e.toString()}';
+          // Continue - knot sync is optional
+        }
+      }
+      
+      // 4.2: Sync fabric data if group data exists
+      if (scope == SyncScope.all && _knotFabricService != null && _agentIdService != null) {
+        try {
+          developer.log(
+            '🧵 Syncing fabric data (if group data exists)',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would sync fabric data to/from cloud
+          // This is a placeholder for future fabric data sync
+          developer.log(
+            'ℹ️ Fabric data sync deferred (requires cloud fabric storage)',
+            name: _logName,
+          );
+          
+          syncDetails['fabric'] = 'deferred';
+        } catch (e) {
+          developer.log(
+            '⚠️ Fabric data sync failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          syncDetails['fabric'] = 'failed: ${e.toString()}';
+          // Continue - fabric sync is optional
+        }
+      }
+      
+      // 4.3: Sync worldsheet data if group tracking exists
+      if (scope == SyncScope.all && _knotWorldsheetService != null && _agentIdService != null) {
+        try {
+          developer.log(
+            '📊 Syncing worldsheet data (if group tracking exists)',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would sync worldsheet data to/from cloud
+          developer.log(
+            'ℹ️ Worldsheet data sync deferred (requires cloud worldsheet storage)',
+            name: _logName,
+          );
+          
+          syncDetails['worldsheet'] = 'deferred';
+        } catch (e) {
+          developer.log(
+            '⚠️ Worldsheet data sync failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          syncDetails['worldsheet'] = 'failed: ${e.toString()}';
+          // Continue - worldsheet sync is optional
+        }
+      }
+      
+      // 4.4: Sync quantum states if available
+      if (scope == SyncScope.all && _quantumEntanglementService != null) {
+        try {
+          developer.log(
+            '🔬 Syncing quantum states (if available)',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would sync quantum states to/from cloud
+          developer.log(
+            'ℹ️ Quantum state sync deferred (requires cloud quantum state storage)',
+            name: _logName,
+          );
+          
+          syncDetails['quantum'] = 'deferred';
+        } catch (e) {
+          developer.log(
+            '⚠️ Quantum state sync failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          syncDetails['quantum'] = 'failed: ${e.toString()}';
+          // Continue - quantum state sync is optional
+        }
+      }
+      
+      // 4.5: Use AI2AI mesh for distributed sync (optional)
+      if (_ai2aiProtocol != null && hasConnectivity) {
+        try {
+          developer.log(
+            '🤖 AI2AI mesh sync available (distributed sync deferred)',
+            name: _logName,
+          );
+          
+          // Note: Full implementation would use AI2AI mesh for peer-to-peer sync
+          // This is a placeholder for future AI2AI mesh sync
+          developer.log(
+            'ℹ️ AI2AI mesh sync deferred (requires mesh network implementation)',
+            name: _logName,
+          );
+          
+          syncDetails['ai2ai'] = 'deferred';
+        } catch (e) {
+          developer.log(
+            '⚠️ AI2AI mesh sync failed (non-blocking): $e',
+            name: _logName,
+            error: e,
+          );
+          syncDetails['ai2ai'] = 'failed: ${e.toString()}';
+          // Continue - AI2AI mesh sync is optional
+        }
+      }
 
       developer.log('Sync completed for user: $userId', name: _logName);
       return SyncResult.success(

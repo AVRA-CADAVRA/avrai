@@ -14,9 +14,8 @@ This patent appears in both Category 2 (Offline Privacy Systems) and Category 6 
 
 ## Quick Reference
 
-**Patent Number:** #18  
-**Strength Tier:** Tier 4 (WEAK)  
+**Patent Number:** #18
+**Strength Tier:** Tier 4 (WEAK)
 **Key Innovation:** City-level location obfuscation (~1km precision) with differential privacy noise (~500m) and 24-hour expiration
 
 For complete documentation, please see the Category 2 documentation.
-

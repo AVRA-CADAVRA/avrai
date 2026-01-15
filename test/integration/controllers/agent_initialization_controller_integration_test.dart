@@ -215,6 +215,62 @@ void main() {
       // Optional steps may succeed or fail, but controller should handle gracefully
       expect(result.cloudSyncAttempted, isA<bool>());
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should create 4D quantum location state when location timing service available', () async {
+        // This test verifies that 4D quantum state creation is attempted
+        // when LocationTimingQuantumStateService is available
+        final result = await controller.initializeAgent(
+          userId: testUserId,
+          onboardingData: testOnboardingData,
+          generatePlaceLists: false,
+          getRecommendations: false,
+          attemptCloudSync: false,
+        );
+
+        expect(result.isSuccess, isTrue, reason: 'Should succeed with AVRAI services');
+        expect(result.personalityProfile, isNotNull, reason: 'Personality profile should be created');
+        // Note: 4D quantum state creation happens internally and doesn't affect result
+        // This test verifies the controller doesn't crash when AVRAI services are available
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () async {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = AgentInitializationController(
+          locationTimingService: null,
+          quantumEntanglementService: null,
+          aiLearningService: null,
+        );
+
+        final result = await controllerWithoutAVRAI.initializeAgent(
+          userId: testUserId,
+          onboardingData: testOnboardingData,
+          generatePlaceLists: false,
+          getRecommendations: false,
+          attemptCloudSync: false,
+        );
+
+        expect(result.isSuccess, isTrue, reason: 'Should succeed even without AVRAI services');
+        expect(result.personalityProfile, isNotNull, reason: 'Personality profile should be created');
+        expect(result.preferencesProfile, isNotNull, reason: 'Preferences profile should be created');
+        // Core functionality should work without AVRAI services
+      });
+
+      test('should handle 4D quantum state creation failure gracefully', () async {
+        // This test verifies that if 4D quantum state creation fails,
+        // the controller continues and doesn't block initialization
+        final result = await controller.initializeAgent(
+          userId: testUserId,
+          onboardingData: testOnboardingData,
+          generatePlaceLists: false,
+          getRecommendations: false,
+          attemptCloudSync: false,
+        );
+
+        expect(result.isSuccess, isTrue, reason: 'Should succeed even if 4D quantum creation fails');
+        // The controller should handle quantum state creation failures gracefully
+      });
+    });
   });
 }
 

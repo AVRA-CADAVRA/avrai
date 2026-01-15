@@ -10,6 +10,9 @@ import 'package:avrai/core/services/search_cache_service.dart';
 import 'package:avrai/core/services/ai_search_suggestions_service.dart';
 import 'package:geolocator/geolocator.dart';
 
+export 'package:avrai/data/repositories/hybrid_search_repository.dart'
+    show SearchFilters, SearchSortOption;
+
 // Events
 abstract class HybridSearchEvent extends Equatable {
   @override
@@ -21,16 +24,27 @@ class SearchHybridSpots extends HybridSearchEvent {
   final bool includeExternal;
   final int maxResults;
   final bool useCache;
+  final SearchFilters? filters;
+  final SearchSortOption sortOption;
 
   SearchHybridSpots({
     required this.query,
     this.includeExternal = true,
     this.maxResults = 50,
     this.useCache = true,
+    this.filters,
+    this.sortOption = SearchSortOption.relevance,
   });
 
   @override
-  List<Object?> get props => [query, includeExternal, maxResults, useCache];
+  List<Object?> get props => [
+        query,
+        includeExternal,
+        maxResults,
+        useCache,
+        filters,
+        sortOption,
+      ];
 }
 
 class SearchNearbyHybridSpots extends HybridSearchEvent {
@@ -352,6 +366,8 @@ class HybridSearchBloc extends Bloc<HybridSearchEvent, HybridSearchState> {
           longitude: position?.longitude,
           maxResults: event.maxResults,
           includeExternal: event.includeExternal && _externalDataEnabled,
+          filters: event.filters,
+          sortOption: event.sortOption,
         );
 
         // STEP 3: Cache the result for future use

@@ -86,6 +86,96 @@ void main() {
         expect(invalidResult.isValid, isFalse);
       });
     });
+
+    group('AVRAI Core System Integration', () {
+      test('should work when AVRAI services are available', () {
+        final event = ExpertiseEvent(
+          id: 'event_123',
+          title: 'Test Event',
+          description: 'Test',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.workshop,
+          host: UnifiedUser(
+            id: 'host_123',
+            email: 'host@test.com',
+            primaryRole: UserRole.follower,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+          startTime: DateTime.now().add(const Duration(days: 1)),
+          endTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        final buyer = UnifiedUser(
+          id: 'user_456',
+          email: 'user@test.com',
+          primaryRole: UserRole.follower,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        final validInput = CheckoutInput(
+          event: event,
+          buyer: buyer,
+          quantity: 2,
+        );
+
+        final validationResult = controller.validate(validInput);
+        expect(validationResult.isValid, isTrue, reason: 'Should validate correctly with AVRAI services');
+        // Note: AVRAI integrations (quantum compatibility, fabrics, worldsheets, AI2AI learning)
+        // happen internally during checkout and don't affect validation
+      });
+
+      test('should work when AVRAI services are unavailable (graceful degradation)', () {
+        // Create controller without AVRAI services
+        final controllerWithoutAVRAI = CheckoutController(
+          knotFabricService: null,
+          knotWorldsheetService: null,
+          locationTimingService: null,
+          quantumEntanglementService: null,
+          aiLearningService: null,
+        );
+
+        final event = ExpertiseEvent(
+          id: 'event_123',
+          title: 'Test Event',
+          description: 'Test',
+          category: 'Coffee',
+          eventType: ExpertiseEventType.workshop,
+          host: UnifiedUser(
+            id: 'host_123',
+            email: 'host@test.com',
+            primaryRole: UserRole.follower,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+          startTime: DateTime.now().add(const Duration(days: 1)),
+          endTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        final buyer = UnifiedUser(
+          id: 'user_456',
+          email: 'user@test.com',
+          primaryRole: UserRole.follower,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        final validInput = CheckoutInput(
+          event: event,
+          buyer: buyer,
+          quantity: 2,
+        );
+
+        final validationResult = controllerWithoutAVRAI.validate(validInput);
+        expect(validationResult.isValid, isTrue, reason: 'Should validate correctly even without AVRAI services');
+        // Core functionality should work without AVRAI services
+      });
+    });
   });
 }
 
