@@ -20,7 +20,7 @@ rug = { version = "1.22", features = ["serde"] }  # Arbitrary precision arithmet
 
 # === Numerical Methods ===
 quadrature = "0.1"        # Numerical integration (for energy calculations) - latest is 0.1.2
-statrs = "0.16"           # Statistical functions (Boltzmann, entropy)
+statrs = "0.18"           # Statistical functions (Boltzmann, entropy)
 
 # === Serialization ===
 serde = { version = "1.0", features = ["derive"] }
