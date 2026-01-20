@@ -21,7 +21,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   google_fonts: ^7.0.2
   qr_flutter: ^4.1.0  # Phase 10.1: QR code generation for reservation check-in
-  mobile_scanner: ^5.2.3  # QR code scanning for friend connections
+  mobile_scanner: ^7.1.4  # QR code scanning for friend connections
   nfc_manager: ^4.1.1  # Phase 10.1: NFC tap-to-check-in (phone-to-phone or phone-to-tag)
   nfc_manager_ndef: ^1.1.0  # Phase 10.1: NDEF support for NFC tags
   ndef_record: ^1.4.1  # Phase 10.1: NDEF record classes (used by nfc_manager_ndef)
