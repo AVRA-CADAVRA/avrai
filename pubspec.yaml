@@ -19,7 +19,7 @@ dependencies:
   
   # UI Components
   cupertino_icons: ^1.0.2
-  google_fonts: ^7.0.2
+  google_fonts: ^7.1.0
   qr_flutter: ^4.1.0  # Phase 10.1: QR code generation for reservation check-in
   mobile_scanner: ^5.2.3  # QR code scanning for friend connections
   nfc_manager: ^4.1.1  # Phase 10.1: NFC tap-to-check-in (phone-to-phone or phone-to-tag)
