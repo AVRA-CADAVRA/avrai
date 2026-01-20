@@ -1,0 +1,3 @@
+cat > docs/performance/trace_testing/traces/baseline/.gitkeep << ''
+cat > docs/performance/trace_testing/traces/optimizations/.gitkeep << ''
+cat > docs/performance/trace_testing/traces/features/.gitkeep << ''

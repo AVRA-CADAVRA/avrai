@@ -48,7 +48,7 @@ class _PrivacyControlsWidgetState extends State<PrivacyControlsWidget> {
                   _ai2aiEnabled = value;
                 });
               },
-              activeColor: AppColors.success,
+              activeThumbColor: AppColors.success,
             ),
             const Divider(),
             // Privacy Level Selector
@@ -93,7 +93,7 @@ class _PrivacyControlsWidgetState extends State<PrivacyControlsWidget> {
                   _shareLearningInsights = value;
                 });
               },
-              activeColor: AppColors.success,
+              activeThumbColor: AppColors.success,
             ),
             const SizedBox(height: 8),
             Container(

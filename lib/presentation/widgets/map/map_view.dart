@@ -1153,7 +1153,7 @@ class _MapViewState extends State<MapView> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: selectedCityCode,
+                        initialValue: selectedCityCode,
                         decoration: const InputDecoration(
                           labelText: 'City',
                           border: OutlineInputBorder(),
@@ -1178,7 +1178,7 @@ class _MapViewState extends State<MapView> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: selectedLocalityName,
+                        initialValue: selectedLocalityName,
                         decoration: const InputDecoration(
                           labelText: 'Locality (for boundaries)',
                           border: OutlineInputBorder(),

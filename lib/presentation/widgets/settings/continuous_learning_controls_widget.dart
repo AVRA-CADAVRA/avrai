@@ -270,7 +270,7 @@ class _ContinuousLearningControlsWidgetState extends State<ContinuousLearningCon
                       onChanged: _isToggling
                           ? null
                           : (value) => _toggleContinuousLearning(value),
-                      activeColor: AppColors.success,
+                      activeThumbColor: AppColors.success,
                     ),
                   ),
               ],
@@ -442,7 +442,7 @@ class _ContinuousLearningControlsWidgetState extends State<ContinuousLearningCon
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeColor: AppColors.success,
+                activeThumbColor: AppColors.success,
               ),
             ],
           ),

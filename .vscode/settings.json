@@ -26,5 +26,17 @@
     "android/app/libs/**/*.jar"
   ],
   "gradle.nestedProjects": false,
-  "dart.showTodos": false
+  "dart.showTodos": false,
+  "dart.testInvocationMode": "name",
+  "testExplorer.useNativeTesting": true,
+  "testExplorer.groupBy": "location",
+  "testExplorer.sortBy": "location",
+  "dart.enableSdkFormatter": true,
+  "dart.allowTestsOutsideTestFolder": false,
+  "dart.showSkippedTests": false,
+  "testExplorer.expandOnDiscovery": false,
+  "testExplorer.collapseAfterExecution": true,
+  "testExplorer.showCollapseButton": true,
+  "testExplorer.mergeSuites": true,
+  "workbench.activityBar.location": "top"
 }

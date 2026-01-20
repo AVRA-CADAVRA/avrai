@@ -97,6 +97,62 @@ class _FriendDiscoveryPageState extends State<FriendDiscoveryPage> {
     }
   }
 
+  Future<void> _acceptFriendRequest(FriendSuggestion friend) async {
+    try {
+      final authBloc = context.read<AuthBloc>();
+      final authState = authBloc.state;
+      if (authState is! Authenticated) {
+        throw Exception('User not authenticated');
+      }
+
+      final userId = authState.user.id;
+      final agentId = await _agentIdService.getUserAgentId(userId);
+
+      final success = await _discoveryService.acceptFriendConnectionRequest(
+        agentId: agentId,
+        friendAgentId: friend.agentId,
+        userId: userId,
+      );
+
+      if (mounted) {
+        if (success) {
+          // Update friend status
+          setState(() {
+            final index = _friendSuggestions.indexOf(friend);
+            if (index != -1) {
+              _friendSuggestions[index] = friend.copyWith(
+                status: FriendConnectionStatus.connected,
+              );
+            }
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Friend request accepted!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to accept friend request'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error accepting request: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _connectWithFriend(FriendSuggestion friend) async {
     try {
       final authBloc = context.read<AuthBloc>();
@@ -243,24 +299,49 @@ class _FriendDiscoveryPageState extends State<FriendDiscoveryPage> {
                         ),
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _findFriends,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.search),
-                      label: Text(
-                          _isLoading ? 'Finding friends...' : 'Find Friends'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _findFriends,
+                          icon: _isLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.search),
+                          label: Text(
+                              _isLoading ? 'Finding...' : 'Find Friends'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // QR Code buttons
+                      IconButton(
+                        icon: const Icon(Icons.qr_code),
+                        onPressed: () {
+                          context.push('/friends/qr/add');
+                        },
+                        tooltip: 'Show My QR Code',
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.qr_code_scanner),
+                        onPressed: () {
+                          context.push('/friends/qr/scan');
+                        },
+                        tooltip: 'Scan QR Code',
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -389,9 +470,7 @@ class _FriendDiscoveryPageState extends State<FriendDiscoveryPage> {
                                   : friend.status ==
                                           FriendConnectionStatus.requestReceived
                                       ? TextButton(
-                                          onPressed: () {
-                                            // TODO: Implement accept request
-                                          },
+                                          onPressed: () => _acceptFriendRequest(friend),
                                           child: const Text('Accept'),
                                         )
                                       : null,

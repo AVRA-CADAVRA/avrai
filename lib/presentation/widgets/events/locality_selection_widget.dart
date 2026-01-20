@@ -216,7 +216,7 @@ class _LocalitySelectionWidgetState extends State<LocalitySelectionWidget> {
           )
         else if (_availableLocalities.isNotEmpty)
           DropdownButtonFormField<String>(
-            value: widget.selectedLocality,
+            initialValue: widget.selectedLocality,
             decoration: InputDecoration(
               labelText: 'Select Locality',
               hintText: 'Choose a locality',

@@ -1,0 +1,77 @@
+version: 2
+updates:
+  # Dart/Flutter dependencies
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "avra-cadavra"
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      # Ignore major version updates for critical packages
+      - dependency-name: "flutter"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "flutter_bloc"
+        update-types: ["version-update:semver-major"]
+
+  # Rust dependencies (Cargo)
+  - package-ecosystem: "cargo"
+    directory: "/native/knot_math"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "avra-cadavra"
+    labels:
+      - "dependencies"
+      - "security"
+      - "rust"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Rust dependencies for Signal FFI wrapper
+  - package-ecosystem: "cargo"
+    directory: "/native/signal_ffi/wrapper_rust"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "avra-cadavra"
+    labels:
+      - "dependencies"
+      - "security"
+      - "rust"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "avra-cadavra"
+    labels:
+      - "dependencies"
+      - "ci/cd"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

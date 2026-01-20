@@ -514,7 +514,7 @@ class _EventFeedbackPageState extends State<EventFeedbackPage> {
                 _wouldAttendAgain = value;
               });
             },
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: AppTheme.primaryColor,
           ),
           SwitchListTile(
             title: const Text(
@@ -527,7 +527,7 @@ class _EventFeedbackPageState extends State<EventFeedbackPage> {
                 _wouldRecommend = value;
               });
             },
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: AppTheme.primaryColor,
           ),
         ],
       ),

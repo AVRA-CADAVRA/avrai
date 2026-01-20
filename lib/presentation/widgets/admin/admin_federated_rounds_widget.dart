@@ -172,7 +172,7 @@ class _AdminFederatedRoundsWidgetState extends State<AdminFederatedRoundsWidget>
                 });
                 _loadRounds();
               },
-              activeColor: AppColors.electricGreen,
+              activeThumbColor: AppColors.electricGreen,
             ),
           ],
         ),

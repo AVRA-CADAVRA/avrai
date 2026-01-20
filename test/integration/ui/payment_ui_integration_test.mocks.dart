@@ -7,12 +7,13 @@ import 'dart:async' as _i8;
 
 import 'package:avrai/core/models/expertise_event.dart' as _i6;
 import 'package:avrai/core/models/payment.dart' as _i5;
-import 'package:avrai/core/models/payment_intent.dart' as _i9;
+import 'package:avrai/core/models/payment_intent.dart' as _i10;
 import 'package:avrai/core/models/payment_result.dart' as _i3;
+import 'package:avrai/core/models/reservation.dart' as _i9;
 import 'package:avrai/core/models/revenue_split.dart' as _i4;
-import 'package:avrai/core/models/spot.dart' as _i12;
-import 'package:avrai/core/models/unified_user.dart' as _i11;
-import 'package:avrai/core/services/expertise_event_service.dart' as _i10;
+import 'package:avrai/core/models/spot.dart' as _i13;
+import 'package:avrai/core/models/unified_user.dart' as _i12;
+import 'package:avrai/core/services/expertise_event_service.dart' as _i11;
 import 'package:avrai/core/services/payment_service.dart' as _i7;
 import 'package:avrai/core/services/stripe_service.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
@@ -30,6 +31,7 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeStripeService_0 extends _i1.SmartFake implements _i2.StripeService {
   _FakeStripeService_0(
@@ -179,6 +181,45 @@ class MockPaymentService extends _i1.Mock implements _i7.PaymentService {
       ) as _i4.RevenueSplit);
 
   @override
+  _i8.Future<_i3.PaymentResult> processReservationPayment({
+    required String? reservationId,
+    required _i9.ReservationType? reservationType,
+    required String? userId,
+    required double? ticketPrice,
+    required int? ticketCount,
+    double? depositAmount,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #processReservationPayment,
+          [],
+          {
+            #reservationId: reservationId,
+            #reservationType: reservationType,
+            #userId: userId,
+            #ticketPrice: ticketPrice,
+            #ticketCount: ticketCount,
+            #depositAmount: depositAmount,
+          },
+        ),
+        returnValue: _i8.Future<_i3.PaymentResult>.value(_FakePaymentResult_1(
+          this,
+          Invocation.method(
+            #processReservationPayment,
+            [],
+            {
+              #reservationId: reservationId,
+              #reservationType: reservationType,
+              #userId: userId,
+              #ticketPrice: ticketPrice,
+              #ticketCount: ticketCount,
+              #depositAmount: depositAmount,
+            },
+          ),
+        )),
+      ) as _i8.Future<_i3.PaymentResult>);
+
+  @override
   _i8.Future<_i5.Payment> confirmPayment({
     required String? paymentId,
     required String? paymentIntentId,
@@ -240,11 +281,11 @@ class MockPaymentService extends _i1.Mock implements _i7.PaymentService {
       );
 
   @override
-  _i9.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
+  _i10.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
       (super.noSuchMethod(Invocation.method(
         #getPaymentIntent,
         [paymentIntentId],
-      )) as _i9.PaymentIntent?);
+      )) as _i10.PaymentIntent?);
 
   @override
   List<_i5.Payment> getPaymentsForEvent(String? eventId) => (super.noSuchMethod(
@@ -354,21 +395,21 @@ class MockPaymentService extends _i1.Mock implements _i7.PaymentService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockExpertiseEventService extends _i1.Mock
-    implements _i10.ExpertiseEventService {
+    implements _i11.ExpertiseEventService {
   MockExpertiseEventService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
   _i8.Future<_i6.ExpertiseEvent> createEvent({
-    required _i11.UnifiedUser? host,
+    required _i12.UnifiedUser? host,
     required String? title,
     required String? description,
     required String? category,
     required _i6.ExpertiseEventType? eventType,
     required DateTime? startTime,
     required DateTime? endTime,
-    List<_i12.Spot>? spots,
+    List<_i13.Spot>? spots,
     String? location,
     double? latitude,
     double? longitude,
@@ -461,7 +502,7 @@ class MockExpertiseEventService extends _i1.Mock
   @override
   _i8.Future<void> registerForEvent(
     _i6.ExpertiseEvent? event,
-    _i11.UnifiedUser? user,
+    _i12.UnifiedUser? user,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -478,7 +519,7 @@ class MockExpertiseEventService extends _i1.Mock
   @override
   _i8.Future<void> cancelRegistration(
     _i6.ExpertiseEvent? event,
-    _i11.UnifiedUser? user,
+    _i12.UnifiedUser? user,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -494,7 +535,7 @@ class MockExpertiseEventService extends _i1.Mock
 
   @override
   _i8.Future<List<_i6.ExpertiseEvent>> getEventsByHost(
-          _i11.UnifiedUser? host) =>
+          _i12.UnifiedUser? host) =>
       (super.noSuchMethod(
         Invocation.method(
           #getEventsByHost,
@@ -506,7 +547,7 @@ class MockExpertiseEventService extends _i1.Mock
 
   @override
   _i8.Future<List<_i6.ExpertiseEvent>> getEventsByAttendee(
-          _i11.UnifiedUser? user) =>
+          _i12.UnifiedUser? user) =>
       (super.noSuchMethod(
         Invocation.method(
           #getEventsByAttendee,
@@ -571,7 +612,7 @@ class MockExpertiseEventService extends _i1.Mock
 
   @override
   _i8.Future<List<_i6.ExpertiseEvent>> searchEventsWithConnectedLocalities({
-    required _i11.UnifiedUser? user,
+    required _i12.UnifiedUser? user,
     String? category,
     String? location,
     _i6.ExpertiseEventType? eventType,

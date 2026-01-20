@@ -2,6 +2,7 @@
 // Structured event system for tracking user interactions with context enrichment
 
 import 'package:geolocator/geolocator.dart';
+import 'package:avrai_core/models/atomic_timestamp.dart';
 
 /// Interaction event model for tracking user actions
 /// 
@@ -15,6 +16,7 @@ class InteractionEvent {
   final Map<String, dynamic> parameters;
   final InteractionContext context;
   final DateTime timestamp;
+  final AtomicTimestamp? atomicTimestamp; // Phase 11 Enhancement: Atomic time for quantum formulas
   final String? agentId;
 
   InteractionEvent({
@@ -22,11 +24,33 @@ class InteractionEvent {
     required this.parameters,
     required this.context,
     DateTime? timestamp,
+    AtomicTimestamp? atomicTimestamp,
     this.agentId,
-  }) : timestamp = timestamp ?? DateTime.now();
+  })  : timestamp = timestamp ?? DateTime.now(),
+        atomicTimestamp = atomicTimestamp; // Will be set by caller if needed
 
   /// Create event from JSON (for database retrieval)
   factory InteractionEvent.fromJson(Map<String, dynamic> json) {
+    AtomicTimestamp? atomicTimestamp;
+    if (json['atomic_timestamp'] != null) {
+      if (json['atomic_timestamp'] is Map) {
+        atomicTimestamp = AtomicTimestamp.fromJson(
+          json['atomic_timestamp'] as Map<String, dynamic>,
+        );
+      } else if (json['atomic_timestamp'] is String) {
+        // Fallback: parse as ISO string and create AtomicTimestamp using now() factory
+        final dt = DateTime.parse(json['atomic_timestamp'] as String);
+        atomicTimestamp = AtomicTimestamp.now(
+          precision: TimePrecision.millisecond,
+          serverTime: dt,
+          localTime: dt.toLocal(),
+          timezoneId: 'UTC',
+          offset: Duration.zero,
+          isSynchronized: false,
+        );
+      }
+    }
+    
     return InteractionEvent(
       eventType: json['event_type'] as String,
       parameters: Map<String, dynamic>.from(json['parameters'] as Map? ?? {}),
@@ -36,6 +60,7 @@ class InteractionEvent {
       timestamp: json['timestamp'] != null
           ? DateTime.parse(json['timestamp'] as String)
           : DateTime.now(),
+      atomicTimestamp: atomicTimestamp,
       agentId: json['agent_id'] as String?,
     );
   }
@@ -47,6 +72,7 @@ class InteractionEvent {
       'parameters': parameters,
       'context': context.toJson(),
       'timestamp': timestamp.toIso8601String(),
+      if (atomicTimestamp != null) 'atomic_timestamp': atomicTimestamp!.toJson(),
       'agent_id': agentId,
     };
   }
@@ -57,6 +83,7 @@ class InteractionEvent {
     Map<String, dynamic>? parameters,
     InteractionContext? context,
     DateTime? timestamp,
+    AtomicTimestamp? atomicTimestamp,
     String? agentId,
   }) {
     return InteractionEvent(
@@ -64,6 +91,7 @@ class InteractionEvent {
       parameters: parameters ?? this.parameters,
       context: context ?? this.context,
       timestamp: timestamp ?? this.timestamp,
+      atomicTimestamp: atomicTimestamp ?? this.atomicTimestamp,
       agentId: agentId ?? this.agentId,
     );
   }

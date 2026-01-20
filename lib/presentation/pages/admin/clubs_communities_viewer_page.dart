@@ -243,7 +243,7 @@ class _ClubsCommunitiesViewerPageState extends State<ClubsCommunitiesViewerPage>
               
               // Category filter
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(

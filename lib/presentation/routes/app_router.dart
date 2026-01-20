@@ -63,6 +63,8 @@ import 'package:avrai/presentation/pages/receipts/receipt_detail_page.dart';
 import 'package:avrai/presentation/pages/receipts/receipts_page.dart';
 // Phase 10: Social Media Integration - Friend Discovery
 import 'package:avrai/presentation/pages/social/friend_discovery_page.dart';
+import 'package:avrai/presentation/pages/social/add_friend_qr_page.dart';
+import 'package:avrai/presentation/pages/social/scan_friend_qr_page.dart';
 // Phase 10: Social Media Integration - Public Handles
 import 'package:avrai/presentation/pages/settings/public_handles_page.dart';
 import 'package:avrai/presentation/pages/admin/learning_analytics_page.dart';
@@ -431,6 +433,15 @@ class AppRouter {
             GoRoute(
               path: 'friends/discover',
               builder: (c, s) => const FriendDiscoveryPage(),
+            ),
+            // QR Code Friending
+            GoRoute(
+              path: 'friends/qr/add',
+              builder: (c, s) => const AddFriendQRPage(),
+            ),
+            GoRoute(
+              path: 'friends/qr/scan',
+              builder: (c, s) => const ScanFriendQRPage(),
             ),
             // Phase 10: Social Media Integration - Public Handles
             GoRoute(

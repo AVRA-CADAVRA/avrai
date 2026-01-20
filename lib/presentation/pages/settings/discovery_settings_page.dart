@@ -156,7 +156,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
           });
           await _saveSetting('event_mode_enabled', value);
         },
-        activeColor: AppColors.electricGreen,
+        activeThumbColor: AppColors.electricGreen,
         secondary: Icon(
           _eventModeEnabled
               ? Icons.local_activity
@@ -257,7 +257,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
           await _saveSetting('discovery_enabled', value);
           await _applyDiscoveryRuntime(value);
         },
-        activeColor: AppColors.electricGreen,
+        activeThumbColor: AppColors.electricGreen,
         secondary: Icon(
           _discoveryEnabled ? Icons.radar : Icons.radar_outlined,
           color:
@@ -300,7 +300,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
                   });
                   await _saveSetting('discover_wifi', value);
                 },
-                activeColor: AppColors.electricGreen,
+                activeThumbColor: AppColors.electricGreen,
                 secondary: const Icon(Icons.wifi, color: AppColors.primary),
               ),
               const Divider(height: 1),
@@ -314,7 +314,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
                   });
                   await _saveSetting('discover_bluetooth', value);
                 },
-                activeColor: AppColors.electricGreen,
+                activeThumbColor: AppColors.electricGreen,
                 secondary:
                     const Icon(Icons.bluetooth, color: AppColors.primary),
               ),
@@ -329,7 +329,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
                   });
                   await _saveSetting('discover_multipeer', value);
                 },
-                activeColor: AppColors.electricGreen,
+                activeThumbColor: AppColors.electricGreen,
                 secondary: const Icon(Icons.devices, color: AppColors.primary),
               ),
             ],
@@ -384,7 +384,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
                   });
                   await _saveSetting('share_personality_data', value);
                 },
-                activeColor: AppColors.electricGreen,
+                activeThumbColor: AppColors.electricGreen,
                 secondary: const Icon(
                   Icons.psychology,
                   color: AppColors.primary,
@@ -441,7 +441,7 @@ class _DiscoverySettingsPageState extends State<DiscoverySettingsPage> {
               });
               await _saveSetting('auto_discovery', value);
             },
-            activeColor: AppColors.electricGreen,
+            activeThumbColor: AppColors.electricGreen,
             secondary: const Icon(
               Icons.autorenew,
               color: AppColors.primary,

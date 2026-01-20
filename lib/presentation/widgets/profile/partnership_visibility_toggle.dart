@@ -72,7 +72,7 @@ class PartnershipVisibilityToggle extends StatelessWidget {
                 Switch(
                   value: partnership.isPublic,
                   onChanged: onVisibilityChanged,
-                  activeColor: AppTheme.primaryColor,
+                  activeThumbColor: AppTheme.primaryColor,
                 ),
               ],
             ),

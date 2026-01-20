@@ -63,7 +63,7 @@ class _KnotPatternAnalysisTabState extends State<KnotPatternAnalysisTab> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: DropdownButtonFormField<AnalysisType>(
-            value: _selectedAnalysisType,
+            initialValue: _selectedAnalysisType,
             decoration: const InputDecoration(
               labelText: 'Analysis Type',
               border: OutlineInputBorder(),

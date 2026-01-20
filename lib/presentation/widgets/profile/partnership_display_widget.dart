@@ -146,7 +146,7 @@ class _PartnershipDisplayWidgetState extends State<PartnershipDisplayWidget> {
         // Type Filter
         Expanded(
           child: DropdownButtonFormField<ProfilePartnershipType?>(
-            value: _selectedType,
+            initialValue: _selectedType,
             decoration: InputDecoration(
               labelText: 'Type',
               labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -180,7 +180,7 @@ class _PartnershipDisplayWidgetState extends State<PartnershipDisplayWidget> {
         // Status Filter
         Expanded(
           child: DropdownButtonFormField<PartnershipStatus?>(
-            value: _selectedStatus,
+            initialValue: _selectedStatus,
             decoration: InputDecoration(
               labelText: 'Status',
               labelStyle: const TextStyle(color: AppColors.textSecondary),

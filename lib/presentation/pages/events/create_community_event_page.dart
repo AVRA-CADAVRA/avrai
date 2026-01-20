@@ -471,7 +471,7 @@ class _CreateCommunityEventPageState extends State<CreateCommunityEventPage> {
 
               // Category Dropdown
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Category *',
                   border: OutlineInputBorder(
@@ -503,7 +503,7 @@ class _CreateCommunityEventPageState extends State<CreateCommunityEventPage> {
 
               // Event Type Dropdown
               DropdownButtonFormField<ExpertiseEventType>(
-                value: _selectedEventType,
+                initialValue: _selectedEventType,
                 decoration: InputDecoration(
                   labelText: 'Event Type *',
                   border: OutlineInputBorder(

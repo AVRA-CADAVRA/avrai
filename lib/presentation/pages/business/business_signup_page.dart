@@ -295,7 +295,7 @@ class _BusinessSignupPageState extends State<BusinessSignupPage> {
 
               // Business Type
               DropdownButtonFormField<String>(
-                value: _selectedBusinessType,
+                initialValue: _selectedBusinessType,
                 decoration: const InputDecoration(
                   labelText: 'Business Type *',
                   border: OutlineInputBorder(),

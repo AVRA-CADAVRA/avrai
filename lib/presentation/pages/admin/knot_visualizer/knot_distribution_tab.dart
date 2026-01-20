@@ -71,7 +71,7 @@ class _KnotDistributionTabState extends State<KnotDistributionTab> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedLocation,
+                  initialValue: _selectedLocation,
                   decoration: const InputDecoration(
                     labelText: 'Location',
                     border: OutlineInputBorder(),
@@ -93,7 +93,7 @@ class _KnotDistributionTabState extends State<KnotDistributionTab> {
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),

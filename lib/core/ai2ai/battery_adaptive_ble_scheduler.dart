@@ -40,6 +40,20 @@ class BatteryAdaptiveBleScheduler with WidgetsBindingObserver {
     required this.prefs,
     Battery? battery,
   }) : _battery = battery ?? Battery();
+  
+  /// Get current battery level (0-100)
+  /// Used for battery-aware rate limiting integration
+  Future<int> getBatteryLevel() async {
+    try {
+      return await _battery.batteryLevel;
+    } catch (e) {
+      developer.log(
+        'Error getting battery level: $e',
+        name: _logName,
+      );
+      return 100; // Default to full battery on error
+    }
+  }
 
   bool get _enabled =>
       (prefs.getBool(_prefsKeyBatteryAdaptiveEnabled) ?? true) == true;

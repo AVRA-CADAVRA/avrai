@@ -8,6 +8,7 @@
 import 'dart:developer' as developer;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:avrai/core/models/reservation.dart';
 import 'package:avrai/core/models/spot.dart';
@@ -33,6 +34,8 @@ import 'package:avrai_core/models/atomic_timestamp.dart';
 import 'package:avrai_core/models/quantum_entity_state.dart';
 import 'package:avrai/core/models/matching_result.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
+import 'package:ndef_record/ndef_record.dart';
 
 /// Check-In Result
 ///
@@ -823,6 +826,10 @@ class ReservationCheckInService {
       NFCPayload? payload;
 
       await NfcManager.instance.startSession(
+        pollingOptions: {
+          NfcPollingOption.iso14443,
+          NfcPollingOption.iso15693,
+        },
         onDiscovered: (NfcTag tag) async {
           try {
             // Get NDEF message from tag
@@ -835,7 +842,7 @@ class ReservationCheckInService {
 
             // Read NDEF message
             final ndefMessage = await ndef.read();
-            if (ndefMessage.records.isEmpty) {
+            if (ndefMessage == null || ndefMessage.records.isEmpty) {
               developer.log('NDEF message is empty', name: _logName);
               await NfcManager.instance.stopSession();
               return;
@@ -843,7 +850,7 @@ class ReservationCheckInService {
 
             // Parse first NDEF record (text record)
             final record = ndefMessage.records.first;
-            if (record.typeNameFormat != NdefTypeNameFormat.nfcWellknown ||
+            if (record.typeNameFormat != TypeNameFormat.wellKnown ||
                 record.type.length != 1 ||
                 record.type[0] != 0x54) {
               // Not a text record
@@ -924,6 +931,10 @@ class ReservationCheckInService {
       final payloadJson = payload.toJsonString();
 
       await NfcManager.instance.startSession(
+        pollingOptions: {
+          NfcPollingOption.iso14443,
+          NfcPollingOption.iso15693,
+        },
         onDiscovered: (NfcTag tag) async {
           try {
             // Get NDEF from tag
@@ -942,11 +953,19 @@ class ReservationCheckInService {
             }
 
             // Create NDEF message with text record
-            final record = NdefRecord.createText(payloadJson);
-            final message = NdefMessage([record]);
+            // NdefRecord constructor: NdefRecord({ required TypeNameFormat typeNameFormat, required Uint8List type, required Uint8List identifier, required Uint8List payload })
+            // For text record: TypeNameFormat.wellKnown, type=[0x54], identifier=[], payload=textBytes
+            final textBytes = utf8.encode(payloadJson);
+            final record = NdefRecord(
+              typeNameFormat: TypeNameFormat.wellKnown,
+              type: Uint8List.fromList([0x54]), // 'T' for text record
+              identifier: Uint8List(0), // Empty identifier
+              payload: Uint8List.fromList(textBytes),
+            );
+            final message = NdefMessage(records: [record]);
 
             // Write NDEF message
-            await ndef.write(message);
+            await ndef.write(message: message);
 
             developer.log('NFC tag written successfully', name: _logName);
             success = true;

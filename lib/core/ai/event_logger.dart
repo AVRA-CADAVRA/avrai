@@ -10,6 +10,8 @@ import 'package:avrai/core/services/agent_id_service.dart';
 import 'package:avrai/core/services/supabase_service.dart';
 import 'package:avrai/core/ai/continuous_learning_system.dart';
 import 'package:avrai/injection_container.dart' as di;
+import 'package:avrai_core/services/atomic_clock_service.dart';
+import 'package:avrai_core/models/atomic_timestamp.dart';
 
 /// Event logger service for tracking user interactions
 /// 
@@ -108,11 +110,26 @@ class EventLogger {
       // Build enriched context
       final enrichedContext = context ?? await _buildContext();
       
-      // Create event
+      // Phase 11.8.6: Use atomic time for quantum formula compatibility
+      // Create event with atomic timestamp
+      AtomicTimestamp? atomicTimestamp;
+      try {
+        if (di.sl.isRegistered<AtomicClockService>()) {
+          final atomicClock = di.sl<AtomicClockService>();
+          atomicTimestamp = await atomicClock.getAtomicTimestamp();
+        }
+      } catch (e) {
+        developer.log(
+          'Error getting atomic timestamp: $e, event will use default timestamp',
+          name: _logName,
+        );
+        // Continue without atomic timestamp - InteractionEvent will use DateTime
+      }
       final event = InteractionEvent(
         eventType: eventType,
         parameters: parameters,
         context: enrichedContext,
+        atomicTimestamp: atomicTimestamp, // Explicit atomic time if available
         agentId: eventAgentId,
       );
       

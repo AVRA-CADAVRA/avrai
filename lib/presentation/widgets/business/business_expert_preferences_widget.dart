@@ -246,7 +246,7 @@ class _BusinessExpertPreferencesWidgetState extends State<BusinessExpertPreferen
             children: [
               Expanded(
                 child: DropdownButtonFormField<int?>(
-                  value: _minExpertLevel,
+                  initialValue: _minExpertLevel,
                   decoration: const InputDecoration(
                     labelText: 'Minimum Level',
                     border: OutlineInputBorder(),
@@ -269,7 +269,7 @@ class _BusinessExpertPreferencesWidgetState extends State<BusinessExpertPreferen
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<int?>(
-                  value: _preferredExpertLevel,
+                  initialValue: _preferredExpertLevel,
                   decoration: const InputDecoration(
                     labelText: 'Preferred Level',
                     border: OutlineInputBorder(),
@@ -462,7 +462,7 @@ class _BusinessExpertPreferencesWidgetState extends State<BusinessExpertPreferen
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<int?>(
-            value: _preferredCommitmentLevel,
+            initialValue: _preferredCommitmentLevel,
             decoration: const InputDecoration(
               labelText: 'Preferred Commitment Level',
               border: OutlineInputBorder(),

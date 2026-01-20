@@ -5,18 +5,18 @@
 import 'dart:typed_data';
 
 /// Signal Protocol Identity Key Pair
-/// 
+///
 /// Long-term identity key used for authentication.
 /// Generated once per device and stored securely.
 class SignalIdentityKeyPair {
   final Uint8List publicKey;
   final Uint8List privateKey;
-  
+
   SignalIdentityKeyPair({
     required this.publicKey,
     required this.privateKey,
   });
-  
+
   /// Serialize to JSON for storage
   Map<String, dynamic> toJson() {
     return {
@@ -24,7 +24,7 @@ class SignalIdentityKeyPair {
       'privateKey': privateKey.toList(),
     };
   }
-  
+
   /// Deserialize from JSON
   factory SignalIdentityKeyPair.fromJson(Map<String, dynamic> json) {
     return SignalIdentityKeyPair(
@@ -32,15 +32,15 @@ class SignalIdentityKeyPair {
       privateKey: Uint8List.fromList((json['privateKey'] as List).cast<int>()),
     );
   }
-  
+
   /// Serialize to base64 string for secure storage
   String toBase64() {
     final json = toJson();
     return Uri.encodeComponent(json.toString());
   }
-  
+
   /// Deserialize from base64 string
-  /// 
+  ///
   /// **Note:** This method is not yet implemented. Use toJson()/fromJson() instead.
   factory SignalIdentityKeyPair.fromBase64(String base64) {
     // Note: This is a simple implementation. For production, consider using
@@ -48,18 +48,24 @@ class SignalIdentityKeyPair {
     // For now, use toJson()/fromJson() with jsonEncode/jsonDecode
     // ignore: unused_local_variable - Parameter kept for future implementation
     final _ = base64;
-    throw UnimplementedError('fromBase64 not yet implemented. Use fromJson(jsonDecode(string)) instead.');
+    throw UnimplementedError(
+        'fromBase64 not yet implemented. Use fromJson(jsonDecode(string)) instead.');
   }
 }
 
 /// Signal Protocol Prekey Bundle
-/// 
-/// Contains keys needed for X3DH/PQXDH key exchange:
-/// - Identity key
-/// - Signed prekey
-/// - One-time prekey (optional)
-/// - Kyber prekey (required for PQXDH)
+///
+/// Contains keys needed for hybrid key exchange (X3DH + PQXDH):
+/// - Identity key (ECDH, X25519)
+/// - Signed prekey (ECDH, X25519)
+/// - One-time prekey (optional, ECDH, X25519)
+/// - Kyber prekey (REQUIRED, ML-KEM for PQXDH post-quantum security)
 /// - Signatures
+///
+/// **PQXDH (Post-Quantum Security):**
+/// - Kyber prekey (ML-KEM) is required for all key exchanges
+/// - Enables hybrid key exchange: X3DH (classical) + PQXDH (post-quantum)
+/// - Future-proof against quantum computing attacks
 class SignalPreKeyBundle {
   final String preKeyId;
   final Uint8List signedPreKey;
@@ -74,7 +80,7 @@ class SignalPreKeyBundle {
   final int? kyberPreKeyId;
   final Uint8List? kyberPreKey;
   final Uint8List? kyberPreKeySignature;
-  
+
   SignalPreKeyBundle({
     required this.preKeyId,
     required this.signedPreKey,
@@ -89,7 +95,7 @@ class SignalPreKeyBundle {
     this.kyberPreKey,
     this.kyberPreKeySignature,
   });
-  
+
   Map<String, dynamic> toJson() {
     return {
       'preKeyId': preKeyId,
@@ -106,14 +112,16 @@ class SignalPreKeyBundle {
       'kyberPreKeySignature': kyberPreKeySignature,
     };
   }
-  
+
   factory SignalPreKeyBundle.fromJson(Map<String, dynamic> json) {
     return SignalPreKeyBundle(
       preKeyId: json['preKeyId'] as String,
-      signedPreKey: Uint8List.fromList((json['signedPreKey'] as List).cast<int>()),
+      signedPreKey:
+          Uint8List.fromList((json['signedPreKey'] as List).cast<int>()),
       signedPreKeyId: json['signedPreKeyId'] as int,
       signature: Uint8List.fromList((json['signature'] as List).cast<int>()),
-      identityKey: Uint8List.fromList((json['identityKey'] as List).cast<int>()),
+      identityKey:
+          Uint8List.fromList((json['identityKey'] as List).cast<int>()),
       oneTimePreKey: json['oneTimePreKey'] != null
           ? Uint8List.fromList((json['oneTimePreKey'] as List).cast<int>())
           : null,
@@ -125,7 +133,8 @@ class SignalPreKeyBundle {
           ? Uint8List.fromList((json['kyberPreKey'] as List).cast<int>())
           : null,
       kyberPreKeySignature: json['kyberPreKeySignature'] != null
-          ? Uint8List.fromList((json['kyberPreKeySignature'] as List).cast<int>())
+          ? Uint8List.fromList(
+              (json['kyberPreKeySignature'] as List).cast<int>())
           : null,
     );
   }
@@ -157,67 +166,64 @@ class SignalLocalPreKeyMaterial {
 }
 
 /// Signal Protocol Encrypted Message
-/// 
+///
 /// Contains encrypted message data and metadata needed for decryption.
 class SignalEncryptedMessage {
   final Uint8List ciphertext;
   final Uint8List? messageHeader; // For Double Ratchet
   final int? messageType;
   final DateTime timestamp;
-  
+
   SignalEncryptedMessage({
     required this.ciphertext,
     this.messageHeader,
     this.messageType,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
-  
+
   /// Serialize to bytes for transmission
   Uint8List toBytes() {
     // Format: [header_length][header][ciphertext]
     final headerBytes = messageHeader ?? Uint8List(0);
     final result = Uint8List(4 + headerBytes.length + ciphertext.length);
-    
+
     // Write header length (4 bytes)
     result[0] = (headerBytes.length >> 24) & 0xFF;
     result[1] = (headerBytes.length >> 16) & 0xFF;
     result[2] = (headerBytes.length >> 8) & 0xFF;
     result[3] = headerBytes.length & 0xFF;
-    
+
     // Write header
     if (headerBytes.isNotEmpty) {
       result.setRange(4, 4 + headerBytes.length, headerBytes);
     }
-    
+
     // Write ciphertext
     result.setRange(4 + headerBytes.length, result.length, ciphertext);
-    
+
     return result;
   }
-  
+
   factory SignalEncryptedMessage.fromBytes(Uint8List bytes) {
     if (bytes.length < 4) {
       throw Exception('Invalid encrypted message format');
     }
-    
+
     // Read header length
-    final headerLength = (bytes[0] << 24) |
-                        (bytes[1] << 16) |
-                        (bytes[2] << 8) |
-                        bytes[3];
-    
+    final headerLength =
+        (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+
     if (bytes.length < 4 + headerLength) {
-      throw Exception('Invalid encrypted message format: header length mismatch');
+      throw Exception(
+          'Invalid encrypted message format: header length mismatch');
     }
-    
+
     // Extract header
-    final header = headerLength > 0
-        ? bytes.sublist(4, 4 + headerLength)
-        : null;
-    
+    final header = headerLength > 0 ? bytes.sublist(4, 4 + headerLength) : null;
+
     // Extract ciphertext
     final ciphertext = bytes.sublist(4 + headerLength);
-    
+
     return SignalEncryptedMessage(
       ciphertext: ciphertext,
       messageHeader: header,
@@ -226,7 +232,7 @@ class SignalEncryptedMessage {
 }
 
 /// Signal Protocol Session State
-/// 
+///
 /// Represents the state of a Signal Protocol session with a recipient.
 /// Used for Double Ratchet operations.
 class SignalSessionState {
@@ -238,7 +244,14 @@ class SignalSessionState {
   final int receivingMessageNumber;
   final DateTime createdAt;
   final DateTime? lastUsedAt;
-  
+
+  // Re-keying tracking
+  /// Total number of messages sent and received in this session
+  final int totalMessageCount;
+
+  /// Timestamp of last re-keying operation
+  final DateTime? lastRekeyedAt;
+
   SignalSessionState({
     required this.recipientId,
     this.rootKey,
@@ -248,8 +261,10 @@ class SignalSessionState {
     this.receivingMessageNumber = 0,
     DateTime? createdAt,
     this.lastUsedAt,
+    this.totalMessageCount = 0,
+    this.lastRekeyedAt,
   }) : createdAt = createdAt ?? DateTime.now();
-  
+
   Map<String, dynamic> toJson() {
     return {
       'recipientId': recipientId,
@@ -260,9 +275,11 @@ class SignalSessionState {
       'receivingMessageNumber': receivingMessageNumber,
       'createdAt': createdAt.toIso8601String(),
       'lastUsedAt': lastUsedAt?.toIso8601String(),
+      'totalMessageCount': totalMessageCount,
+      'lastRekeyedAt': lastRekeyedAt?.toIso8601String(),
     };
   }
-  
+
   factory SignalSessionState.fromJson(Map<String, dynamic> json) {
     return SignalSessionState(
       recipientId: json['recipientId'] as String,
@@ -281,6 +298,38 @@ class SignalSessionState {
       lastUsedAt: json['lastUsedAt'] != null
           ? DateTime.parse(json['lastUsedAt'] as String)
           : null,
+      totalMessageCount: json['totalMessageCount'] as int? ?? 0,
+      lastRekeyedAt: json['lastRekeyedAt'] != null
+          ? DateTime.parse(json['lastRekeyedAt'] as String)
+          : null,
+    );
+  }
+
+  /// Create a copy with updated message count
+  SignalSessionState copyWith({
+    String? recipientId,
+    Uint8List? rootKey,
+    Uint8List? sendingChainKey,
+    Uint8List? receivingChainKey,
+    int? sendingMessageNumber,
+    int? receivingMessageNumber,
+    DateTime? createdAt,
+    DateTime? lastUsedAt,
+    int? totalMessageCount,
+    DateTime? lastRekeyedAt,
+  }) {
+    return SignalSessionState(
+      recipientId: recipientId ?? this.recipientId,
+      rootKey: rootKey ?? this.rootKey,
+      sendingChainKey: sendingChainKey ?? this.sendingChainKey,
+      receivingChainKey: receivingChainKey ?? this.receivingChainKey,
+      sendingMessageNumber: sendingMessageNumber ?? this.sendingMessageNumber,
+      receivingMessageNumber:
+          receivingMessageNumber ?? this.receivingMessageNumber,
+      createdAt: createdAt ?? this.createdAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      totalMessageCount: totalMessageCount ?? this.totalMessageCount,
+      lastRekeyedAt: lastRekeyedAt ?? this.lastRekeyedAt,
     );
   }
 }
@@ -290,13 +339,13 @@ class SignalProtocolException implements Exception {
   final String message;
   final String? code;
   final dynamic originalError;
-  
+
   SignalProtocolException(
     this.message, {
     this.code,
     this.originalError,
   });
-  
+
   @override
   String toString() {
     return 'SignalProtocolException: $message${code != null ? ' (code: $code)' : ''}';

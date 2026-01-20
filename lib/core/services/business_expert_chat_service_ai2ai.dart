@@ -14,7 +14,7 @@ import 'package:sembast/sembast.dart';
 import 'package:avrai/data/datasources/local/sembast_database.dart';
 
 /// Business-Expert Chat Service (AI2AI Network Routing)
-/// 
+///
 /// Routes messages through ai2ai network while showing real business/expert identities.
 /// Messages are encrypted in transit but participants see each other's real names.
 /// All messages stored locally in Sembast for offline access.
@@ -26,11 +26,11 @@ class BusinessExpertChatServiceAI2AI {
   final BusinessAccountService? _businessService;
   final AgentIdService _agentIdService;
   final _uuid = const Uuid();
-  
+
   // Local message storage in Sembast
-  static final StoreRef<String, Map<String, dynamic>> _messagesStore = 
+  static final StoreRef<String, Map<String, dynamic>> _messagesStore =
       stringMapStoreFactory.store('business_expert_messages');
-  static final StoreRef<String, Map<String, dynamic>> _conversationsStore = 
+  static final StoreRef<String, Map<String, dynamic>> _conversationsStore =
       stringMapStoreFactory.store('business_expert_conversations');
 
   BusinessExpertChatServiceAI2AI({
@@ -50,22 +50,21 @@ class BusinessExpertChatServiceAI2AI {
     if (di.sl.isRegistered<ai2ai.AnonymousCommunicationProtocol>()) {
       return di.sl<ai2ai.AnonymousCommunicationProtocol>();
     }
-    
+
     // If not registered, throw error - protocol must be provided via DI
     throw ArgumentError(
-      'AnonymousCommunicationProtocol must be registered in dependency injection. '
-      'It requires encryptionService, supabase, atomicClock, and anonymizationService.'
-    );
+        'AnonymousCommunicationProtocol must be registered in dependency injection. '
+        'It requires encryptionService, supabase, atomicClock, and anonymizationService.');
   }
 
   /// Send a message from business to expert or vice versa
-  /// 
+  ///
   /// Messages are:
   /// 1. Encrypted with MessageEncryptionService
   /// 2. Routed through ai2ai network (encrypted in transit)
   /// 3. Stored locally in Sembast (for offline access)
   /// 4. Include participant identities (visible to participants)
-  /// 
+  ///
   /// Agent IDs are automatically looked up if not provided.
   Future<BusinessExpertMessage> sendMessage({
     required String businessId,
@@ -79,16 +78,16 @@ class BusinessExpertChatServiceAI2AI {
   }) async {
     try {
       // Get agent IDs if not provided
-      final actualSenderAgentId = senderAgentId ?? 
+      final actualSenderAgentId = senderAgentId ??
           (senderType == MessageSenderType.business
               ? await _agentIdService.getBusinessAgentId(businessId)
               : await _agentIdService.getExpertAgentId(expertId));
-      
+
       final actualRecipientAgentId = recipientAgentId ??
           (senderType == MessageSenderType.business
               ? await _agentIdService.getExpertAgentId(expertId)
               : await _agentIdService.getBusinessAgentId(businessId));
-      
+
       developer.log(
         'Sending message via ai2ai: sender=${senderType.name}, senderAgent=$actualSenderAgentId, recipientAgent=$actualRecipientAgentId',
         name: _logName,
@@ -101,7 +100,8 @@ class BusinessExpertChatServiceAI2AI {
       Uint8List? encryptedContent;
       EncryptionType encryptionType = EncryptionType.aes256gcm;
       if (encrypt) {
-        final encrypted = await _encryptionService.encrypt(content, actualRecipientAgentId);
+        final encrypted =
+            await _encryptionService.encrypt(content, actualRecipientAgentId);
         encryptedContent = encrypted.encryptedContent;
         encryptionType = encrypted.encryptionType;
       }
@@ -111,11 +111,13 @@ class BusinessExpertChatServiceAI2AI {
         id: _uuid.v4(),
         conversationId: conversation['id'] as String,
         senderType: senderType,
-        senderId: senderType == MessageSenderType.business ? businessId : expertId,
+        senderId:
+            senderType == MessageSenderType.business ? businessId : expertId,
         recipientType: senderType == MessageSenderType.business
             ? MessageRecipientType.expert
             : MessageRecipientType.business,
-        recipientId: senderType == MessageSenderType.business ? expertId : businessId,
+        recipientId:
+            senderType == MessageSenderType.business ? expertId : businessId,
         content: content,
         encryptedContent: encryptedContent,
         encryptionType: encryptionType,
@@ -137,9 +139,8 @@ class BusinessExpertChatServiceAI2AI {
         'recipient_type': message.recipientType.name,
         'recipient_id': message.recipientId,
         'content': content, // Will be encrypted by ai2ai protocol
-        'encrypted_content': encryptedContent != null 
-            ? base64Encode(encryptedContent) 
-            : null,
+        'encrypted_content':
+            encryptedContent != null ? base64Encode(encryptedContent) : null,
         'encryption_type': encryptionType.name,
         'message_type': messageType.name,
         'created_at': message.createdAt.toIso8601String(),
@@ -151,11 +152,17 @@ class BusinessExpertChatServiceAI2AI {
       // Route through ai2ai network
       // Note: AnonymousCommunicationProtocol will encrypt the payload
       // but participants can see each other's identities in the chat UI
-      // Using a generic message type - the payload contains the chat message data
+      // MessageType.userChat allows routing before decryption (unencrypted header)
+      final payloadWithCategory = {
+        ...ai2aiPayload,
+        'message_category':
+            'user_chat', // Optional: post-decryption validation/clarity
+      };
       await _ai2aiProtocol.sendEncryptedMessage(
         actualRecipientAgentId,
-        ai2ai.MessageType.recommendationShare, // Using available message type for chat
-        ai2aiPayload,
+        ai2ai.MessageType
+            .userChat, // Protocol-level routing via unencrypted header (AnonymousCommunicationProtocol enum)
+        payloadWithCategory,
       );
 
       // Update conversation last_message_at
@@ -190,14 +197,15 @@ class BusinessExpertChatServiceAI2AI {
   }
 
   /// Get all conversations for a business
-  Future<List<Map<String, dynamic>>> getBusinessConversations(String businessId) async {
+  Future<List<Map<String, dynamic>>> getBusinessConversations(
+      String businessId) async {
     try {
       final db = await SembastDatabase.database;
       final finder = Finder(
         filter: Filter.equals('business_id', businessId),
         sortOrders: [SortOrder('last_message_at', true)], // Most recent first
       );
-      
+
       final records = await _conversationsStore.find(db, finder: finder);
       return records.map((record) => record.value).toList();
     } catch (e) {
@@ -207,14 +215,15 @@ class BusinessExpertChatServiceAI2AI {
   }
 
   /// Get all conversations for an expert
-  Future<List<Map<String, dynamic>>> getExpertConversations(String expertId) async {
+  Future<List<Map<String, dynamic>>> getExpertConversations(
+      String expertId) async {
     try {
       final db = await SembastDatabase.database;
       final finder = Finder(
         filter: Filter.equals('expert_id', expertId),
         sortOrders: [SortOrder('last_message_at', true)], // Most recent first
       );
-      
+
       final records = await _conversationsStore.find(db, finder: finder);
       return records.map((record) => record.value).toList();
     } catch (e) {
@@ -242,14 +251,15 @@ class BusinessExpertChatServiceAI2AI {
           businessId: businessId,
         );
       } catch (e) {
-        developer.log('Error calculating vibe compatibility: $e', name: _logName);
+        developer.log('Error calculating vibe compatibility: $e',
+            name: _logName);
       }
     }
 
     // Get business and expert names for display
     String? businessName;
     String? expertName;
-    
+
     if (_businessService != null) {
       try {
         final business = await _businessService!.getBusinessAccount(businessId);
@@ -258,7 +268,7 @@ class BusinessExpertChatServiceAI2AI {
         developer.log('Error getting business name: $e', name: _logName);
       }
     }
-    
+
     // TODO: Get expert name from user service when available
     // For now, expert name will be null and can be populated later
 
@@ -291,18 +301,18 @@ class BusinessExpertChatServiceAI2AI {
   }) async {
     try {
       final db = await SembastDatabase.database;
-      
+
       // Query messages for this conversation, ordered by created_at
       final finder = Finder(
         filter: Filter.equals('conversation_id', conversationId),
         sortOrders: [SortOrder('created_at', false)], // Newest first
       );
-      
+
       final records = await _messagesStore.find(db, finder: finder);
-      
+
       // Apply pagination
       final paginatedRecords = records.skip(offset).take(limit);
-      
+
       final messages = paginatedRecords
           .map((record) => BusinessExpertMessage.fromJson(record.value))
           .toList();
@@ -318,7 +328,8 @@ class BusinessExpertChatServiceAI2AI {
             );
             // Signal sessions are keyed by the remote *agentId* (not businessId/expertId).
             // For legacy AES (local-only), keep the existing senderId lookup behavior.
-            final decryptKeyId = message.encryptionType == EncryptionType.signalProtocol
+            final decryptKeyId = message.encryptionType ==
+                    EncryptionType.signalProtocol
                 ? (message.senderType == MessageSenderType.business
                     ? await _agentIdService.getBusinessAgentId(message.senderId)
                     : await _agentIdService.getExpertAgentId(message.senderId))
@@ -337,7 +348,8 @@ class BusinessExpertChatServiceAI2AI {
         }
       }
 
-      return decryptedMessages.reversed.toList(); // Reverse to show oldest first
+      return decryptedMessages.reversed
+          .toList(); // Reverse to show oldest first
     } catch (e) {
       developer.log('Error getting message history: $e', name: _logName);
       return [];
@@ -362,10 +374,11 @@ class BusinessExpertChatServiceAI2AI {
   }
 
   /// Get unread message count
-  Future<int> getUnreadCount(String businessIdOrExpertId, bool isBusiness) async {
+  Future<int> getUnreadCount(
+      String businessIdOrExpertId, bool isBusiness) async {
     try {
       final db = await SembastDatabase.database;
-      
+
       final finder = Finder(
         filter: Filter.and([
           Filter.equals('is_read', false),
@@ -379,7 +392,7 @@ class BusinessExpertChatServiceAI2AI {
           ),
         ]),
       );
-      
+
       final records = await _messagesStore.find(db, finder: finder);
       return records.length;
     } catch (e) {
@@ -389,11 +402,11 @@ class BusinessExpertChatServiceAI2AI {
   }
 
   /// Subscribe to real-time messages from ai2ai network
-  /// 
+  ///
   /// Listens for incoming messages routed through ai2ai network
   Stream<BusinessExpertMessage> subscribeToMessages(String conversationId) {
     final controller = StreamController<BusinessExpertMessage>.broadcast();
-    
+
     // Poll for new messages from ai2ai network
     // In a real implementation, this would use ai2ai realtime subscriptions
     Timer.periodic(const Duration(seconds: 2), (timer) async {
@@ -413,7 +426,8 @@ class BusinessExpertChatServiceAI2AI {
   }
 
   /// Check for new messages from ai2ai network
-  Future<List<BusinessExpertMessage>> _checkForNewMessages(String conversationId) async {
+  Future<List<BusinessExpertMessage>> _checkForNewMessages(
+      String conversationId) async {
     // This would integrate with ai2ai network to receive messages
     // For now, return empty list - real implementation would:
     // 1. Listen to ai2ai network for messages
@@ -457,4 +471,3 @@ class BusinessExpertChatServiceAI2AI {
     return 'conv_${ids.join('_')}';
   }
 }
-

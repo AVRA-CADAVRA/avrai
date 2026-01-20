@@ -23,6 +23,7 @@ import 'package:supabase/supabase.dart' as _i2;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeFunctionsClient_0 extends _i1.SmartFake
     implements _i2.FunctionsClient {
@@ -213,37 +214,37 @@ class MockSupabaseClient extends _i1.Mock implements _i2.SupabaseClient {
       ) as _i2.GoTrueClient);
 
   @override
-  set functions(_i2.FunctionsClient? _functions) => super.noSuchMethod(
+  set functions(_i2.FunctionsClient? value) => super.noSuchMethod(
         Invocation.setter(
           #functions,
-          _functions,
+          value,
         ),
         returnValueForMissingStub: null,
       );
 
   @override
-  set storage(_i2.SupabaseStorageClient? _storage) => super.noSuchMethod(
+  set storage(_i2.SupabaseStorageClient? value) => super.noSuchMethod(
         Invocation.setter(
           #storage,
-          _storage,
+          value,
         ),
         returnValueForMissingStub: null,
       );
 
   @override
-  set realtime(_i2.RealtimeClient? _realtime) => super.noSuchMethod(
+  set realtime(_i2.RealtimeClient? value) => super.noSuchMethod(
         Invocation.setter(
           #realtime,
-          _realtime,
+          value,
         ),
         returnValueForMissingStub: null,
       );
 
   @override
-  set rest(_i2.PostgrestClient? _rest) => super.noSuchMethod(
+  set rest(_i2.PostgrestClient? value) => super.noSuchMethod(
         Invocation.setter(
           #rest,
-          _rest,
+          value,
         ),
         returnValueForMissingStub: null,
       );
@@ -415,10 +416,10 @@ class MockSupabaseStorageClient extends _i1.Mock
       ) as _i3.Fetch);
 
   @override
-  set storageFetch(_i3.Fetch? _storageFetch) => super.noSuchMethod(
+  set storageFetch(_i3.Fetch? value) => super.noSuchMethod(
         Invocation.setter(
           #storageFetch,
-          _storageFetch,
+          value,
         ),
         returnValueForMissingStub: null,
       );

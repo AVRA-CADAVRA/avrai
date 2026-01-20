@@ -28,41 +28,66 @@ class _PermissionsPageState extends State<PermissionsPage> {
     _loadPermissions();
   }
 
-  /// Opens System Settings on macOS using native command
+  /// Opens System Settings on macOS using native command for specific privacy section
   /// More reliable than openAppSettings() from permission_handler
-  Future<bool> _openMacOSSystemSettings() async {
+  Future<bool> _openMacOSSystemSettings([Permission? permission]) async {
     if (!Platform.isMacOS) {
       return false;
     }
 
     try {
-      _logger.info('Opening macOS System Settings...', tag: 'PermissionsPage');
+      // Map permission to specific System Settings URL
+      String? urlString;
+      
+      if (permission != null) {
+        urlString = _getSystemSettingsURL(permission);
+        _logger.info('Opening macOS System Settings for $permission: $urlString', 
+            tag: 'PermissionsPage');
+      }
+      
+      // If no permission specified or mapping failed, default to Privacy & Security
+      urlString ??= 'x-apple.systempreferences:com.apple.preference.security';
+      _logger.info('Opening macOS System Settings: $urlString', 
+          tag: 'PermissionsPage');
 
-      // Open System Settings > Privacy & Security
-      // This opens directly to the Privacy & Security pane
+      // Try opening with specific URL
       final result = await Process.run(
         'open',
-        ['-b', 'com.apple.preference.security'],
+        [urlString],
         runInShell: false,
       );
 
       if (result.exitCode == 0) {
-        _logger.info('Successfully opened System Settings',
+        _logger.info('Successfully opened System Settings', 
             tag: 'PermissionsPage');
         return true;
       } else {
-        _logger.warn('Failed to open System Settings: ${result.stderr}',
+        _logger.warn('Failed to open System Settings: ${result.stderr}', 
             tag: 'PermissionsPage');
+        
         // Fallback: try opening general System Settings
         final fallback = await Process.run(
           'open',
-          ['x-apple.systempreferences:com.apple.preference.security'],
+          ['x-apple.systempreferences:'],
           runInShell: false,
         );
-        return fallback.exitCode == 0;
+        
+        if (fallback.exitCode == 0) {
+          _logger.info('Opened general System Settings', 
+              tag: 'PermissionsPage');
+          return true;
+        }
+        
+        // Last resort: try openAppSettings()
+        try {
+          return await openAppSettings();
+        } catch (e) {
+          _logger.error('All methods failed: $e', tag: 'PermissionsPage');
+          return false;
+        }
       }
     } catch (e) {
-      _logger.error('Error opening System Settings: $e',
+      _logger.error('Error opening System Settings: $e', 
           tag: 'PermissionsPage');
       // Last resort: try openAppSettings()
       try {
@@ -70,6 +95,31 @@ class _PermissionsPageState extends State<PermissionsPage> {
       } catch (_) {
         return false;
       }
+    }
+  }
+
+  /// Maps Permission to macOS System Settings URL for specific privacy section
+  String? _getSystemSettingsURL(Permission permission) {
+    switch (permission) {
+      case Permission.locationWhenInUse:
+      case Permission.locationAlways:
+        // Opens Privacy & Security > Location Services
+        return 'x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices';
+      
+      case Permission.bluetooth:
+      case Permission.bluetoothScan:
+      case Permission.bluetoothConnect:
+      case Permission.bluetoothAdvertise:
+        // Opens Bluetooth preferences
+        return 'x-apple.systempreferences:com.apple.preference.bluetooth';
+      
+      case Permission.nearbyWifiDevices:
+        // Opens Network > Wi-Fi settings
+        return 'x-apple.systempreferences:com.apple.preference.network?service=Wi-Fi';
+      
+      default:
+        // Default to Privacy & Security main pane
+        return 'x-apple.systempreferences:com.apple.preference.security';
     }
   }
 
@@ -287,7 +337,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
           _logger.warn('Location services are disabled on macOS',
               tag: 'PermissionsPage');
           // Open System Settings to enable location services
-          await _openMacOSSystemSettings();
+          await _openMacOSSystemSettings(Permission.locationWhenInUse);
           if (mounted && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -316,7 +366,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
             _logger.warn(
                 'Location permission permanently denied, opening System Settings',
                 tag: 'PermissionsPage');
-            await _openMacOSSystemSettings();
+            await _openMacOSSystemSettings(Permission.locationWhenInUse);
             if (mounted && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -371,7 +421,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
             _logger.warn(
                 'Location permission permanently denied, opening System Settings',
                 tag: 'PermissionsPage');
-            await _openMacOSSystemSettings();
+            await _openMacOSSystemSettings(Permission.locationWhenInUse);
             if (mounted && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -485,7 +535,16 @@ class _PermissionsPageState extends State<PermissionsPage> {
           if (Platform.isMacOS) {
             Future.delayed(const Duration(milliseconds: 500), () async {
               if (mounted) {
-                final opened = await _openMacOSSystemSettings();
+                // Determine which permission to open based on denied permissions
+                final deniedPermissions = _statuses.entries
+                    .where((e) => e.value.isDenied || e.value.isPermanentlyDenied)
+                    .toList();
+                
+                final permissionToOpen = deniedPermissions.isNotEmpty 
+                    ? deniedPermissions.first.key 
+                    : Permission.locationWhenInUse; // Default to location
+                
+                final opened = await _openMacOSSystemSettings(permissionToOpen);
                 _logger.info('Opened System Settings: $opened',
                     tag: 'PermissionsPage');
 
@@ -689,8 +748,17 @@ class _PermissionsPageState extends State<PermissionsPage> {
       await _requestAll();
     } else {
       // User chose to go to settings
+      // Determine which permission to open based on denied permissions
+      final deniedPermissions = _statuses.entries
+          .where((e) => e.value.isDenied || e.value.isPermanentlyDenied)
+          .toList();
+      
+      final permissionToOpen = deniedPermissions.isNotEmpty 
+          ? deniedPermissions.first.key 
+          : Permission.locationWhenInUse; // Default to location
+      
       final opened = Platform.isMacOS
-          ? await _openMacOSSystemSettings()
+          ? await _openMacOSSystemSettings(permissionToOpen)
           : await openAppSettings();
       _logger.info('Opened app settings: $opened', tag: 'PermissionsPage');
 
@@ -729,7 +797,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
     if (result == true && mounted) {
       if (Platform.isMacOS) {
-        await _openMacOSSystemSettings();
+        await _openMacOSSystemSettings(permission);
       } else {
         await openAppSettings();
       }
@@ -1075,8 +1143,16 @@ class _PermissionsPageState extends State<PermissionsPage> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () async {
+                  // Determine which permission to open based on denied permissions
+                  final deniedPermissions = _statuses.entries
+                      .where((e) => e.value.isDenied || e.value.isPermanentlyDenied)
+                      .toList();
+
                   if (Platform.isMacOS) {
-                    await _openMacOSSystemSettings();
+                    final permissionToOpen = deniedPermissions.isNotEmpty 
+                        ? deniedPermissions.first.key 
+                        : Permission.locationWhenInUse; // Default to location
+                    await _openMacOSSystemSettings(permissionToOpen);
                   } else {
                     await openAppSettings();
                   }

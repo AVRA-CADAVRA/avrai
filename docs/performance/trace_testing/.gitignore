@@ -1,0 +1,17 @@
+# Ignore trace files (they're large binary files)
+traces/**/*.trace
+traces/**/*.run
+
+# Keep directory structure
+!traces/.gitkeep
+!traces/baseline/.gitkeep
+!traces/optimizations/.gitkeep
+!traces/features/.gitkeep
+
+# Ignore temporary analysis files
+*.tmp
+*.cache
+
+# Keep results but ignore large binary outputs
+results/**/*.trace
+results/**/*.run

@@ -6,12 +6,13 @@
 import 'dart:async' as _i7;
 
 import 'package:avrai/core/models/payment.dart' as _i5;
-import 'package:avrai/core/models/payment_intent.dart' as _i8;
+import 'package:avrai/core/models/payment_intent.dart' as _i9;
 import 'package:avrai/core/models/payment_result.dart' as _i3;
+import 'package:avrai/core/models/reservation.dart' as _i8;
 import 'package:avrai/core/models/revenue_split.dart' as _i4;
 import 'package:avrai/core/services/payment_service.dart' as _i6;
 import 'package:avrai/core/services/stripe_service.dart' as _i2;
-import 'package:avrai/core/utils/secure_ssn_encryption.dart' as _i9;
+import 'package:avrai/core/utils/secure_ssn_encryption.dart' as _i10;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -27,6 +28,7 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeStripeService_0 extends _i1.SmartFake implements _i2.StripeService {
   _FakeStripeService_0(
@@ -165,6 +167,45 @@ class MockPaymentService extends _i1.Mock implements _i6.PaymentService {
       ) as _i4.RevenueSplit);
 
   @override
+  _i7.Future<_i3.PaymentResult> processReservationPayment({
+    required String? reservationId,
+    required _i8.ReservationType? reservationType,
+    required String? userId,
+    required double? ticketPrice,
+    required int? ticketCount,
+    double? depositAmount,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #processReservationPayment,
+          [],
+          {
+            #reservationId: reservationId,
+            #reservationType: reservationType,
+            #userId: userId,
+            #ticketPrice: ticketPrice,
+            #ticketCount: ticketCount,
+            #depositAmount: depositAmount,
+          },
+        ),
+        returnValue: _i7.Future<_i3.PaymentResult>.value(_FakePaymentResult_1(
+          this,
+          Invocation.method(
+            #processReservationPayment,
+            [],
+            {
+              #reservationId: reservationId,
+              #reservationType: reservationType,
+              #userId: userId,
+              #ticketPrice: ticketPrice,
+              #ticketCount: ticketCount,
+              #depositAmount: depositAmount,
+            },
+          ),
+        )),
+      ) as _i7.Future<_i3.PaymentResult>);
+
+  @override
   _i7.Future<_i5.Payment> confirmPayment({
     required String? paymentId,
     required String? paymentIntentId,
@@ -226,11 +267,11 @@ class MockPaymentService extends _i1.Mock implements _i6.PaymentService {
       );
 
   @override
-  _i8.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
+  _i9.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
       (super.noSuchMethod(Invocation.method(
         #getPaymentIntent,
         [paymentIntentId],
-      )) as _i8.PaymentIntent?);
+      )) as _i9.PaymentIntent?);
 
   @override
   List<_i5.Payment> getPaymentsForEvent(String? eventId) => (super.noSuchMethod(
@@ -340,7 +381,7 @@ class MockPaymentService extends _i1.Mock implements _i6.PaymentService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSecureSSNEncryption extends _i1.Mock
-    implements _i9.SecureSSNEncryption {
+    implements _i10.SecureSSNEncryption {
   MockSecureSSNEncryption() {
     _i1.throwOnMissingStub(this);
   }

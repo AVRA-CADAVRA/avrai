@@ -164,11 +164,17 @@ class BusinessBusinessChatServiceAI2AI {
       };
 
       // Route through ai2ai network
+      // MessageType.userChat allows routing before decryption (unencrypted header)
+      final payloadWithCategory = {
+        ...ai2aiPayload,
+        'message_category':
+            'user_chat', // Optional: post-decryption validation/clarity
+      };
       await _ai2aiProtocol.sendEncryptedMessage(
         actualRecipientAgentId,
         ai2ai.MessageType
-            .recommendationShare, // Using available message type for chat
-        ai2aiPayload,
+            .userChat, // Protocol-level routing via unencrypted header (AnonymousCommunicationProtocol enum)
+        payloadWithCategory,
       );
 
       // Update conversation last_message_at
@@ -321,9 +327,11 @@ class BusinessBusinessChatServiceAI2AI {
             );
             // Signal sessions are keyed by the remote business *agentId* (not businessId).
             // For legacy AES (local-only), keep the existing senderBusinessId behavior.
-            final decryptKeyId = message.encryptionType == EncryptionType.signalProtocol
-                ? await _agentIdService.getBusinessAgentId(message.senderBusinessId)
-                : message.senderBusinessId;
+            final decryptKeyId =
+                message.encryptionType == EncryptionType.signalProtocol
+                    ? await _agentIdService
+                        .getBusinessAgentId(message.senderBusinessId)
+                    : message.senderBusinessId;
             final decrypted = await _encryptionService.decrypt(
               encrypted,
               decryptKeyId,

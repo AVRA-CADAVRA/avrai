@@ -395,7 +395,7 @@ class _BusinessPatronPreferencesWidgetState extends State<BusinessPatronPreferen
           // Spending & Engagement
           _buildSectionTitle('Spending & Engagement'),
           DropdownButtonFormField<SpendingLevel?>(
-            value: _preferredSpendingLevel,
+            initialValue: _preferredSpendingLevel,
             decoration: const InputDecoration(
               labelText: 'Preferred Spending Level',
               border: OutlineInputBorder(),

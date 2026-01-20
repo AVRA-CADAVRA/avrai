@@ -141,7 +141,7 @@ class _ReservationFormWidgetState extends State<ReservationFormWidget> {
       children: [
         // Reservation Type
         DropdownButtonFormField<ReservationType>(
-          value: _selectedType,
+          initialValue: _selectedType,
           decoration: const InputDecoration(
             labelText: 'Reservation Type',
             border: OutlineInputBorder(),
@@ -167,7 +167,7 @@ class _ReservationFormWidgetState extends State<ReservationFormWidget> {
         // Target Selection
         if (_selectedType != null && widget.availableTargets.isNotEmpty)
           DropdownButtonFormField<String>(
-            value: _selectedTargetId,
+            initialValue: _selectedTargetId,
             decoration: InputDecoration(
               labelText: _selectedType == ReservationType.event
                   ? 'Select Event'

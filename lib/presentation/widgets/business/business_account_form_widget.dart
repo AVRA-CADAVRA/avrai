@@ -243,7 +243,7 @@ class _BusinessAccountFormWidgetState extends State<BusinessAccountFormWidget> {
             
             // Business Type
             DropdownButtonFormField<String>(
-              value: _selectedBusinessType,
+              initialValue: _selectedBusinessType,
               decoration: const InputDecoration(
                 labelText: 'Business Type *',
                 prefixIcon: Icon(Icons.category),

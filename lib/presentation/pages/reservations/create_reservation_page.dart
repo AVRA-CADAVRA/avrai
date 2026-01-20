@@ -576,7 +576,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                       label: 'Reservation type',
                       hint: 'Select whether this is a spot, business, or event reservation',
                       child: DropdownButtonFormField<ReservationType>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
                         decoration: const InputDecoration(
                           labelText: 'Reservation Type',
                           border: OutlineInputBorder(),
@@ -620,7 +620,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                                 : 'Select business',
                         hint: 'Choose the ${_selectedType == ReservationType.event ? 'event' : _selectedType == ReservationType.spot ? 'spot' : 'business'} for your reservation',
                         child: DropdownButtonFormField<String>(
-                          value: _selectedTargetId,
+                          initialValue: _selectedTargetId,
                           decoration: InputDecoration(
                             labelText: _selectedType == ReservationType.event
                                 ? 'Select Event'

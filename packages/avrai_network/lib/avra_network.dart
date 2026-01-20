@@ -57,6 +57,9 @@ export 'network/webrtc_signaling_config.dart';
 export 'network/ai2ai_protocol.dart';
 export 'network/ai2ai_protocol_signal_integration.dart';
 
+// Network services - Rate Limiting (BitChat-inspired, AI2AI-enhanced)
+export 'network/rate_limiter.dart';
+
 // Network services - Encryption
 export 'network/message_encryption_service.dart';
 

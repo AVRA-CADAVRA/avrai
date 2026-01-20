@@ -9,8 +9,9 @@ import 'package:avrai/core/models/event_feedback.dart' as _i3;
 import 'package:avrai/core/models/expertise_event.dart' as _i2;
 import 'package:avrai/core/models/partner_rating.dart' as _i4;
 import 'package:avrai/core/models/payment.dart' as _i8;
-import 'package:avrai/core/models/payment_intent.dart' as _i15;
+import 'package:avrai/core/models/payment_intent.dart' as _i16;
 import 'package:avrai/core/models/payment_result.dart' as _i6;
+import 'package:avrai/core/models/reservation.dart' as _i15;
 import 'package:avrai/core/models/revenue_split.dart' as _i7;
 import 'package:avrai/core/models/spot.dart' as _i12;
 import 'package:avrai/core/models/unified_user.dart' as _i11;
@@ -33,6 +34,7 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeExpertiseEvent_0 extends _i1.SmartFake
     implements _i2.ExpertiseEvent {
@@ -666,6 +668,45 @@ class MockPaymentService extends _i1.Mock implements _i14.PaymentService {
       ) as _i7.RevenueSplit);
 
   @override
+  _i10.Future<_i6.PaymentResult> processReservationPayment({
+    required String? reservationId,
+    required _i15.ReservationType? reservationType,
+    required String? userId,
+    required double? ticketPrice,
+    required int? ticketCount,
+    double? depositAmount,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #processReservationPayment,
+          [],
+          {
+            #reservationId: reservationId,
+            #reservationType: reservationType,
+            #userId: userId,
+            #ticketPrice: ticketPrice,
+            #ticketCount: ticketCount,
+            #depositAmount: depositAmount,
+          },
+        ),
+        returnValue: _i10.Future<_i6.PaymentResult>.value(_FakePaymentResult_5(
+          this,
+          Invocation.method(
+            #processReservationPayment,
+            [],
+            {
+              #reservationId: reservationId,
+              #reservationType: reservationType,
+              #userId: userId,
+              #ticketPrice: ticketPrice,
+              #ticketCount: ticketCount,
+              #depositAmount: depositAmount,
+            },
+          ),
+        )),
+      ) as _i10.Future<_i6.PaymentResult>);
+
+  @override
   _i10.Future<_i8.Payment> confirmPayment({
     required String? paymentId,
     required String? paymentIntentId,
@@ -727,11 +768,11 @@ class MockPaymentService extends _i1.Mock implements _i14.PaymentService {
       );
 
   @override
-  _i15.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
+  _i16.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
       (super.noSuchMethod(Invocation.method(
         #getPaymentIntent,
         [paymentIntentId],
-      )) as _i15.PaymentIntent?);
+      )) as _i16.PaymentIntent?);
 
   @override
   List<_i8.Payment> getPaymentsForEvent(String? eventId) => (super.noSuchMethod(

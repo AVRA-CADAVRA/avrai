@@ -45,6 +45,25 @@ post_install do |installer|
       if deployment_target.nil? || deployment_target.to_f < 10.15
         config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
       end
+      
+      # Suppress C/Objective-C warnings in Pods (fixes zlib OS_CODE macro warnings)
+      config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+      
+      # Suppress Swift warnings in Pods (fixes Firebase weakSelf warnings)
+      config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+      
+      # Suppress linker warnings for duplicate libraries and missing search paths
+      config.build_settings['OTHER_LDFLAGS'] ||= []
+      config.build_settings['OTHER_LDFLAGS'] << '-Wl,-no_warn_duplicate_libraries'
+      
+      # Allow non-modular includes in framework modules
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      
+      # Suppress quoted include warnings in framework headers
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      
+      # Note: Metal toolchain search path warnings are system-level and cannot be suppressed
+      # These warnings are harmless - the linker falls back to other search paths
     end
   end
 end

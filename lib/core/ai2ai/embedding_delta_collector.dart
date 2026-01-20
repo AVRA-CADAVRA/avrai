@@ -60,6 +60,7 @@ class EmbeddingDelta {
 /// connected AIs, anonymized to preserve privacy.
 /// 
 /// Phase 11 Section 7: Federated Learning Hooks
+/// Enhanced with AI2AI Learning Safeguards (Phase 11 Enhancement)
 class EmbeddingDeltaCollector {
   static const String _logName = 'EmbeddingDeltaCollector';
   
@@ -67,11 +68,18 @@ class EmbeddingDeltaCollector {
   /// 
   /// [localPersonality] - Local user's personality profile
   /// [remotePersonalities] - List of remote personality profiles from connections
+  /// [learningQualityByPeer] - Optional map of learning quality by peer ID (65% minimum)
   /// 
   /// Returns list of anonymized embedding deltas
+  /// 
+  /// **Safeguards Applied:**
+  /// - Connection limits: Max 12 simultaneous connections
+  /// - Learning quality threshold: 65% minimum (if provided)
+  /// - Dimension delta threshold: 22% minimum per dimension
   Future<List<EmbeddingDelta>> collectDeltas({
     required PersonalityProfile localPersonality,
     required List<PersonalityProfile> remotePersonalities,
+    Map<String, double>? learningQualityByPeer,
   }) async {
     try {
       developer.log(
@@ -79,10 +87,45 @@ class EmbeddingDeltaCollector {
         name: _logName,
       );
       
+      // ========================================
+      // SAFEGUARD 1: Connection Limits (Phase 11 Enhancement)
+      // ========================================
+      // Respect max simultaneous connections limit
+      const maxConnections = 12; // From VibeConstants.maxSimultaneousConnections
+      if (remotePersonalities.length > maxConnections) {
+        developer.log(
+          'Connection limit exceeded: ${remotePersonalities.length} connections '
+          'exceeds max $maxConnections - limiting to max',
+          name: _logName,
+        );
+        remotePersonalities = remotePersonalities.take(maxConnections).toList();
+      }
+      
       final deltas = <EmbeddingDelta>[];
       
-      for (final remotePersonality in remotePersonalities) {
+      for (int i = 0; i < remotePersonalities.length; i++) {
+        final remotePersonality = remotePersonalities[i];
+        
         try {
+          // ========================================
+          // SAFEGUARD 2: Learning Quality Threshold (Phase 11 Enhancement)
+          // ========================================
+          // Check learning quality if provided (65% minimum)
+          if (learningQualityByPeer != null) {
+            // Try to match by agentId or index
+            final peerId = remotePersonality.agentId;
+            final learningQuality = learningQualityByPeer[peerId];
+            
+            if (learningQuality != null && learningQuality < 0.65) {
+              developer.log(
+                'Skipping delta collection: learning quality ${(learningQuality * 100).toStringAsFixed(1)}% '
+                'below 65% threshold for peer $peerId',
+                name: _logName,
+              );
+              continue; // Skip this connection (low quality)
+            }
+          }
+          
           // Calculate embedding delta (anonymized)
           final delta = await _calculateDelta(
             localPersonality: localPersonality,
@@ -93,6 +136,11 @@ class EmbeddingDeltaCollector {
             deltas.add(delta);
             developer.log(
               'Collected delta: ${delta.delta.length} dimensions, category: ${delta.category ?? "none"}',
+              name: _logName,
+            );
+          } else {
+            developer.log(
+              'No significant delta found for remote personality (peerId: ${remotePersonality.agentId})',
               name: _logName,
             );
           }
@@ -148,21 +196,52 @@ class EmbeddingDeltaCollector {
       final remoteDimensions = _extractDimensionVector(remotePersonality);
       
       // Step 2: Calculate delta (difference between dimensions)
-      final delta = <double>[];
+      final deltaList = <double>[];
       for (int i = 0; i < localDimensions.length; i++) {
         if (i < remoteDimensions.length) {
           // Calculate difference (anonymized - no personal identifiers)
           final diff = remoteDimensions[i] - localDimensions[i];
-          delta.add(diff);
+          deltaList.add(diff);
         } else {
-          delta.add(0.0);
+          deltaList.add(0.0);
         }
       }
       
       // Step 3: Check if delta is significant
+      // ========================================
+      // SAFEGUARD 3: Dimension Delta Threshold (Phase 11 Enhancement)
+      // ========================================
+      // Check each dimension delta individually (22% minimum per dimension)
+      final significantDeltas = <double>[];
+      bool hasSignificantDelta = false;
+      
+      for (int i = 0; i < deltaList.length; i++) {
+        final dimensionDelta = deltaList[i];
+        if (dimensionDelta.abs() >= 0.22) {
+          // Individual dimension delta >= 22% threshold
+          significantDeltas.add(dimensionDelta);
+          hasSignificantDelta = true;
+        } else {
+          // Delta too small for this dimension
+          significantDeltas.add(0.0);
+        }
+      }
+      
+      if (!hasSignificantDelta) {
+        developer.log(
+          'Delta rejected: no individual dimension delta >= 22% threshold',
+          name: _logName,
+        );
+        return null; // No significant deltas
+      }
+      
+      // Use only significant deltas
+      final delta = significantDeltas;
+      
+      // Also check overall magnitude (legacy check)
       final deltaMagnitude = _calculateMagnitude(delta);
       if (deltaMagnitude < 0.1) {
-        // Delta too small to be meaningful
+        // Delta too small to be meaningful overall
         return null;
       }
       

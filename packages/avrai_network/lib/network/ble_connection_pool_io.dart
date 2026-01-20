@@ -232,7 +232,11 @@ final class _PooledConnection {
   Future<void> _ensureConnected() async {
     _connectFuture ??= () async {
       try {
-        await device.connect().timeout(const Duration(seconds: 8));
+        await device
+            .connect(
+              license: License.free, // Use free license for development/testing
+            )
+            .timeout(const Duration(seconds: 8));
       } catch (e) {
         // Some platforms throw when already connected; treat as non-fatal.
         developer.log(
@@ -332,9 +336,9 @@ class BleGattSession {
     required _PooledConnection entry,
     required _GattContext gatt,
     required _AsyncLease lease,
-  })  : _entry = entry,
-        _gatt = gatt,
-        _lease = lease;
+  }) : _entry = entry,
+       _gatt = gatt,
+       _lease = lease;
 
   // --- Read/control protocol ("SPTS") ---
   static const int _spts0 = 0x53; // S
@@ -395,8 +399,9 @@ class BleGattSession {
 
       final actualDataLen = chunk.length - _readHeaderLen;
       if (actualDataLen <= 0) return null;
-      final usableDataLen =
-          actualDataLen < rxChunkLen ? actualDataLen : rxChunkLen;
+      final usableDataLen = actualDataLen < rxChunkLen
+          ? actualDataLen
+          : rxChunkLen;
       out.add(chunk.sublist(_readHeaderLen, _readHeaderLen + usableDataLen));
       offset += usableDataLen;
       if (offset >= totalLen) break;
@@ -538,10 +543,7 @@ class BleGattSession {
     }
   }
 
-  Uint8List _buildControlFrame({
-    required int streamId,
-    required int offset,
-  }) {
+  Uint8List _buildControlFrame({required int streamId, required int offset}) {
     final buf = Uint8List(_controlFrameLen);
     buf[0] = _spts0;
     buf[1] = _spts1;
@@ -577,8 +579,9 @@ class BleGattSession {
 
     final idBytes = Uint8List.fromList(senderId.codeUnits);
     final idField = Uint8List(_senderIdLen);
-    final copyLen =
-        idBytes.length < _senderIdLen ? idBytes.length : _senderIdLen;
+    final copyLen = idBytes.length < _senderIdLen
+        ? idBytes.length
+        : _senderIdLen;
     idField.setRange(0, copyLen, idBytes);
     for (int i = copyLen; i < _senderIdLen; i++) {
       idField[i] = 0x20; // space pad

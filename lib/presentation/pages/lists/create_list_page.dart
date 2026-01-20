@@ -224,7 +224,7 @@ class _CreateListPageState extends State<CreateListPage> {
 
               // Category Dropdown
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),

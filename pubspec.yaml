@@ -19,9 +19,12 @@ dependencies:
   
   # UI Components
   cupertino_icons: ^1.0.2
-  google_fonts: ^6.1.0
+  google_fonts: ^7.0.2
   qr_flutter: ^4.1.0  # Phase 10.1: QR code generation for reservation check-in
-  nfc_manager: ^3.2.0  # Phase 10.1: NFC tap-to-check-in (phone-to-phone or phone-to-tag)
+  mobile_scanner: ^5.2.3  # QR code scanning for friend connections
+  nfc_manager: ^4.1.1  # Phase 10.1: NFC tap-to-check-in (phone-to-phone or phone-to-tag)
+  nfc_manager_ndef: ^1.1.0  # Phase 10.1: NDEF support for NFC tags
+  ndef_record: ^1.4.1  # Phase 10.1: NDEF record classes (used by nfc_manager_ndef)
   flutter_local_notifications: ^19.5.0  # Phase 5: Local notifications for reservation reminders
   
   # Map Components
@@ -42,7 +45,7 @@ dependencies:
   dio: ^5.4.0
   connectivity_plus: ^7.0.0
   wifi_scan: ^0.4.1+2  # Phase 10.1: Android WiFi scanning (SSID, BSSID, signal) for fingerprinting
-  add_2_calendar: ^2.1.2  # Phase 10.2: Calendar integration (iOS Calendar, Google Calendar)
+  add_2_calendar: ^3.0.1  # Phase 10.2: Calendar integration (iOS Calendar, Google Calendar)
   
   # Sharing and URL launching - Added for Phase 1 completion
   share_plus: ^12.0.1
@@ -72,7 +75,7 @@ dependencies:
   # Storage
   get_storage: ^2.1.1
   flutter_secure_storage: ^10.0.0-beta.4
-  sembast: ^3.5.0
+  sembast: ^3.8.6
   path_provider: ^2.1.1
   
   # Firebase
@@ -95,13 +98,13 @@ dependencies:
   audioplayers: ^6.0.0  # For knot-based audio playback
   
   # Charts - Knot Theory Visualization
-  fl_chart: ^0.68.0  # For interactive charts and visualizations
+  fl_chart: ^1.1.1  # For interactive charts and visualizations
   
   # Machine Learning - Phase 12: Neural Network Implementation
   onnxruntime: ^1.4.1  # ONNX Runtime for on-device inference
   
   # Payment Processing - Agent 1: Payment Processing & Revenue
-  flutter_stripe: ^11.5.0
+  flutter_stripe: ^12.1.1
   
   # PDF Generation - Tax Compliance
   pdf: ^3.11.0
@@ -109,7 +112,7 @@ dependencies:
   
   # Development & Code Generation
   json_annotation: ^4.8.1
-  build_runner: ^2.7.1
+  build_runner: ^2.10.5
   json_serializable: ^6.11.2
   injectable_generator: ^2.8.1
   
@@ -126,17 +129,17 @@ dependencies:
     path: packages/avrai_ai
   
   # Proposed routing (ADR-0003)
-  go_router: ^17.0.0
+  go_router: ^17.0.1
   
   # Runtime permissions
   permission_handler: ^12.0.1
   
   # Device Discovery - Platform Plugins
-  flutter_blue_plus: ^1.36.8  # Bluetooth Low Energy (Android, iOS, macOS, Linux, Web, Windows)
+  flutter_blue_plus: ^2.1.0  # Bluetooth Low Energy (Android, iOS, macOS, Linux, Web, Windows)
   flutter_nsd: ^1.6.0  # Network Service Discovery / mDNS (Android, iOS, macOS, Windows)
   wifi_iot: ^0.3.19  # WiFi Direct and WiFi management (Android)
 
-  shared_preferences: any
+  shared_preferences: ^2.5.4
   path: any
   flutter_rust_bridge: 2.11.1
   battery_plus: ^7.0.0
@@ -159,14 +162,14 @@ dev_dependencies:
   bloc_test: ^10.0.0
   mocktail: ^1.0.3
   fake_async: ^1.3.1
-  test: ^1.24.7
+  test: ^1.25.15
   integration_test:
     sdk: flutter
   
   # Performance Testing Dependencies - Phase 9
-  mockito: ^5.5.0
+  mockito: ^5.6.3
   # golden_toolkit: ^0.15.0  # DISCONTINUED - consider using flutter_test's built-in golden testing
-  vm_service: ^15.0.0  # For memory profiling (pinned by integration_test)
+  vm_service: ^15.0.2  # For memory profiling (pinned by integration_test)
   # patrol: ^3.6.1  # For advanced widget testing (temporarily disabled due to Kotlin 2.0 metadata mismatch)
   
   # Test data generation and utilities

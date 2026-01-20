@@ -4,6 +4,10 @@ import 'package:avrai/core/services/social_media_connection_service.dart';
 import 'package:avrai/core/services/storage_service.dart';
 import 'package:avrai/core/services/logger.dart';
 import 'package:avrai/core/services/supabase_service.dart';
+import 'package:get_it/get_it.dart';
+import 'package:avrai_knot/services/knot/knot_weaving_service.dart';
+import 'package:avrai_knot/services/knot/knot_storage_service.dart';
+import 'package:avrai_knot/models/knot/braided_knot.dart';
 
 /// Social Media Discovery Service
 ///
@@ -161,6 +165,13 @@ class SocialMediaDiscoveryService {
   }
 
   /// Accept a friend connection request
+  ///
+  /// **Flow:**
+  /// 1. Store accepted connection
+  /// 2. Get both users' personality knots
+  /// 3. Create braided knot via KnotWeavingService
+  /// 4. Store braided knot
+  /// 5. Update both users' friends lists
   Future<bool> acceptFriendConnectionRequest({
     required String agentId,
     required String friendAgentId,
@@ -172,12 +183,57 @@ class SocialMediaDiscoveryService {
       // Store accepted connection in Supabase
       if (_supabaseService != null) {
         // TODO: Implement connection acceptance in Supabase
-        // For now, return success
-        return true;
+        // For now, continue with local storage
       }
 
-      // Fallback: Store locally
+      // Store locally
       await _storeAcceptedConnection(agentId, friendAgentId);
+
+      // Create braided knot (if knot services are available)
+      try {
+        final sl = GetIt.instance;
+        if (sl.isRegistered<KnotWeavingService>() &&
+            sl.isRegistered<KnotStorageService>()) {
+          final knotWeavingService = sl<KnotWeavingService>();
+          final knotStorageService = sl<KnotStorageService>();
+
+          // Get both users' personality knots
+          final localKnot = await knotStorageService.loadKnot(agentId);
+          final friendKnot = await knotStorageService.loadKnot(friendAgentId);
+
+          if (localKnot != null && friendKnot != null) {
+            // Create braided knot with friendship relationship type
+            final braidedKnot = await knotWeavingService.weaveKnots(
+              knotA: localKnot,
+              knotB: friendKnot,
+              relationshipType: RelationshipType.friendship,
+            );
+
+            // Store braided knot (using agentId as connectionId for now)
+            await knotStorageService.saveBraidedKnot(
+              connectionId: 'friend_${agentId}_$friendAgentId',
+              braidedKnot: braidedKnot,
+            );
+
+            _logger.info(
+              '✅ Braided knot created for friendship: ${agentId.substring(0, 10)}... <-> ${friendAgentId.substring(0, 10)}...',
+              tag: _logName,
+            );
+          } else {
+            _logger.warn(
+              'Knots not available for braiding (local: ${localKnot != null}, friend: ${friendKnot != null})',
+              tag: _logName,
+            );
+          }
+        }
+      } catch (e) {
+        // Log error but don't fail the friend acceptance
+        _logger.warn(
+          'Error creating braided knot (continuing without knot): $e',
+          tag: _logName,
+        );
+      }
+
       return true;
     } catch (e, stackTrace) {
       _logger.error('❌ Failed to accept connection request', error: e, stackTrace: stackTrace, tag: _logName);

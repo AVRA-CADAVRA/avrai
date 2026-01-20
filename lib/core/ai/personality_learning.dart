@@ -742,10 +742,43 @@ class PersonalityLearning {
       // Apply AI2AI learning rate (typically lower than direct user actions)
       // Also apply age-based learning filter if user data is available
       final adjustedInsights = <String, double>{};
+      
+      // ========================================
+      // DRIFT PREVENTION SAFEGUARD (Phase 11 Enhancement)
+      // ========================================
+      // Maximum drift: 30% from original personality (contextual layer)
+      // Core personality should be completely stable
+      final maxDrift = 0.30;
+      final originalDimensions = _currentProfile!.evolutionTimeline.isNotEmpty
+          ? _currentProfile!.evolutionTimeline.first.corePersonality
+          : _currentProfile!.dimensions;
+      
       insight.dimensionInsights.forEach((dimension, change) {
         double learningRate = VibeConstants.ai2aiLearningRate;
-
-        adjustedInsights[dimension] = change * learningRate;
+        final proposedChange = change * learningRate;
+        
+        // Check drift limit before applying change
+        final currentValue = _currentProfile!.dimensions[dimension] ?? 0.5;
+        final originalValue = originalDimensions[dimension] ?? currentValue;
+        final proposedValue = currentValue + proposedChange;
+        
+        // Calculate drift from original
+        final drift = (proposedValue - originalValue).abs();
+        
+        if (drift > maxDrift) {
+          developer.log(
+            'Drift limit exceeded for $dimension: drift ${(drift * 100).toStringAsFixed(1)}% '
+            'exceeds max ${(maxDrift * 100).toStringAsFixed(1)}% - clamping to max drift',
+            name: _logName,
+          );
+          
+          // Clamp to max drift
+          final clampedValue = originalValue + 
+              (proposedValue > originalValue ? maxDrift : -maxDrift);
+          adjustedInsights[dimension] = clampedValue - currentValue;
+        } else {
+          adjustedInsights[dimension] = proposedChange;
+        }
       });
 
       // NEW: Apply outcome-based learning if outcome is available

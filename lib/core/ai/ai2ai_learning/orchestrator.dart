@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:avrai/core/constants/vibe_constants.dart';
@@ -11,6 +12,8 @@ import 'package:avrai/core/ai/ai2ai_learning/analyzers/learning_effectiveness_an
 import 'package:avrai/core/ai/ai2ai_learning/recommendations/learning_recommendations_generator.dart';
 import 'package:avrai/core/ai/ai2ai_learning/utils/ai2ai_learning_utils.dart';
 import 'package:avrai_core/models/personality_profile.dart';
+import 'package:get_it/get_it.dart';
+import 'package:avrai/core/ai/continuous_learning_system.dart';
 
 /// Orchestrates the AI2AI learning system
 ///
@@ -162,6 +165,28 @@ class AI2AILearningOrchestrator {
       developer.log(
           'AI2AI chat analysis completed (confidence: ${(result.analysisConfidence * 100).round()}%)',
           name: _logName);
+
+      // Phase 11 Enhancement: Integrate with ContinuousLearningSystem
+      // If confidence >= 0.6, process through continuous learning pipeline
+      if (result.analysisConfidence >= 0.6) {
+        if (GetIt.instance.isRegistered<ContinuousLearningSystem>()) {
+          try {
+            final continuousLearningSystem =
+                GetIt.instance<ContinuousLearningSystem>();
+            unawaited(continuousLearningSystem.processAI2AIChatConversation(
+              userId: localUserId,
+              chatAnalysis: result,
+            ));
+          } catch (e) {
+            developer.log(
+              'Failed to process AI2AI chat conversation in ContinuousLearningSystem: $e',
+              name: _logName,
+            );
+            // Non-blocking - don't break existing flow
+          }
+        }
+      }
+
       return result;
     } catch (e, stackTrace) {
       developer.log('Error analyzing AI2AI chat: $e',

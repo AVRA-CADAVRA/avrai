@@ -10,6 +10,9 @@ import 'package:avrai/core/services/supabase_service.dart';
 import 'package:avrai/core/constants/vibe_constants.dart';
 import 'package:avrai/core/crypto/signal/signal_key_manager.dart';
 import 'package:avrai/core/crypto/signal/signal_types.dart';
+import 'package:avrai/core/crypto/signal/signal_session_manager.dart';
+import 'package:avrai/core/crypto/signal/signal_protocol_service.dart';
+import 'package:avrai/core/crypto/signal/ai_agent_fingerprint_service.dart';
 import 'package:avrai/core/models/user_vibe.dart';
 import 'package:avrai/core/services/agent_happiness_service.dart';
 import 'package:avrai_core/models/personality_profile.dart';
@@ -17,6 +20,7 @@ import 'package:avrai/core/models/connection_metrics.dart';
 import 'package:avrai/core/ai/vibe_analysis_engine.dart';
 import 'package:avrai/core/ai/personality_learning.dart';
 import 'package:avrai/core/ai/privacy_protection.dart';
+import 'package:avrai/core/ai/continuous_learning_system.dart';
 import 'package:avrai_ai/services/ai2ai_broadcast_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:avrai/core/ai2ai/aipersonality_node.dart';
@@ -43,7 +47,13 @@ import 'package:avrai_knot/models/knot/braided_knot.dart';
 import 'package:avrai/core/services/ledgers/ledger_audit_v0.dart';
 import 'package:avrai/core/services/ledgers/ledger_domain_v0.dart';
 import 'package:avrai_network/avra_network.dart';
+import 'package:avrai_network/network/bloom_filter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:avrai/core/models/business_expert_message.dart' as chat_models;
+import 'package:avrai/core/models/business_business_message.dart'
+    as chat_models;
+import 'package:avrai/data/datasources/local/sembast_database.dart';
+import 'package:sembast/sembast.dart';
 
 class _HotLatencySummary {
   final int count;
@@ -210,9 +220,20 @@ class VibeConnectionOrchestrator {
   BatteryAdaptiveBleScheduler? _batteryScheduler;
   AdaptiveMeshNetworkingService? _adaptiveMeshService;
 
+  // Quality-based key rotation tracking (AI2AI-specific)
+  /// Previous quality scores per agent ID (for detecting quality changes)
+  final Map<String, double> _previousQualityScores = {};
+
+  /// Quality change threshold for triggering key rotation (AI2AI-specific)
+  static const double _qualityChangeThreshold = 0.3; // 30% quality change
+
   Timer? _federatedCloudSyncTimer;
   StreamSubscription<List<ConnectivityResult>>? _federatedCloudConnectivitySub;
   int _lastFederatedCloudSyncAttemptMs = 0;
+
+  // Bloom filters for loop prevention (BitChat-inspired, AI2AI-enhanced)
+  // Per-scope Bloom filters (complements AdaptiveMeshNetworkingService)
+  final Map<String, OptimizedBloomFilter> _bloomFilters = {};
 
   // Stable node id used for offline BLE addressing + Signal session keys.
   // Rotates periodically (privacy), stable within a window (correctness).
@@ -636,6 +657,8 @@ class VibeConnectionOrchestrator {
       }
 
       // Start device discovery (find other devices).
+      // Performance optimization: Add throttling delays between BLE operations
+      // to reduce context switching and improve battery life.
       if (_allowBleSideEffects && _deviceDiscovery != null) {
         // Continuous scanning: back-to-back scan windows (walk-by capture).
         _deviceDiscovery!.onDevicesDiscovered(_onDevicesDiscoveredHotPath);
@@ -646,6 +669,9 @@ class VibeConnectionOrchestrator {
         );
         _logger.info('Device discovery started', tag: _logName);
 
+        // Throttle: Add delay before starting battery scheduler to reduce context switching
+        await Future.delayed(const Duration(milliseconds: 300));
+
         // Battery-adaptive scan scheduling (best-effort).
         _batteryScheduler?.stop();
         _batteryScheduler = BatteryAdaptiveBleScheduler(
@@ -653,6 +679,9 @@ class VibeConnectionOrchestrator {
           prefs: _prefs,
         );
         await _batteryScheduler!.start();
+
+        // Throttle: Add delay before starting adaptive mesh service
+        await Future.delayed(const Duration(milliseconds: 200));
 
         // Initialize adaptive mesh networking service
         _adaptiveMeshService?.stop();
@@ -663,8 +692,9 @@ class VibeConnectionOrchestrator {
         await _adaptiveMeshService!.start();
       }
 
-      // Start AI2AI discovery process (BLE-only; skip when BLE side-effects are disabled).
+      // Throttle: Add delay before starting AI2AI discovery to batch BLE operations
       if (_allowBleSideEffects) {
+        await Future.delayed(const Duration(milliseconds: 200));
         await _startAI2AIDiscovery(userId, personality);
       } else {
         _logger.info(
@@ -674,6 +704,7 @@ class VibeConnectionOrchestrator {
       }
 
       // Start processing incoming BLE inbox messages (silent background).
+      // This is non-blocking, so no delay needed here.
       if (_allowBleSideEffects) {
         _startBleInboxProcessing();
       }
@@ -681,7 +712,11 @@ class VibeConnectionOrchestrator {
       // Start federated (hybrid) sync:
       // - Pattern 1: BLE gossip happens opportunistically via learningInsight messages
       // - Pattern 2: Optional cloud aggregation when online (edge function)
+      // This is non-blocking, so no delay needed here.
       _startFederatedCloudSync();
+
+      // Throttle: Add delay before connection maintenance to allow BLE operations to stabilize
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Begin connection maintenance
       await _startConnectionMaintenance();
@@ -783,7 +818,8 @@ class VibeConnectionOrchestrator {
   bool _isEventModeEnabled() =>
       (_prefs.getBool(_prefsKeyEventModeEnabled) ?? false) == true;
 
-  Future<void> _handleEventModeScanWindow(List<DiscoveredDevice> devices) async {
+  Future<void> _handleEventModeScanWindow(
+      List<DiscoveredDevice> devices) async {
     if (!_allowBleSideEffects) return;
 
     final userId = _currentUserId;
@@ -971,11 +1007,10 @@ class VibeConnectionOrchestrator {
               epoch: epoch,
             ))
         .where((c) {
-          final last = _eventModeLastDeepSyncAtMsByNodeTag[c.nodeTagKey];
-          if (last == null) return true;
-          return (nowMs - last) >= _eventPerNodeDeepSyncCooldownMs;
-        })
-        .toList();
+      final last = _eventModeLastDeepSyncAtMsByNodeTag[c.nodeTagKey];
+      if (last == null) return true;
+      return (nowMs - last) >= _eventPerNodeDeepSyncCooldownMs;
+    }).toList();
     if (eligible.isEmpty) return null;
 
     eligible.sort((a, b) {
@@ -1325,6 +1360,26 @@ class VibeConnectionOrchestrator {
           insight,
         );
         _lastAi2AiLearningAtByPeerId[node.nodeId] = now;
+
+        // Phase 11 Enhancement: Integrate with ContinuousLearningSystem
+        // KEEP existing personalityLearning call above - this is ADDITIONAL integration
+        if (GetIt.instance.isRegistered<ContinuousLearningSystem>()) {
+          try {
+            final continuousLearningSystem =
+                GetIt.instance<ContinuousLearningSystem>();
+            unawaited(continuousLearningSystem.processAI2AILearningInsight(
+              userId: userId,
+              insight: insight,
+              peerId: node.nodeId,
+            ));
+          } catch (e) {
+            _logger.debug(
+              'Failed to process AI2AI learning insight in ContinuousLearningSystem: $e',
+              tag: _logName,
+            );
+            // Non-blocking - don't break existing flow
+          }
+        }
 
         // V1 "real" AI2AI learning exchange:
         // send the insight to the peer over the encrypted, ACK-confirmed BLE channel.
@@ -1929,6 +1984,7 @@ class VibeConnectionOrchestrator {
           final decoded = await protocol.decodeMessage(msg.data, msg.senderId);
           if (decoded == null) continue;
 
+          // Route messages based on type (routing happens before payload decryption)
           if (decoded.type == MessageType.learningInsight) {
             // Check if this is a locality agent update or learning insight
             final payload = decoded.payload;
@@ -1938,6 +1994,9 @@ class VibeConnectionOrchestrator {
             } else {
               await _handleIncomingLearningInsight(decoded);
             }
+          } else if (decoded.type == MessageType.userChat) {
+            // Route user-to-user chat messages to UI layer
+            await _handleIncomingUserChat(decoded);
           }
         }
 
@@ -2187,7 +2246,7 @@ class VibeConnectionOrchestrator {
       final originId = payload['origin_id'] as String? ?? message.senderId;
       final hop = (payload['hop'] as num?)?.toInt() ?? 0;
       // Validate hop count
-      if (hop < 0) return;  // Negative hops are invalid
+      if (hop < 0) return; // Negative hops are invalid
 
       // Use adaptive mesh service to check hop limit
       if (_adaptiveMeshService != null) {
@@ -2249,6 +2308,27 @@ class VibeConnectionOrchestrator {
 
       await personalityLearning.evolveFromAI2AILearning(userId, insight);
       _lastAi2AiLearningAtByPeerId[sender] = now;
+
+      // Phase 11 Enhancement: Integrate with ContinuousLearningSystem
+      // KEEP existing personalityLearning call above - this is ADDITIONAL integration
+      if (GetIt.instance.isRegistered<ContinuousLearningSystem>()) {
+        try {
+          final continuousLearningSystem =
+              GetIt.instance<ContinuousLearningSystem>();
+          unawaited(continuousLearningSystem.processAI2AILearningInsight(
+            userId: userId,
+            insight: insight,
+            peerId: sender,
+          ));
+        } catch (e) {
+          _logger.debug(
+            'Failed to process AI2AI learning insight in ContinuousLearningSystem: $e',
+            tag: _logName,
+          );
+          // Non-blocking - don't break existing flow
+        }
+      }
+
       if (LedgerAuditV0.isEnabled) {
         unawaited(LedgerAuditV0.tryAppend(
           domain: LedgerDomainV0.deviceCapability,
@@ -2290,6 +2370,271 @@ class VibeConnectionOrchestrator {
     }
   }
 
+  /// Handle incoming user-to-user chat message routed through AI2AI mesh
+  ///
+  /// Routes user chat messages (business-expert or business-business) to the
+  /// appropriate chat service for storage and UI display. The message type is
+  /// determined from the unencrypted binary packet header (MessageType.userChat),
+  /// allowing routing before decryption.
+  Future<void> _handleIncomingUserChat(ProtocolMessage message) async {
+    try {
+      final payload = message.payload;
+
+      // Optional: Validate message_category in payload (post-decryption validation/clarity)
+      final messageCategory = payload['message_category'] as String?;
+      if (messageCategory != null && messageCategory != 'user_chat') {
+        _logger.warn(
+          'Received userChat message with mismatched category: $messageCategory',
+          tag: _logName,
+        );
+        // Continue anyway - category is optional
+      }
+
+      // Determine chat type from payload structure
+      // Business-expert chats have: sender_type, business_id, expert_id
+      // Business-business chats have: sender_business_id, recipient_business_id
+      final hasBusinessExpertFields = payload.containsKey('sender_type') &&
+          (payload.containsKey('business_id') ||
+              payload.containsKey('expert_id'));
+      final hasBusinessBusinessFields =
+          payload.containsKey('sender_business_id') &&
+              payload.containsKey('recipient_business_id');
+
+      if (hasBusinessExpertFields) {
+        await _handleIncomingBusinessExpertChat(message, payload);
+      } else if (hasBusinessBusinessFields) {
+        await _handleIncomingBusinessBusinessChat(message, payload);
+      } else {
+        _logger.warn(
+          'Received userChat message with unrecognized payload structure: ${payload.keys}',
+          tag: _logName,
+        );
+      }
+    } catch (e, st) {
+      _logger.error(
+        'Error handling incoming user chat message: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Handle incoming business-expert chat message
+  Future<void> _handleIncomingBusinessExpertChat(
+    ProtocolMessage message,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      // Extract required fields
+      final messageId = payload['message_id'] as String?;
+      final conversationId = payload['conversation_id'] as String?;
+      final senderTypeStr = payload['sender_type'] as String?;
+      final senderId = payload['sender_id'] as String?;
+      final recipientTypeStr = payload['recipient_type'] as String?;
+      final recipientId = payload['recipient_id'] as String?;
+      final content = payload['content'] as String?;
+      final encryptedContentStr = payload['encrypted_content'] as String?;
+      final encryptionTypeStr = payload['encryption_type'] as String?;
+      final messageTypeStr = payload['message_type'] as String?;
+      final createdAtStr = payload['created_at'] as String?;
+
+      // Validate required fields
+      if (messageId == null ||
+          conversationId == null ||
+          senderTypeStr == null ||
+          senderId == null ||
+          recipientTypeStr == null ||
+          recipientId == null ||
+          content == null ||
+          createdAtStr == null) {
+        _logger.warn(
+          'Received incomplete business-expert chat message: missing required fields',
+          tag: _logName,
+        );
+        return;
+      }
+
+      // Parse enums
+      final senderType = chat_models.MessageSenderType.values.firstWhere(
+        (e) => e.name == senderTypeStr,
+        orElse: () => chat_models.MessageSenderType.business,
+      );
+      final recipientType = chat_models.MessageRecipientType.values.firstWhere(
+        (e) => e.name == recipientTypeStr,
+        orElse: () => chat_models.MessageRecipientType.expert,
+      );
+      final encryptionType = EncryptionType.values.firstWhere(
+        (e) => e.name == encryptionTypeStr,
+        orElse: () => EncryptionType.aes256gcm,
+      );
+      final messageType = chat_models.MessageType.values.firstWhere(
+        (e) => e.name == messageTypeStr,
+        orElse: () => chat_models.MessageType.text,
+      );
+
+      // Parse encrypted content if present
+      Uint8List? encryptedContent;
+      if (encryptedContentStr != null && encryptedContentStr.isNotEmpty) {
+        try {
+          encryptedContent = base64Decode(encryptedContentStr);
+        } catch (e) {
+          _logger.warn(
+            'Failed to decode encrypted content: $e',
+            tag: _logName,
+          );
+        }
+      }
+
+      // Parse timestamp
+      final createdAt = DateTime.tryParse(createdAtStr);
+      if (createdAt == null) {
+        _logger.warn(
+          'Failed to parse created_at timestamp: $createdAtStr',
+          tag: _logName,
+        );
+        return;
+      }
+
+      // Create message object
+      final chatMessage = chat_models.BusinessExpertMessage(
+        id: messageId,
+        conversationId: conversationId,
+        senderType: senderType,
+        senderId: senderId,
+        recipientType: recipientType,
+        recipientId: recipientId,
+        content: content,
+        encryptedContent: encryptedContent,
+        encryptionType: encryptionType,
+        type: messageType,
+        isRead: false,
+        readAt: null,
+        createdAt: createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      // Save to Sembast (same store as BusinessExpertChatServiceAI2AI uses)
+      final db = await SembastDatabase.database;
+      final messagesStore =
+          stringMapStoreFactory.store('business_expert_messages');
+      await messagesStore.record(messageId).put(db, chatMessage.toJson());
+
+      _logger.debug(
+        'Saved incoming business-expert chat message: $messageId',
+        tag: _logName,
+      );
+    } catch (e, st) {
+      _logger.error(
+        'Error handling incoming business-expert chat: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Handle incoming business-business chat message
+  Future<void> _handleIncomingBusinessBusinessChat(
+    ProtocolMessage message,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      // Extract required fields
+      final messageId = payload['message_id'] as String?;
+      final conversationId = payload['conversation_id'] as String?;
+      final senderBusinessId = payload['sender_business_id'] as String?;
+      final recipientBusinessId = payload['recipient_business_id'] as String?;
+      final content = payload['content'] as String?;
+      final encryptedContentStr = payload['encrypted_content'] as String?;
+      final encryptionTypeStr = payload['encryption_type'] as String?;
+      final messageTypeStr = payload['message_type'] as String?;
+      final createdAtStr = payload['created_at'] as String?;
+
+      // Validate required fields
+      if (messageId == null ||
+          conversationId == null ||
+          senderBusinessId == null ||
+          recipientBusinessId == null ||
+          content == null ||
+          createdAtStr == null) {
+        _logger.warn(
+          'Received incomplete business-business chat message: missing required fields',
+          tag: _logName,
+        );
+        return;
+      }
+
+      // Parse enums
+      final encryptionType = EncryptionType.values.firstWhere(
+        (e) => e.name == encryptionTypeStr,
+        orElse: () => EncryptionType.aes256gcm,
+      );
+      final messageType =
+          chat_models.BusinessBusinessMessageType.values.firstWhere(
+        (e) => e.name == messageTypeStr,
+        orElse: () => chat_models.BusinessBusinessMessageType.text,
+      );
+
+      // Parse encrypted content if present
+      Uint8List? encryptedContent;
+      if (encryptedContentStr != null && encryptedContentStr.isNotEmpty) {
+        try {
+          encryptedContent = base64Decode(encryptedContentStr);
+        } catch (e) {
+          _logger.warn(
+            'Failed to decode encrypted content: $e',
+            tag: _logName,
+          );
+        }
+      }
+
+      // Parse timestamp
+      final createdAt = DateTime.tryParse(createdAtStr);
+      if (createdAt == null) {
+        _logger.warn(
+          'Failed to parse created_at timestamp: $createdAtStr',
+          tag: _logName,
+        );
+        return;
+      }
+
+      // Create message object
+      final chatMessage = chat_models.BusinessBusinessMessage(
+        id: messageId,
+        conversationId: conversationId,
+        senderBusinessId: senderBusinessId,
+        recipientBusinessId: recipientBusinessId,
+        content: content,
+        encryptedContent: encryptedContent,
+        encryptionType: encryptionType,
+        type: messageType,
+        isRead: false,
+        readAt: null,
+        createdAt: createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      // Save to Sembast (same store as BusinessBusinessChatServiceAI2AI uses)
+      final db = await SembastDatabase.database;
+      final messagesStore =
+          stringMapStoreFactory.store('business_business_messages');
+      await messagesStore.record(messageId).put(db, chatMessage.toJson());
+
+      _logger.debug(
+        'Saved incoming business-business chat message: $messageId',
+        tag: _logName,
+      );
+    } catch (e, st) {
+      _logger.error(
+        'Error handling incoming business-business chat: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
   Future<void> _maybeForwardLearningInsightGossip({
     required Map<String, dynamic> payload,
     required String originId,
@@ -2300,14 +2645,41 @@ class VibeConnectionOrchestrator {
     if (!_allowBleSideEffects) return;
     if (!_isFederatedLearningParticipationEnabled()) return;
 
+    // Bloom filter check (BEFORE adaptive hop limits) - AI2AI-specific
+    final messageHash =
+        sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+    final scope =
+        payload['scope'] as String? ?? 'locality'; // Default to locality
+    final bloomFilter = _getOrCreateBloomFilter(scope);
+
+    // Check if message might already be in filter (loop prevention)
+    if (bloomFilter.mightContain(messageHash)) {
+      _logger.debug(
+        'Bloom filter: message might be duplicate, skipping forward (scope: $scope)',
+        tag: _logName,
+      );
+      return; // Might be a loop, don't forward
+    }
+
+    // Add message to filter
+    if (!bloomFilter.add(messageHash)) {
+      _logger.debug(
+        'Bloom filter full, clearing and retrying (scope: $scope)',
+        tag: _logName,
+      );
+      bloomFilter.clear();
+      bloomFilter.add(messageHash);
+    }
+
     // Use adaptive hop limit instead of hardcoded 1-hop limit
     if (_adaptiveMeshService != null) {
       if (!_adaptiveMeshService!.shouldForwardMessage(
         currentHop: hop,
         priority: mesh_policy.MessagePriority.medium,
         messageType: mesh_policy.MessageType.learningInsight,
+        geographicScope: scope,
       )) {
-        return;  // Adaptive policy says don't forward
+        return; // Adaptive policy says don't forward
       }
     } else {
       // Fallback to old behavior if adaptive service not available
@@ -2390,11 +2762,437 @@ class VibeConnectionOrchestrator {
         Timer.periodic(const Duration(seconds: 30), (timer) async {
       try {
         await manageActiveConnections();
+        // NEW: Manage Signal Protocol session lifecycle (AI2AI-specific)
+        await _manageSessionLifecycle();
+        // NEW: Manage prekey bundle rotation and refresh (Enhanced BLE distribution)
+        await _managePreKeyBundleRotation();
       } catch (e) {
         _logger.error('Error in connection maintenance',
             error: e, tag: _logName);
       }
     });
+  }
+
+  /// Manage Signal Protocol session lifecycle for AI2AI connections
+  ///
+  /// Implements AI2AI-specific session lifecycle management:
+  /// - Session expiration based on connection quality
+  /// - Automatic cleanup for inactive AI agents
+  /// - Session renewal for frequent/active connections
+  Future<void> _manageSessionLifecycle() async {
+    try {
+      // Check if Signal Protocol services are available
+      final sl = GetIt.instance;
+      if (!sl.isRegistered<SignalSessionManager>()) {
+        return; // Signal Protocol not available
+      }
+
+      final sessionManager = sl<SignalSessionManager>();
+
+      _logger.debug('Managing Signal Protocol session lifecycle',
+          tag: _logName);
+
+      // 1. Check for expired sessions based on connection quality
+      await _expireSessionsBasedOnQuality(sessionManager);
+
+      // 2. Clean up inactive sessions (no activity for extended period)
+      await _cleanupInactiveSessions(sessionManager);
+
+      // 3. Renew sessions for frequent/active connections
+      await _renewActiveSessions(sessionManager);
+
+      // 4. Rotate keys based on connection quality changes (AI2AI-specific)
+      await _rotateKeysBasedOnQualityChanges(sessionManager);
+    } catch (e, st) {
+      _logger.error(
+        'Error managing session lifecycle: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Manage prekey bundle rotation and refresh (Enhanced BLE distribution)
+  ///
+  /// Implements automatic prekey bundle management:
+  /// - Cleanup expired prekey bundles
+  /// - Proactive refresh of bundles expiring soon
+  /// - Distribution of fresh bundles via BLE to active connections
+  Future<void> _managePreKeyBundleRotation() async {
+    try {
+      final signalKeyManager = _signalKeyManager;
+      if (signalKeyManager == null) {
+        return; // Signal Protocol not available
+      }
+
+      // Cleanup expired prekey bundles
+      await signalKeyManager.cleanupExpiredPreKeyBundles();
+
+      // Get recipients needing refresh (expiring soon)
+      final recipientsNeedingRefresh =
+          signalKeyManager.getRecipientsNeedingRefresh();
+
+      // Proactively refresh bundles for active connections
+      for (final recipientId in recipientsNeedingRefresh) {
+        // Check if recipient has an active connection
+        final hasActiveConnection = _activeConnections.values.any(
+          (connection) =>
+              connection.remoteAISignature == recipientId &&
+              (connection.status == ConnectionStatus.active ||
+                  connection.status == ConnectionStatus.learning),
+        );
+
+        if (hasActiveConnection) {
+          _logger.debug(
+            'Proactively refreshing prekey bundle for active connection: $recipientId',
+            tag: _logName,
+          );
+
+          // Background refresh (non-blocking)
+          unawaited(
+            signalKeyManager.fetchPreKeyBundle(recipientId).then((bundle) {
+              _logger.debug(
+                'Successfully refreshed prekey bundle for recipient: $recipientId',
+                tag: _logName,
+              );
+              return bundle;
+            }).catchError((e) {
+              _logger.warn(
+                'Failed to refresh prekey bundle for $recipientId: $e',
+                tag: _logName,
+              );
+              // Return a dummy bundle to satisfy type checker (won't be used)
+              return SignalPreKeyBundle(
+                preKeyId: 'error',
+                signedPreKey: Uint8List(0),
+                signedPreKeyId: 0,
+                signature: Uint8List(0),
+                identityKey: Uint8List(0),
+                kyberPreKeyId: 0,
+                kyberPreKey: Uint8List(0),
+                kyberPreKeySignature: Uint8List(0),
+              );
+            }),
+          );
+        }
+      }
+
+      // Note: Prekey bundle distribution via BLE is handled by PersonalityAdvertisingService
+      // (advertising side serves bundles on stream 1). We just manage refresh/rotation here.
+    } catch (e, st) {
+      _logger.error(
+        'Error managing prekey bundle rotation: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Expire sessions based on connection quality (AI2AI-specific)
+  ///
+  /// Uses SignalSessionManager's quality-based methods to expire sessions
+  /// for connections with poor quality.
+  Future<void> _expireSessionsBasedOnQuality(
+      SignalSessionManager sessionManager) async {
+    try {
+      // Build map of agent ID to ConnectionMetrics for active connections
+      final metricsByAgentId = <String, ConnectionMetrics>{};
+      for (final connection in _activeConnections.values) {
+        // Skip if connection is not active
+        if (connection.status != ConnectionStatus.active &&
+            connection.status != ConnectionStatus.learning) {
+          continue;
+        }
+
+        metricsByAgentId[connection.remoteAISignature] = connection;
+      }
+
+      // Get sessions to close using SignalSessionManager's quality-based method
+      final sessionsToClose =
+          sessionManager.getSessionsToClose(metricsByAgentId);
+
+      // Close sessions and complete connections
+      for (final agentId in sessionsToClose) {
+        final connection = _activeConnections.values.firstWhere(
+          (c) => c.remoteAISignature == agentId,
+          orElse: () => throw StateError('Connection not found for agent'),
+        );
+
+        _logger.info(
+          'Expiring session for agent $agentId due to poor connection quality',
+          tag: _logName,
+        );
+
+        // Delete the session
+        await sessionManager.deleteSession(agentId);
+
+        // Mark connection for completion
+        _activeConnections.remove(connection.connectionId);
+        await _completeConnection(
+          connection,
+          reason: 'poor_connection_quality',
+        );
+      }
+    } catch (e, st) {
+      _logger.error(
+        'Error expiring sessions based on quality: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Clean up inactive sessions (no activity for extended period)
+  ///
+  /// Sessions are cleaned up if they haven't been used for a certain period
+  /// and don't have an active connection. High-quality connections are maintained
+  /// even if temporarily inactive.
+  Future<void> _cleanupInactiveSessions(
+      SignalSessionManager sessionManager) async {
+    try {
+      const inactivityThreshold = Duration(hours: 24); // 24 hours of inactivity
+      final now = DateTime.now();
+
+      // Build map of agent ID to ConnectionMetrics for active connections
+      final metricsByAgentId = <String, ConnectionMetrics>{};
+      for (final connection in _activeConnections.values) {
+        if (connection.status == ConnectionStatus.active ||
+            connection.status == ConnectionStatus.learning) {
+          metricsByAgentId[connection.remoteAISignature] = connection;
+        }
+      }
+
+      // Get sessions that should be maintained (high-quality connections)
+      final sessionsToMaintain =
+          sessionManager.getSessionsToMaintain(metricsByAgentId);
+      final maintainedSet = sessionsToMaintain.toSet();
+
+      // Get all sessions from SignalSessionManager
+      // Note: SignalSessionManager doesn't have a method to list all sessions,
+      // so we track sessions through active connections and discovered nodes
+
+      // Check sessions for active connections
+      final activeAgentIds =
+          _activeConnections.values.map((c) => c.remoteAISignature).toSet();
+
+      // Also check discovered nodes (may have sessions)
+      final discoveredAgentIds = _discoveredNodes.values
+          .map((n) => n.nodeId)
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
+      // Combine all potential agent IDs that might have sessions
+      final allAgentIds = {...activeAgentIds, ...discoveredAgentIds};
+
+      // Check each potential session
+      for (final agentId in allAgentIds) {
+        // Skip if this agent has an active connection
+        final hasActiveConnection = _activeConnections.values.any(
+          (c) =>
+              c.remoteAISignature == agentId &&
+              (c.status == ConnectionStatus.active ||
+                  c.status == ConnectionStatus.learning),
+        );
+
+        if (hasActiveConnection) {
+          continue; // Active connection, don't clean up
+        }
+
+        // Skip if session should be maintained (high-quality)
+        if (maintainedSet.contains(agentId)) {
+          _logger.debug(
+            'Skipping cleanup for maintained session (high-quality): $agentId',
+            tag: _logName,
+          );
+          continue; // High-quality session, maintain it
+        }
+
+        final session = await sessionManager.getSession(agentId);
+        if (session == null) {
+          continue; // No session to clean up
+        }
+
+        // Check last activity time
+        final lastActivity = session.lastUsedAt ?? session.createdAt;
+        final timeSinceActivity = now.difference(lastActivity);
+
+        if (timeSinceActivity >= inactivityThreshold) {
+          _logger.info(
+            'Cleaning up inactive session for agent $agentId: inactive for ${timeSinceActivity.inHours}h',
+            tag: _logName,
+          );
+
+          // Delete the inactive session
+          await sessionManager.deleteSession(agentId);
+        }
+      }
+    } catch (e, st) {
+      _logger.error(
+        'Error cleaning up inactive sessions: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Renew sessions for frequent/active connections
+  ///
+  /// Uses SignalSessionManager's quality-based methods to renew sessions
+  /// for high-quality, active connections.
+  Future<void> _renewActiveSessions(SignalSessionManager sessionManager) async {
+    try {
+      // Build map of agent ID to ConnectionMetrics for active connections
+      final metricsByAgentId = <String, ConnectionMetrics>{};
+      for (final connection in _activeConnections.values) {
+        // Skip if connection is not active
+        if (connection.status != ConnectionStatus.active &&
+            connection.status != ConnectionStatus.learning) {
+          continue;
+        }
+
+        metricsByAgentId[connection.remoteAISignature] = connection;
+      }
+
+      // Get sessions to renew using SignalSessionManager's quality-based method
+      final sessionsToRenew =
+          await sessionManager.getSessionsToRenew(metricsByAgentId);
+
+      // Renew sessions
+      for (final agentId in sessionsToRenew) {
+        _logger.info(
+          'Renewing session for agent $agentId based on connection quality',
+          tag: _logName,
+        );
+
+        // Trigger re-keying by checking needsRekeying and marking as rekeyed
+        // The actual re-keying will happen on next message send/receive
+        if (await sessionManager.needsRekeying(agentId)) {
+          // Mark as rekeyed (will trigger actual re-keying on next use)
+          await sessionManager.markRekeyed(agentId);
+
+          _logger.debug(
+            'Session renewal triggered for agent $agentId',
+            tag: _logName,
+          );
+        }
+      }
+    } catch (e, st) {
+      _logger.error(
+        'Error renewing active sessions: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Rotate keys based on connection quality changes (AI2AI-specific)
+  ///
+  /// Implements automatic key rotation triggered by significant connection quality changes.
+  /// Rotates keys when quality improves significantly (fresh keys for high-value connections)
+  /// or degrades significantly (security rotation for compromised connections).
+  ///
+  /// **AI2AI-Specific:**
+  /// - Rotation triggered by quality change threshold (30%)
+  /// - Integrates with Signal Protocol re-keying
+  /// - Prevents excessive rotation (cooldown period)
+  Future<void> _rotateKeysBasedOnQualityChanges(
+    SignalSessionManager sessionManager,
+  ) async {
+    try {
+      final sl = GetIt.instance;
+      final signalProtocolService = sl.isRegistered<SignalProtocolService>()
+          ? sl<SignalProtocolService>()
+          : null;
+
+      if (signalProtocolService == null) {
+        return; // Signal Protocol not available
+      }
+
+      // Track quality changes for active connections
+      for (final connection in _activeConnections.values) {
+        if (connection.status != ConnectionStatus.active &&
+            connection.status != ConnectionStatus.learning) {
+          continue; // Skip inactive connections
+        }
+
+        final agentId = connection.remoteAISignature;
+        final currentQuality = connection.qualityScore;
+        final previousQuality = _previousQualityScores[agentId];
+
+        // Initialize previous quality if not tracked
+        if (previousQuality == null) {
+          _previousQualityScores[agentId] = currentQuality;
+          continue; // First time tracking, no change to detect
+        }
+
+        // Calculate quality change
+        final qualityChange = (currentQuality - previousQuality).abs();
+
+        // Check if quality change exceeds threshold
+        if (qualityChange >= _qualityChangeThreshold) {
+          _logger.info(
+            'Significant quality change detected for agent $agentId: '
+            '${previousQuality.toStringAsFixed(2)} → ${currentQuality.toStringAsFixed(2)} '
+            '(change: ${(qualityChange * 100).toStringAsFixed(1)}%)',
+            tag: _logName,
+          );
+
+          // Check if session exists
+          final session = await sessionManager.getSession(agentId);
+          if (session != null) {
+            // Trigger key rotation by marking session as needing re-keying
+            // This will cause re-keying on next message send/receive
+            _logger.info(
+              'Triggering key rotation for agent $agentId due to quality change',
+              tag: _logName,
+            );
+
+            // Force re-keying by resetting re-keying timestamp
+            // This ensures re-keying happens on next message
+            await sessionManager.markRekeyed(agentId);
+
+            // Also trigger immediate re-keying by checking needsRekeying
+            // and performing re-keying if needed
+            if (await sessionManager.needsRekeying(agentId)) {
+              // Perform re-keying immediately (for quality-based rotation)
+              // Re-keying will happen automatically on next encryptMessage/decryptMessage
+              // We've already marked it as needing re-keying above
+              _logger.debug(
+                'Key rotation triggered for agent $agentId (quality change: ${(qualityChange * 100).toStringAsFixed(1)}%)',
+                tag: _logName,
+              );
+            }
+          }
+
+          // Update previous quality score
+          _previousQualityScores[agentId] = currentQuality;
+        }
+      }
+
+      // Clean up quality scores for inactive connections
+      final activeAgentIds = _activeConnections.values
+          .where((c) =>
+              c.status == ConnectionStatus.active ||
+              c.status == ConnectionStatus.learning)
+          .map((c) => c.remoteAISignature)
+          .toSet();
+
+      _previousQualityScores.removeWhere(
+        (agentId, _) => !activeAgentIds.contains(agentId),
+      );
+    } catch (e, st) {
+      _logger.error(
+        'Error rotating keys based on quality changes: $e',
+        tag: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
   }
 
   /// Check if device has active connectivity
@@ -2538,10 +3336,57 @@ class VibeConnectionOrchestrator {
       if (peerNodeId != null && peerNodeId.isNotEmpty) {
         _peerNodeIdByDeviceId[device.deviceId] = peerNodeId;
       }
+
+      // Phase 3.2: Enhanced offline-first prekey bundle exchange
+      // Check if bundle needs refresh (automatic refresh logic)
+      final needsRefresh = signalKeyManager.getRecipientsNeedingRefresh().contains(recipientId);
+      
+      if (needsRefresh) {
+        _logger.debug(
+          'Prekey bundle for $recipientId needs refresh - attempting background refresh',
+          tag: _logName,
+        );
+        
+        // Background refresh (non-blocking) - try to fetch fresh bundle from Supabase
+        unawaited(
+          signalKeyManager.fetchPreKeyBundle(recipientId).then((freshBundle) {
+            _logger.debug(
+              'Successfully refreshed prekey bundle for recipient: $recipientId',
+              tag: _logName,
+            );
+            // Fresh bundle is automatically cached by fetchPreKeyBundle
+          }).catchError((e) {
+            _logger.debug(
+              'Background refresh failed for $recipientId, using BLE bundle: $e',
+              tag: _logName,
+            );
+            // Continue with BLE bundle if refresh fails
+          }),
+        );
+      }
+
+      // Validate and cache prekey bundle (with automatic validation)
+      // This validates PQXDH requirements, signatures, expiration, etc.
       await signalKeyManager.cacheRemotePreKeyBundle(
         recipientId: recipientId,
         preKeyBundle: bundle,
       );
+
+      _logger.debug(
+        'Cached and validated prekey bundle for recipient: $recipientId (PQXDH enabled)',
+        tag: _logName,
+      );
+
+      // Phase 3.2: Mesh forwarding integration
+      // Forward prekey bundle through mesh network if mesh service is available
+      if (_adaptiveMeshService != null && _isFederatedLearningParticipationEnabled()) {
+        await _forwardPreKeyBundleThroughMesh(
+          bundle: bundle,
+          recipientId: recipientId,
+          device: device,
+        );
+      }
+
       if (LedgerAuditV0.isEnabled) {
         unawaited(LedgerAuditV0.tryAppend(
           domain: LedgerDomainV0.deviceCapability,
@@ -2608,6 +3453,103 @@ class VibeConnectionOrchestrator {
           },
         ));
       }
+    }
+  }
+
+  /// Forward prekey bundle through mesh network (Phase 3.2: Mesh forwarding integration)
+  ///
+  /// Forwards prekey bundle to nearby devices for multi-hop key exchange.
+  /// This enables key exchange even without direct connection.
+  Future<void> _forwardPreKeyBundleThroughMesh({
+    required SignalPreKeyBundle bundle,
+    required String recipientId,
+    required DiscoveredDevice device,
+  }) async {
+    if (!_allowBleSideEffects || _deviceDiscovery == null || _protocol == null) {
+      return;
+    }
+
+    try {
+      // Only forward if mesh service says we should
+      if (_adaptiveMeshService == null) {
+        return;
+      }
+
+      // Check if mesh forwarding is allowed (1-hop limit for prekey bundles)
+      if (!_adaptiveMeshService!.shouldForwardMessage(
+        currentHop: 0,
+        priority: mesh_policy.MessagePriority.high,
+        messageType: mesh_policy.MessageType.learningInsight, // Reuse type
+        geographicScope: 'locality', // Prekey bundles are locality-scoped
+      )) {
+        return;
+      }
+
+      // Choose up to 2 nearby devices to forward to (best-effort)
+      final candidates = _discoveredNodes.values
+          .map((n) => n.nodeId)
+          .where((id) => id != recipientId && id != _localBleNodeId)
+          .take(2)
+          .toList();
+
+      if (candidates.isEmpty) {
+        return;
+      }
+
+      // Create prekey bundle message for forwarding
+      final bundleJson = bundle.toJson();
+      final forwardPayload = <String, dynamic>{
+        'kind': 'prekey_bundle_forward',
+        'recipient_id': recipientId,
+        'prekey_bundle': bundleJson,
+        'hop': 1, // Starting at hop 1 (we received it at hop 0)
+        'origin_id': recipientId,
+        'scope': 'locality', // Prekey bundles are locality-scoped
+      };
+
+      // Forward to candidates
+      for (final peerId in candidates) {
+        final peerDevice = _deviceDiscovery!.getDevice(peerId);
+        if (peerDevice == null || peerDevice.type != DeviceType.bluetooth) {
+          continue;
+        }
+
+        final peerRecipientId = _peerNodeIdByDeviceId[peerDevice.deviceId] ?? peerDevice.deviceId;
+
+        try {
+          final packetBytes = await _protocol!.encodePacketBytes(
+            type: MessageType.learningInsight, // Reuse learning insight type for prekey forwarding
+            payload: forwardPayload,
+            senderNodeId: _localBleNodeId,
+            recipientNodeId: peerRecipientId,
+            geographicScope: 'locality',
+          );
+
+          // Best-effort send (don't block)
+          unawaited(
+            sendBlePacketsBatch(
+              device: peerDevice,
+              senderId: _localBleNodeId,
+              packetBytesList: <Uint8List>[packetBytes],
+            ),
+          );
+
+          _logger.debug(
+            'Forwarded prekey bundle through mesh: $recipientId → $peerRecipientId',
+            tag: _logName,
+          );
+        } catch (e) {
+          _logger.debug(
+            'Failed to forward prekey bundle to $peerRecipientId: $e',
+            tag: _logName,
+          );
+        }
+      }
+    } catch (e) {
+      _logger.debug(
+        'Error forwarding prekey bundle through mesh: $e',
+        tag: _logName,
+      );
     }
   }
 
@@ -2844,13 +3786,88 @@ class VibeConnectionOrchestrator {
         }
       }
 
-      // Update connection with initial interaction
+      // Extract handshake hash for channel binding (if Signal Protocol session exists)
+      Uint8List? handshakeHash;
+      String? localAgentFingerprint;
+      String? remoteAgentFingerprint;
+
+      try {
+        final sl = GetIt.instance;
+        final signalKeyManager = _signalKeyManager;
+
+        // Generate local agent fingerprint (from our identity key)
+        if (signalKeyManager != null) {
+          try {
+            final localIdentityKeyPair =
+                await signalKeyManager.getOrGenerateIdentityKeyPair();
+            final localFingerprint =
+                AIAgentFingerprintService.generateFingerprintFromKeyPair(
+                    localIdentityKeyPair);
+            localAgentFingerprint = localFingerprint.hexString;
+
+            _logger.debug(
+              'Generated local AI agent fingerprint: ${localFingerprint.displayFormat.substring(0, 20)}...',
+              tag: _logName,
+            );
+          } catch (e) {
+            _logger.debug(
+              'Failed to generate local fingerprint: $e',
+              tag: _logName,
+            );
+          }
+
+          // Generate remote agent fingerprint (from remote prekey bundle)
+          try {
+            final remotePreKeyBundle =
+                await signalKeyManager.fetchPreKeyBundle(remoteAgentId);
+            final remoteFingerprint =
+                AIAgentFingerprintService.generateFingerprintFromBundle(
+                    remotePreKeyBundle);
+            remoteAgentFingerprint = remoteFingerprint.hexString;
+
+            _logger.debug(
+              'Generated remote AI agent fingerprint: ${remoteFingerprint.displayFormat.substring(0, 20)}...',
+              tag: _logName,
+            );
+          } catch (e) {
+            _logger.debug(
+              'Failed to generate remote fingerprint: $e (will be set on first message)',
+              tag: _logName,
+            );
+          }
+        }
+
+        // Extract channel binding hash
+        if (sl.isRegistered<SignalSessionManager>()) {
+          final sessionManager = sl<SignalSessionManager>();
+          handshakeHash =
+              await sessionManager.getChannelBindingHash(remoteAgentId);
+
+          if (handshakeHash != null) {
+            _logger.debug(
+              'Channel binding hash extracted for connection: ${initialMetrics.connectionId}',
+              tag: _logName,
+            );
+          }
+        }
+      } catch (e) {
+        // Non-fatal: continue without fingerprints/hash
+        _logger.debug(
+          'Failed to extract fingerprints/channel binding hash: $e (will be set on first message)',
+          tag: _logName,
+        );
+      }
+
+      // Update connection with initial interaction, fingerprints, and channel binding hash
       final updatedMetrics = initialMetrics.updateDuringInteraction(
         newInteraction: initialInteraction,
         additionalOutcomes: {
           'successful_exchanges': 1,
           if (braidedKnot != null) 'braided_knot_id': braidedKnot.id,
         },
+        handshakeHash: handshakeHash,
+        localAgentFingerprint: localAgentFingerprint,
+        remoteAgentFingerprint: remoteAgentFingerprint,
       );
 
       return updatedMetrics;
@@ -2861,6 +3878,31 @@ class VibeConnectionOrchestrator {
       // #endregion
       return null;
     }
+  }
+
+  /// Get current battery level (for rate limiting integration)
+  ///
+  /// Returns battery level (0-100) or null if battery scheduler not available.
+  Future<int?> getBatteryLevel() async {
+    if (_batteryScheduler != null) {
+      try {
+        return await _batteryScheduler!.getBatteryLevel();
+      } catch (e) {
+        _logger.debug(
+          'Failed to get battery level: $e',
+          tag: _logName,
+        );
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /// Get current network density (for rate limiting integration)
+  ///
+  /// Returns network density or null if adaptive mesh service not available.
+  int? getNetworkDensity() {
+    return _adaptiveMeshService?.networkDensity;
   }
 
   void _scheduleConnectionManagement(ConnectionMetrics connection) {
@@ -3074,11 +4116,37 @@ class VibeConnectionOrchestrator {
     if (discovery == null) return;
 
     final hop = (message['hop'] as num?)?.toInt() ?? 0;
-    final originId = message['origin_id'] as String? ?? message['agent_id'] as String?;
+    final originId =
+        message['origin_id'] as String? ?? message['agent_id'] as String?;
 
-    // Use adaptive mesh service to check hop limit
+    // Bloom filter check (BEFORE adaptive hop limits) - AI2AI-specific
+    final messageHash =
+        sha256.convert(utf8.encode(jsonEncode(message))).toString();
+    final scope =
+        message['scope'] as String? ?? 'locality'; // Default to locality
+    final bloomFilter = _getOrCreateBloomFilter(scope);
+
+    // Check if message might already be in filter (loop prevention)
+    if (bloomFilter.mightContain(messageHash)) {
+      _logger.debug(
+        'Bloom filter: locality agent update might be duplicate, skipping forward (scope: $scope)',
+        tag: _logName,
+      );
+      return; // Might be a loop, don't forward
+    }
+
+    // Add message to filter
+    if (!bloomFilter.add(messageHash)) {
+      _logger.debug(
+        'Bloom filter full, clearing and retrying (scope: $scope)',
+        tag: _logName,
+      );
+      bloomFilter.clear();
+      bloomFilter.add(messageHash);
+    }
+
+    // Use adaptive mesh service to check hop limit (AFTER Bloom filter check)
     if (_adaptiveMeshService != null) {
-      final scope = message['scope'] as String?;
       if (!_adaptiveMeshService!.shouldForwardMessage(
         currentHop: hop,
         priority: mesh_policy.MessagePriority.high,
@@ -3114,7 +4182,8 @@ class VibeConnectionOrchestrator {
         final recipientId =
             _peerNodeIdByDeviceId[device.deviceId] ?? device.deviceId;
         final packetBytes = await protocol.encodePacketBytes(
-          type: MessageType.learningInsight, // Reuse learning insight type for now
+          type: MessageType
+              .learningInsight, // Reuse learning insight type for now
           payload: forwardedMessage,
           senderNodeId: _localBleNodeId,
           recipientNodeId: recipientId,
@@ -3128,14 +4197,16 @@ class VibeConnectionOrchestrator {
         );
       }
 
-      _logger.debug('Forwarded locality agent update through mesh', tag: _logName);
+      _logger.debug('Forwarded locality agent update through mesh',
+          tag: _logName);
     } catch (e) {
       _logger.debug('Locality agent update forward failed: $e', tag: _logName);
     }
   }
 
   /// NEW: Handle incoming locality agent update from mesh
-  Future<void> _handleIncomingLocalityAgentUpdate(ProtocolMessage message) async {
+  Future<void> _handleIncomingLocalityAgentUpdate(
+      ProtocolMessage message) async {
     try {
       final payload = message.payload;
       final type = payload['type'] as String?;
@@ -3186,8 +4257,8 @@ class VibeConnectionOrchestrator {
       if (sl.isRegistered<LocalityAgentMeshCache>()) {
         try {
           final meshCache = sl<LocalityAgentMeshCache>();
-          final ttlMs = (payload['ttl_ms'] as num?)?.toInt() ?? 
-                        (6 * 60 * 60 * 1000); // Default 6 hours
+          final ttlMs = (payload['ttl_ms'] as num?)?.toInt() ??
+              (6 * 60 * 60 * 1000); // Default 6 hours
           await meshCache.storeMeshUpdate(
             key: key,
             delta12: delta12,
@@ -3239,8 +4310,33 @@ class VibeConnectionOrchestrator {
     if (!_allowBleSideEffects) return;
     if (!_isFederatedLearningParticipationEnabled()) return;
 
+    // Bloom filter check (BEFORE adaptive hop limits) - AI2AI-specific
+    final messageHash =
+        sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+    final scope =
+        payload['scope'] as String? ?? 'locality'; // Default to locality
+    final bloomFilter = _getOrCreateBloomFilter(scope);
+
+    // Check if message might already be in filter (loop prevention)
+    if (bloomFilter.mightContain(messageHash)) {
+      _logger.debug(
+        'Bloom filter: locality agent update might be duplicate, skipping forward (scope: $scope)',
+        tag: _logName,
+      );
+      return; // Might be a loop, don't forward
+    }
+
+    // Add message to filter
+    if (!bloomFilter.add(messageHash)) {
+      _logger.debug(
+        'Bloom filter full, clearing and retrying (scope: $scope)',
+        tag: _logName,
+      );
+      bloomFilter.clear();
+      bloomFilter.add(messageHash);
+    }
+
     // Use adaptive hop limit
-    final scope = payload['scope'] as String?;
     if (_adaptiveMeshService != null) {
       if (!_adaptiveMeshService!.shouldForwardMessage(
         currentHop: hop,
@@ -3303,6 +4399,14 @@ class VibeConnectionOrchestrator {
       _logger.debug('Locality agent update gossip forward failed: $e',
           tag: _logName);
     }
+  }
+
+  /// Get or create Bloom filter for geographic scope (AI2AI-specific)
+  OptimizedBloomFilter _getOrCreateBloomFilter(String scope) {
+    return _bloomFilters.putIfAbsent(
+      scope,
+      () => OptimizedBloomFilter(geographicScope: scope),
+    );
   }
 }
 

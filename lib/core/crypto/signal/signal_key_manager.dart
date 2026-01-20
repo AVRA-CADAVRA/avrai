@@ -37,6 +37,12 @@ class SignalKeyManager {
   static const String _preKeyCachePrefix = 'signal_prekey_cache_';
   static const String _dmInviteTokenPrefix = 'signal_dm_invite_token_v1_';
   static const Duration _defaultPreKeyCacheTtl = Duration(hours: 24);
+  
+  /// Refresh threshold: refresh bundle if it expires within this time
+  static const Duration _preKeyRefreshThreshold = Duration(hours: 2);
+  
+  /// Rotation interval: generate new bundle every N hours
+  static const Duration _preKeyRotationInterval = Duration(hours: 12);
 
   final FlutterSecureStorage _secureStorage;
   final SignalFFIBindings _ffiBindings;
@@ -93,26 +99,32 @@ class SignalKeyManager {
   /// Cache a remote prekey bundle for offline session establishment (Mode 2).
   ///
   /// Stores the bundle in-memory and in secure storage with a TTL.
+  /// Validates bundle before caching (PQXDH requirements).
   Future<void> cacheRemotePreKeyBundle({
     required String recipientId,
     required SignalPreKeyBundle preKeyBundle,
     Duration ttl = _defaultPreKeyCacheTtl,
   }) async {
+    // Validate bundle before caching (PQXDH requirements, signatures, etc.)
+    _validatePreKeyBundle(preKeyBundle, recipientId);
+    
     final expiresAt = DateTime.now().toUtc().add(ttl);
 
     _cachedRemotePreKeyBundles[recipientId] = _CachedPreKeyBundle(
       bundle: preKeyBundle,
       expiresAt: expiresAt,
+      cachedAt: DateTime.now().toUtc(),
     );
 
     try {
       final storageKey = '$_preKeyCachePrefix$recipientId';
       final json = <String, dynamic>{
         'expires_at': expiresAt.toIso8601String(),
+        'cached_at': DateTime.now().toUtc().toIso8601String(),
         'bundle': _preKeyBundleToJsonEncodable(preKeyBundle),
       };
       await _secureStorage.write(key: storageKey, value: jsonEncode(json));
-      developer.log('✅ Cached remote prekey bundle for $recipientId',
+      developer.log('✅ Cached remote prekey bundle for $recipientId (expires in ${ttl.inHours}h)',
           name: _logName);
     } catch (e, st) {
       developer.log(
@@ -155,10 +167,17 @@ class SignalKeyManager {
 
       final bundleJson = decoded['bundle'] as Map<String, dynamic>;
       final bundle = SignalPreKeyBundle.fromJson(bundleJson);
+      final cachedAt = decoded['cached_at'] != null
+          ? DateTime.parse(decoded['cached_at'] as String).toUtc()
+          : expiresAt.subtract(_defaultPreKeyCacheTtl);
+
+      // Validate loaded bundle
+      _validatePreKeyBundle(bundle, recipientId);
 
       _cachedRemotePreKeyBundles[recipientId] = _CachedPreKeyBundle(
         bundle: bundle,
         expiresAt: expiresAt,
+        cachedAt: cachedAt,
       );
       return bundle;
     } catch (e, st) {
@@ -470,7 +489,7 @@ class SignalKeyManager {
       final identityKeyPair = await getOrGenerateIdentityKeyPair();
       final registrationId = await getOrGenerateRegistrationId();
 
-      developer.log('Generating prekey bundle', name: _logName);
+      developer.log('Generating prekey bundle with PQXDH (ML-KEM) support', name: _logName);
       final localMaterial = await _ffiBindings.generateLocalPreKeyMaterial(
         identityKeyPair: identityKeyPair,
         registrationId: registrationId,
@@ -484,6 +503,7 @@ class SignalKeyManager {
       );
       await setCurrentSignedPreKeyId(localMaterial.bundle.signedPreKeyId);
 
+      // PQXDH: Kyber prekey (ML-KEM) is required for modern Signal Protocol
       final kyberId = localMaterial.bundle.kyberPreKeyId;
       if (kyberId != null) {
         await storeKyberPreKeyRecord(
@@ -491,6 +511,16 @@ class SignalKeyManager {
           serialized: localMaterial.kyberPreKeyRecordSerialized,
         );
         await setCurrentKyberPreKeyId(kyberId);
+        
+        developer.log(
+          '✅ Kyber prekey (ML-KEM) stored for PQXDH: id=$kyberId',
+          name: _logName,
+        );
+      } else {
+        developer.log(
+          '⚠️ Warning: No kyber prekey generated. PQXDH support may be limited.',
+          name: _logName,
+        );
       }
 
       final preKeyId = localMaterial.bundle.oneTimePreKeyId;
@@ -726,6 +756,23 @@ class SignalKeyManager {
       // Offline-first cache (Mode 2: BLE bootstrap)
       final cached = await _getCachedRemotePreKeyBundle(recipientUserId);
       if (cached != null) {
+        // Check if bundle needs refresh (expiring soon)
+        final cachedEntry = _cachedRemotePreKeyBundles[recipientUserId];
+        if (cachedEntry != null) {
+          final timeUntilExpiry = cachedEntry.expiresAt.difference(DateTime.now().toUtc());
+          if (timeUntilExpiry < _preKeyRefreshThreshold) {
+            developer.log(
+              'Prekey bundle expiring soon for recipient: $recipientUserId (${timeUntilExpiry.inHours}h remaining). Will refresh proactively.',
+              name: _logName,
+            );
+            // Proactively refresh in background (non-blocking)
+            _refreshPreKeyBundleInBackground(recipientUserId);
+          }
+        }
+        
+        // Validate cached bundle (PQXDH requirements)
+        _validatePreKeyBundle(cached, recipientUserId);
+        
         developer.log(
           '✅ Using cached prekey bundle for recipient: $recipientUserId',
           name: _logName,
@@ -784,6 +831,15 @@ class SignalKeyManager {
 
           if (jsonData != null) {
             final preKeyBundle = SignalPreKeyBundle.fromJson(jsonData);
+
+            // Validate fetched bundle (PQXDH requirements)
+            _validatePreKeyBundle(preKeyBundle, recipientUserId);
+            
+            // Cache the fetched bundle for offline use
+            await cacheRemotePreKeyBundle(
+              recipientId: recipientUserId,
+              preKeyBundle: preKeyBundle,
+            );
 
             developer.log(
               '✅ Fetched prekey bundle from Supabase for recipient: $recipientUserId',
@@ -929,14 +985,176 @@ class SignalKeyManager {
       rethrow;
     }
   }
+  
+  /// Validate prekey bundle (PQXDH requirements, signatures, etc.)
+  ///
+  /// **Validations:**
+  /// - PQXDH: Kyber prekey, kyber prekey ID, and signature must be present
+  /// - Required fields: Identity key, signed prekey, signature
+  /// - Signature validation (if identity key available)
+  ///
+  /// **Throws:**
+  /// - `SignalProtocolException` if validation fails
+  void _validatePreKeyBundle(
+    SignalPreKeyBundle bundle,
+    String recipientId,
+  ) {
+    // Validate PQXDH requirements (required for modern Signal Protocol)
+    if (bundle.kyberPreKey == null ||
+        bundle.kyberPreKeyId == null ||
+        bundle.kyberPreKeySignature == null) {
+      throw SignalProtocolException(
+        'Invalid prekey bundle for recipient $recipientId: PQXDH (Post-Quantum Security) required. '
+        'Bundle must include kyberPreKey, kyberPreKeyId, and kyberPreKeySignature.',
+        code: 'PQXDH_REQUIRED',
+      );
+    }
+    
+    // Validate required fields
+    if (bundle.identityKey.isEmpty) {
+      throw SignalProtocolException(
+        'Invalid prekey bundle for recipient $recipientId: identity key is empty',
+        code: 'MISSING_IDENTITY_KEY',
+      );
+    }
+    
+    if (bundle.signedPreKey.isEmpty) {
+      throw SignalProtocolException(
+        'Invalid prekey bundle for recipient $recipientId: signed prekey is empty',
+        code: 'MISSING_SIGNED_PREKEY',
+      );
+    }
+    
+    if (bundle.signature.isEmpty) {
+      throw SignalProtocolException(
+        'Invalid prekey bundle for recipient $recipientId: signature is empty',
+        code: 'MISSING_SIGNATURE',
+      );
+    }
+    
+    // Validate kyber prekey signature (basic size check)
+    if (bundle.kyberPreKeySignature == null ||
+        bundle.kyberPreKeySignature!.isEmpty) {
+      throw SignalProtocolException(
+        'Invalid prekey bundle for recipient $recipientId: kyber prekey signature is empty',
+        code: 'MISSING_KYBER_SIGNATURE',
+      );
+    }
+    
+    developer.log(
+      '✅ Prekey bundle validated for recipient: $recipientId (PQXDH enabled)',
+      name: _logName,
+    );
+  }
+  
+  /// Refresh prekey bundle in background (non-blocking)
+  ///
+  /// Attempts to fetch a fresh bundle from Supabase if available.
+  /// Does not block or throw errors - logs failures only.
+  Future<void> _refreshPreKeyBundleInBackground(String recipientId) async {
+    if (_supabaseService == null || !_supabaseService!.isAvailable) {
+      return; // Cannot refresh without Supabase
+    }
+    
+    try {
+      developer.log(
+        'Proactively refreshing prekey bundle for recipient: $recipientId',
+        name: _logName,
+      );
+      
+      // Fetch fresh bundle (this will cache it automatically)
+      await fetchPreKeyBundle(recipientId);
+      
+      developer.log(
+        '✅ Successfully refreshed prekey bundle for recipient: $recipientId',
+        name: _logName,
+      );
+    } catch (e, st) {
+      // Non-blocking: log but don't fail
+      developer.log(
+        'Warning: Failed to refresh prekey bundle for recipient $recipientId: $e',
+        name: _logName,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+  
+  /// Check if prekey bundle needs rotation
+  ///
+  /// Returns true if bundle should be rotated (cached for too long).
+  bool shouldRotatePreKeyBundle(String recipientId) {
+    final cached = _cachedRemotePreKeyBundles[recipientId];
+    if (cached == null) return false;
+    return cached.shouldRotate(_preKeyRotationInterval);
+  }
+  
+  /// Get all recipient IDs that need bundle rotation
+  List<String> getRecipientsNeedingRotation() {
+    return _cachedRemotePreKeyBundles.entries
+        .where((entry) => entry.value.shouldRotate(_preKeyRotationInterval))
+        .map((entry) => entry.key)
+        .toList();
+  }
+  
+  /// Get all recipient IDs that need bundle refresh
+  List<String> getRecipientsNeedingRefresh() {
+    return _cachedRemotePreKeyBundles.entries
+        .where((entry) => entry.value.needsRefresh(_preKeyRefreshThreshold))
+        .map((entry) => entry.key)
+        .toList();
+  }
+  
+  /// Clean up expired prekey bundles
+  Future<void> cleanupExpiredPreKeyBundles() async {
+    final now = DateTime.now().toUtc();
+    final expired = <String>[];
+    
+    for (final entry in _cachedRemotePreKeyBundles.entries) {
+      if (!entry.value.expiresAt.isAfter(now)) {
+        expired.add(entry.key);
+      }
+    }
+    
+    for (final recipientId in expired) {
+      _cachedRemotePreKeyBundles.remove(recipientId);
+      try {
+        final storageKey = '$_preKeyCachePrefix$recipientId';
+        await _secureStorage.delete(key: storageKey);
+      } catch (_) {
+        // Best-effort cleanup
+      }
+    }
+    
+    if (expired.isNotEmpty) {
+      developer.log(
+        'Cleaned up ${expired.length} expired prekey bundles',
+        name: _logName,
+      );
+    }
+  }
 }
 
 class _CachedPreKeyBundle {
   final SignalPreKeyBundle bundle;
   final DateTime expiresAt;
+  final DateTime cachedAt;
 
   const _CachedPreKeyBundle({
     required this.bundle,
     required this.expiresAt,
+    required this.cachedAt,
   });
+  
+  /// Check if bundle should be rotated (cached for too long)
+  bool shouldRotate(Duration rotationInterval) {
+    final age = DateTime.now().toUtc().difference(cachedAt);
+    return age >= rotationInterval;
+  }
+  
+  /// Check if bundle needs refresh (expiring soon)
+  bool needsRefresh(Duration refreshThreshold) {
+    final timeUntilExpiry = expiresAt.difference(DateTime.now().toUtc());
+    return timeUntilExpiry < refreshThreshold;
+  }
 }

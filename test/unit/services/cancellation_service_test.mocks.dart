@@ -7,19 +7,20 @@ import 'dart:async' as _i9;
 
 import 'package:avrai/core/models/expertise_event.dart' as _i2;
 import 'package:avrai/core/models/payment.dart' as _i6;
-import 'package:avrai/core/models/payment_intent.dart' as _i13;
+import 'package:avrai/core/models/payment_intent.dart' as _i14;
 import 'package:avrai/core/models/payment_result.dart' as _i4;
-import 'package:avrai/core/models/refund_distribution.dart' as _i15;
+import 'package:avrai/core/models/refund_distribution.dart' as _i16;
+import 'package:avrai/core/models/reservation.dart' as _i13;
 import 'package:avrai/core/models/revenue_split.dart' as _i5;
 import 'package:avrai/core/models/spot.dart' as _i11;
 import 'package:avrai/core/models/unified_user.dart' as _i10;
 import 'package:avrai/core/services/expertise_event_service.dart' as _i8;
 import 'package:avrai/core/services/payment_service.dart' as _i12;
-import 'package:avrai/core/services/refund_service.dart' as _i14;
+import 'package:avrai/core/services/refund_service.dart' as _i15;
 import 'package:avrai/core/services/stripe_service.dart' as _i3;
 import 'package:flutter_stripe/flutter_stripe.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i16;
+import 'package:mockito/src/dummies.dart' as _i17;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -34,6 +35,7 @@ import 'package:mockito/src/dummies.dart' as _i16;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeExpertiseEvent_0 extends _i1.SmartFake
     implements _i2.ExpertiseEvent {
@@ -460,6 +462,45 @@ class MockPaymentService extends _i1.Mock implements _i12.PaymentService {
       ) as _i5.RevenueSplit);
 
   @override
+  _i9.Future<_i4.PaymentResult> processReservationPayment({
+    required String? reservationId,
+    required _i13.ReservationType? reservationType,
+    required String? userId,
+    required double? ticketPrice,
+    required int? ticketCount,
+    double? depositAmount,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #processReservationPayment,
+          [],
+          {
+            #reservationId: reservationId,
+            #reservationType: reservationType,
+            #userId: userId,
+            #ticketPrice: ticketPrice,
+            #ticketCount: ticketCount,
+            #depositAmount: depositAmount,
+          },
+        ),
+        returnValue: _i9.Future<_i4.PaymentResult>.value(_FakePaymentResult_2(
+          this,
+          Invocation.method(
+            #processReservationPayment,
+            [],
+            {
+              #reservationId: reservationId,
+              #reservationType: reservationType,
+              #userId: userId,
+              #ticketPrice: ticketPrice,
+              #ticketCount: ticketCount,
+              #depositAmount: depositAmount,
+            },
+          ),
+        )),
+      ) as _i9.Future<_i4.PaymentResult>);
+
+  @override
   _i9.Future<_i6.Payment> confirmPayment({
     required String? paymentId,
     required String? paymentIntentId,
@@ -521,11 +562,11 @@ class MockPaymentService extends _i1.Mock implements _i12.PaymentService {
       );
 
   @override
-  _i13.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
+  _i14.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
       (super.noSuchMethod(Invocation.method(
         #getPaymentIntent,
         [paymentIntentId],
-      )) as _i13.PaymentIntent?);
+      )) as _i14.PaymentIntent?);
 
   @override
   List<_i6.Payment> getPaymentsForEvent(String? eventId) => (super.noSuchMethod(
@@ -634,13 +675,13 @@ class MockPaymentService extends _i1.Mock implements _i12.PaymentService {
 /// A class which mocks [RefundService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockRefundService extends _i1.Mock implements _i14.RefundService {
+class MockRefundService extends _i1.Mock implements _i15.RefundService {
   MockRefundService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i9.Future<List<_i15.RefundDistribution>> processRefund({
+  _i9.Future<List<_i16.RefundDistribution>> processRefund({
     required String? paymentId,
     required double? amount,
     String? cancellationId,
@@ -655,12 +696,12 @@ class MockRefundService extends _i1.Mock implements _i14.RefundService {
             #cancellationId: cancellationId,
           },
         ),
-        returnValue: _i9.Future<List<_i15.RefundDistribution>>.value(
-            <_i15.RefundDistribution>[]),
-      ) as _i9.Future<List<_i15.RefundDistribution>>);
+        returnValue: _i9.Future<List<_i16.RefundDistribution>>.value(
+            <_i16.RefundDistribution>[]),
+      ) as _i9.Future<List<_i16.RefundDistribution>>);
 
   @override
-  _i9.Future<List<_i15.RefundDistribution>> processBatchRefunds({
+  _i9.Future<List<_i16.RefundDistribution>> processBatchRefunds({
     required List<_i6.Payment>? payments,
     required String? cancellationId,
     required bool? fullRefund,
@@ -675,21 +716,21 @@ class MockRefundService extends _i1.Mock implements _i14.RefundService {
             #fullRefund: fullRefund,
           },
         ),
-        returnValue: _i9.Future<List<_i15.RefundDistribution>>.value(
-            <_i15.RefundDistribution>[]),
-      ) as _i9.Future<List<_i15.RefundDistribution>>);
+        returnValue: _i9.Future<List<_i16.RefundDistribution>>.value(
+            <_i16.RefundDistribution>[]),
+      ) as _i9.Future<List<_i16.RefundDistribution>>);
 
   @override
-  _i9.Future<List<_i15.RefundDistribution>> getRefundDistributions(
+  _i9.Future<List<_i16.RefundDistribution>> getRefundDistributions(
           String? cancellationId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getRefundDistributions,
           [cancellationId],
         ),
-        returnValue: _i9.Future<List<_i15.RefundDistribution>>.value(
-            <_i15.RefundDistribution>[]),
-      ) as _i9.Future<List<_i15.RefundDistribution>>);
+        returnValue: _i9.Future<List<_i16.RefundDistribution>>.value(
+            <_i16.RefundDistribution>[]),
+      ) as _i9.Future<List<_i16.RefundDistribution>>);
 
   @override
   _i9.Future<String?> getRefundStatus(String? paymentId) => (super.noSuchMethod(
@@ -741,7 +782,7 @@ class MockStripeService extends _i1.Mock implements _i3.StripeService {
             #metadata: metadata,
           },
         ),
-        returnValue: _i9.Future<String>.value(_i16.dummyValue<String>(
+        returnValue: _i9.Future<String>.value(_i17.dummyValue<String>(
           this,
           Invocation.method(
             #createPaymentIntent,
@@ -798,7 +839,7 @@ class MockStripeService extends _i1.Mock implements _i3.StripeService {
             #reason: reason,
           },
         ),
-        returnValue: _i9.Future<String>.value(_i16.dummyValue<String>(
+        returnValue: _i9.Future<String>.value(_i17.dummyValue<String>(
           this,
           Invocation.method(
             #processRefund,
@@ -818,7 +859,7 @@ class MockStripeService extends _i1.Mock implements _i3.StripeService {
           #handlePaymentError,
           [error],
         ),
-        returnValue: _i16.dummyValue<String>(
+        returnValue: _i17.dummyValue<String>(
           this,
           Invocation.method(
             #handlePaymentError,

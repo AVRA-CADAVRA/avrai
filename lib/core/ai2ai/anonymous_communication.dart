@@ -688,6 +688,7 @@ enum MessageType {
   reputationUpdate,
   networkMaintenance,
   emergencyAlert,
+  userChat, // NEW: User-to-user chat messages routed through AI2AI mesh
 }
 
 enum PrivacyLevel { low, medium, high, maximum }

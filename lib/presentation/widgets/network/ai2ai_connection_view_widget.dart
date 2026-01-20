@@ -580,6 +580,7 @@ class _AI2AIConnectionViewWidgetState extends State<AI2AIConnectionViewWidget> {
       ],
     );
   }
+
   
   Color _getCompatibilityColor(double score) {
     if (score >= 0.9) return AppColors.electricGreen;

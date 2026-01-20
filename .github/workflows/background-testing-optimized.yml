@@ -385,6 +385,16 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
       
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        override: true
+      
+    - name: Install cargo-audit
+      run: cargo install cargo-audit --version 0.18.0
+      
     - name: Run security analysis with retry
       uses: nick-fields/retry@v2
       with:
@@ -401,6 +411,20 @@ jobs:
           # Check for permission overuse
           grep -r "android.permission" android/ || echo "Permissions check completed"
           
+          # Run cargo audit on Rust dependencies
+          echo "🔍 Running cargo audit on Rust dependencies..."
+          if [ -f "native/knot_math/Cargo.toml" ]; then
+            cd native/knot_math
+            cargo audit || echo "⚠️  cargo audit found vulnerabilities or failed"
+            cd ../..
+          fi
+          
+          if [ -f "native/signal_ffi/wrapper_rust/Cargo.toml" ]; then
+            cd native/signal_ffi/wrapper_rust
+            cargo audit || echo "⚠️  cargo audit found vulnerabilities or failed"
+            cd ../../..
+          fi
+          
     - name: Generate security report
       run: |
         echo "# Security Analysis Report" > security-report.md
@@ -412,6 +436,10 @@ jobs:
         echo "- Hardcoded secrets: $(grep -r "password\|secret\|key\|token" lib/ | wc -l || echo '0') found" >> security-report.md
         echo "- Insecure HTTP calls: $(grep -r "http://" lib/ | wc -l || echo '0') found" >> security-report.md
         echo "- Permission usage: $(grep -r "android.permission" android/ | wc -l || echo '0') found" >> security-report.md
+        echo "" >> security-report.md
+        echo "## Rust Dependency Security (cargo audit)" >> security-report.md
+        echo "- Rust dependencies scanned for known vulnerabilities" >> security-report.md
+        echo "- Check cargo audit output above for details" >> security-report.md
         
     - name: Upload security report
       uses: actions/upload-artifact@v4

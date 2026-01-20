@@ -219,9 +219,52 @@ Future<void> registerAIServices(GetIt sl) async {
 
   // AI2AI Protocol (Philosophy: "The Key Works Everywhere")
   // Phase 14: Updated to use MessageEncryptionService (Signal Protocol ready)
-  sl.registerLazySingleton(() => AI2AIProtocol(
-        encryptionService: sl<MessageEncryptionService>(),
-      ));
+  // Create RateLimiter with late-binding providers for battery-aware and adaptive mesh integration
+  sl.registerLazySingleton(() {
+    // Create RateLimiter with providers that access ConnectionOrchestrator's services
+    // These providers will be called when rate limiting checks occur, allowing them
+    // to access services that are initialized in ConnectionOrchestrator
+    final rateLimiter = RateLimiter(
+      batteryLevelProvider: () {
+        try {
+          // Access battery level through ConnectionOrchestrator
+          // This will work even if orchestrator is created after protocol
+          // Function signature: Future<int>? Function()? - can return null or Future<int>
+          if (sl.isRegistered<VibeConnectionOrchestrator>()) {
+            final orchestrator = sl<VibeConnectionOrchestrator>();
+            // Get battery level and convert int? to int (default to 100 if null)
+            // Return Future<int> (the signature allows Future<int>?)
+            final future = orchestrator.getBatteryLevel().then((level) {
+              return level ?? 100; // Convert int? to int
+            });
+            return future;
+          }
+          return null; // Battery level not available yet
+        } catch (e) {
+          // Non-fatal: rate limiting will work without battery-aware adjustments
+          return null;
+        }
+      },
+      networkDensityProvider: () {
+        try {
+          // Access network density through ConnectionOrchestrator
+          if (sl.isRegistered<VibeConnectionOrchestrator>()) {
+            final orchestrator = sl<VibeConnectionOrchestrator>();
+            return orchestrator.getNetworkDensity();
+          }
+          return null; // Network density not available yet
+        } catch (e) {
+          // Non-fatal: rate limiting will work without adaptive mesh adjustments
+          return null;
+        }
+      },
+    );
+
+    return AI2AIProtocol(
+      encryptionService: sl<MessageEncryptionService>(),
+      rateLimiter: rateLimiter,
+    );
+  });
 
   // Connection Log Queue (Philosophy: "Cloud is optional enhancement")
   sl.registerLazySingleton(
@@ -606,14 +649,16 @@ Future<void> registerAIServices(GetIt sl) async {
   sl.registerLazySingleton(() => FriendChatService(
         encryptionService: sl<MessageEncryptionService>(),
         agentIdService: sl<AgentIdService>(),
-        realtimeBackend: sl.isRegistered<RealtimeBackend>() ? sl<RealtimeBackend>() : null,
+        realtimeBackend:
+            sl.isRegistered<RealtimeBackend>() ? sl<RealtimeBackend>() : null,
         atomicClock: sl<AtomicClockService>(),
         dmStore: sl<DmMessageStore>(),
       ));
   sl.registerLazySingleton(() => CommunityChatService(
         encryptionService: sl<MessageEncryptionService>(),
         agentIdService: sl<AgentIdService>(),
-        realtimeBackend: sl.isRegistered<RealtimeBackend>() ? sl<RealtimeBackend>() : null,
+        realtimeBackend:
+            sl.isRegistered<RealtimeBackend>() ? sl<RealtimeBackend>() : null,
         atomicClock: sl<AtomicClockService>(),
         dmStore: sl<DmMessageStore>(),
         senderKeyService: sl<CommunitySenderKeyService>(),
@@ -658,7 +703,8 @@ Future<void> registerAIServices(GetIt sl) async {
         encryptionService: sl<MessageEncryptionService>(),
         agentIdService:
             sl.isRegistered<AgentIdService>() ? sl<AgentIdService>() : null,
-        supabase: sl<SupabaseClient>(),
+        supabase:
+            sl.isRegistered<SupabaseClient>() ? sl<SupabaseClient>() : null,
         atomicClock: sl<AtomicClockService>(),
         anonymizationService: sl<UserAnonymizationService>(),
         supabaseService:

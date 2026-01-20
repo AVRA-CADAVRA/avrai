@@ -6,28 +6,29 @@
 import 'dart:async' as _i13;
 
 import 'package:avrai/core/models/business_account.dart' as _i10;
-import 'package:avrai/core/models/business_expert_preferences.dart' as _i23;
-import 'package:avrai/core/models/business_patron_preferences.dart' as _i24;
+import 'package:avrai/core/models/business_expert_preferences.dart' as _i24;
+import 'package:avrai/core/models/business_patron_preferences.dart' as _i25;
 import 'package:avrai/core/models/business_verification.dart' as _i11;
 import 'package:avrai/core/models/event_partnership.dart' as _i8;
 import 'package:avrai/core/models/expertise_event.dart' as _i6;
 import 'package:avrai/core/models/payment.dart' as _i5;
-import 'package:avrai/core/models/payment_intent.dart' as _i14;
+import 'package:avrai/core/models/payment_intent.dart' as _i15;
 import 'package:avrai/core/models/payment_result.dart' as _i3;
+import 'package:avrai/core/models/reservation.dart' as _i14;
 import 'package:avrai/core/models/revenue_split.dart' as _i4;
-import 'package:avrai/core/models/spot.dart' as _i17;
-import 'package:avrai/core/models/unified_user.dart' as _i16;
-import 'package:avrai/core/services/business_account_service.dart' as _i22;
-import 'package:avrai/core/services/business_service.dart' as _i21;
-import 'package:avrai/core/services/expertise_event_service.dart' as _i15;
-import 'package:avrai/core/services/partnership_matching_service.dart' as _i20;
-import 'package:avrai/core/services/partnership_service.dart' as _i19;
+import 'package:avrai/core/models/spot.dart' as _i18;
+import 'package:avrai/core/models/unified_user.dart' as _i17;
+import 'package:avrai/core/services/business_account_service.dart' as _i23;
+import 'package:avrai/core/services/business_service.dart' as _i22;
+import 'package:avrai/core/services/expertise_event_service.dart' as _i16;
+import 'package:avrai/core/services/partnership_matching_service.dart' as _i21;
+import 'package:avrai/core/services/partnership_service.dart' as _i20;
 import 'package:avrai/core/services/payment_event_service.dart' as _i9;
 import 'package:avrai/core/services/payment_service.dart' as _i12;
 import 'package:avrai/core/services/stripe_service.dart' as _i2;
 import 'package:flutter_stripe/flutter_stripe.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i18;
+import 'package:mockito/src/dummies.dart' as _i19;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -42,6 +43,7 @@ import 'package:mockito/src/dummies.dart' as _i18;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeStripeService_0 extends _i1.SmartFake implements _i2.StripeService {
   _FakeStripeService_0(
@@ -255,6 +257,45 @@ class MockPaymentService extends _i1.Mock implements _i12.PaymentService {
       ) as _i4.RevenueSplit);
 
   @override
+  _i13.Future<_i3.PaymentResult> processReservationPayment({
+    required String? reservationId,
+    required _i14.ReservationType? reservationType,
+    required String? userId,
+    required double? ticketPrice,
+    required int? ticketCount,
+    double? depositAmount,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #processReservationPayment,
+          [],
+          {
+            #reservationId: reservationId,
+            #reservationType: reservationType,
+            #userId: userId,
+            #ticketPrice: ticketPrice,
+            #ticketCount: ticketCount,
+            #depositAmount: depositAmount,
+          },
+        ),
+        returnValue: _i13.Future<_i3.PaymentResult>.value(_FakePaymentResult_1(
+          this,
+          Invocation.method(
+            #processReservationPayment,
+            [],
+            {
+              #reservationId: reservationId,
+              #reservationType: reservationType,
+              #userId: userId,
+              #ticketPrice: ticketPrice,
+              #ticketCount: ticketCount,
+              #depositAmount: depositAmount,
+            },
+          ),
+        )),
+      ) as _i13.Future<_i3.PaymentResult>);
+
+  @override
   _i13.Future<_i5.Payment> confirmPayment({
     required String? paymentId,
     required String? paymentIntentId,
@@ -316,11 +357,11 @@ class MockPaymentService extends _i1.Mock implements _i12.PaymentService {
       );
 
   @override
-  _i14.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
+  _i15.PaymentIntent? getPaymentIntent(String? paymentIntentId) =>
       (super.noSuchMethod(Invocation.method(
         #getPaymentIntent,
         [paymentIntentId],
-      )) as _i14.PaymentIntent?);
+      )) as _i15.PaymentIntent?);
 
   @override
   List<_i5.Payment> getPaymentsForEvent(String? eventId) => (super.noSuchMethod(
@@ -430,21 +471,21 @@ class MockPaymentService extends _i1.Mock implements _i12.PaymentService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockExpertiseEventService extends _i1.Mock
-    implements _i15.ExpertiseEventService {
+    implements _i16.ExpertiseEventService {
   MockExpertiseEventService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
   _i13.Future<_i6.ExpertiseEvent> createEvent({
-    required _i16.UnifiedUser? host,
+    required _i17.UnifiedUser? host,
     required String? title,
     required String? description,
     required String? category,
     required _i6.ExpertiseEventType? eventType,
     required DateTime? startTime,
     required DateTime? endTime,
-    List<_i17.Spot>? spots,
+    List<_i18.Spot>? spots,
     String? location,
     double? latitude,
     double? longitude,
@@ -539,7 +580,7 @@ class MockExpertiseEventService extends _i1.Mock
   @override
   _i13.Future<void> registerForEvent(
     _i6.ExpertiseEvent? event,
-    _i16.UnifiedUser? user,
+    _i17.UnifiedUser? user,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -556,7 +597,7 @@ class MockExpertiseEventService extends _i1.Mock
   @override
   _i13.Future<void> cancelRegistration(
     _i6.ExpertiseEvent? event,
-    _i16.UnifiedUser? user,
+    _i17.UnifiedUser? user,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -572,7 +613,7 @@ class MockExpertiseEventService extends _i1.Mock
 
   @override
   _i13.Future<List<_i6.ExpertiseEvent>> getEventsByHost(
-          _i16.UnifiedUser? host) =>
+          _i17.UnifiedUser? host) =>
       (super.noSuchMethod(
         Invocation.method(
           #getEventsByHost,
@@ -584,7 +625,7 @@ class MockExpertiseEventService extends _i1.Mock
 
   @override
   _i13.Future<List<_i6.ExpertiseEvent>> getEventsByAttendee(
-          _i16.UnifiedUser? user) =>
+          _i17.UnifiedUser? user) =>
       (super.noSuchMethod(
         Invocation.method(
           #getEventsByAttendee,
@@ -649,7 +690,7 @@ class MockExpertiseEventService extends _i1.Mock
 
   @override
   _i13.Future<List<_i6.ExpertiseEvent>> searchEventsWithConnectedLocalities({
-    required _i16.UnifiedUser? user,
+    required _i17.UnifiedUser? user,
     String? category,
     String? location,
     _i6.ExpertiseEventType? eventType,
@@ -735,7 +776,7 @@ class MockStripeService extends _i1.Mock implements _i2.StripeService {
             #metadata: metadata,
           },
         ),
-        returnValue: _i13.Future<String>.value(_i18.dummyValue<String>(
+        returnValue: _i13.Future<String>.value(_i19.dummyValue<String>(
           this,
           Invocation.method(
             #createPaymentIntent,
@@ -792,7 +833,7 @@ class MockStripeService extends _i1.Mock implements _i2.StripeService {
             #reason: reason,
           },
         ),
-        returnValue: _i13.Future<String>.value(_i18.dummyValue<String>(
+        returnValue: _i13.Future<String>.value(_i19.dummyValue<String>(
           this,
           Invocation.method(
             #processRefund,
@@ -812,7 +853,7 @@ class MockStripeService extends _i1.Mock implements _i2.StripeService {
           #handlePaymentError,
           [error],
         ),
-        returnValue: _i18.dummyValue<String>(
+        returnValue: _i19.dummyValue<String>(
           this,
           Invocation.method(
             #handlePaymentError,
@@ -826,7 +867,7 @@ class MockStripeService extends _i1.Mock implements _i2.StripeService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockPartnershipService extends _i1.Mock
-    implements _i19.PartnershipService {
+    implements _i20.PartnershipService {
   MockPartnershipService() {
     _i1.throwOnMissingStub(this);
   }
@@ -1005,7 +1046,7 @@ class MockPaymentEventService extends _i1.Mock
   @override
   _i13.Future<_i9.PaymentEventResult> processEventPayment({
     required _i6.ExpertiseEvent? event,
-    required _i16.UnifiedUser? user,
+    required _i17.UnifiedUser? user,
     int? quantity = 1,
   }) =>
       (super.noSuchMethod(
@@ -1068,13 +1109,13 @@ class MockPaymentEventService extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockPartnershipMatchingService extends _i1.Mock
-    implements _i20.PartnershipMatchingService {
+    implements _i21.PartnershipMatchingService {
   MockPartnershipMatchingService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i13.Future<List<_i20.PartnershipSuggestion>> findMatchingPartners({
+  _i13.Future<List<_i21.PartnershipSuggestion>> findMatchingPartners({
     required String? userId,
     required String? eventId,
     double? minCompatibility = 0.7,
@@ -1089,9 +1130,9 @@ class MockPartnershipMatchingService extends _i1.Mock
             #minCompatibility: minCompatibility,
           },
         ),
-        returnValue: _i13.Future<List<_i20.PartnershipSuggestion>>.value(
-            <_i20.PartnershipSuggestion>[]),
-      ) as _i13.Future<List<_i20.PartnershipSuggestion>>);
+        returnValue: _i13.Future<List<_i21.PartnershipSuggestion>>.value(
+            <_i21.PartnershipSuggestion>[]),
+      ) as _i13.Future<List<_i21.PartnershipSuggestion>>);
 
   @override
   _i13.Future<double> calculateCompatibility({
@@ -1113,7 +1154,7 @@ class MockPartnershipMatchingService extends _i1.Mock
       ) as _i13.Future<double>);
 
   @override
-  _i13.Future<List<_i20.PartnershipSuggestion>> getSuggestions(
+  _i13.Future<List<_i21.PartnershipSuggestion>> getSuggestions(
           {required String? eventId}) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1121,15 +1162,15 @@ class MockPartnershipMatchingService extends _i1.Mock
           [],
           {#eventId: eventId},
         ),
-        returnValue: _i13.Future<List<_i20.PartnershipSuggestion>>.value(
-            <_i20.PartnershipSuggestion>[]),
-      ) as _i13.Future<List<_i20.PartnershipSuggestion>>);
+        returnValue: _i13.Future<List<_i21.PartnershipSuggestion>>.value(
+            <_i21.PartnershipSuggestion>[]),
+      ) as _i13.Future<List<_i21.PartnershipSuggestion>>);
 }
 
 /// A class which mocks [BusinessService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockBusinessService extends _i1.Mock implements _i21.BusinessService {
+class MockBusinessService extends _i1.Mock implements _i22.BusinessService {
   MockBusinessService() {
     _i1.throwOnMissingStub(this);
   }
@@ -1338,14 +1379,14 @@ class MockBusinessService extends _i1.Mock implements _i21.BusinessService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockBusinessAccountService extends _i1.Mock
-    implements _i22.BusinessAccountService {
+    implements _i23.BusinessAccountService {
   MockBusinessAccountService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
   _i13.Future<_i10.BusinessAccount> createBusinessAccount({
-    required _i16.UnifiedUser? creator,
+    required _i17.UnifiedUser? creator,
     required String? name,
     required String? email,
     required String? businessType,
@@ -1357,8 +1398,8 @@ class MockBusinessAccountService extends _i1.Mock
     List<String>? categories,
     List<String>? requiredExpertise,
     List<String>? preferredCommunities,
-    _i23.BusinessExpertPreferences? expertPreferences,
-    _i24.BusinessPatronPreferences? patronPreferences,
+    _i24.BusinessExpertPreferences? expertPreferences,
+    _i25.BusinessPatronPreferences? patronPreferences,
     String? preferredLocation,
     int? minExpertLevel,
   }) =>
@@ -1425,8 +1466,8 @@ class MockBusinessAccountService extends _i1.Mock
     List<String>? categories,
     List<String>? requiredExpertise,
     List<String>? preferredCommunities,
-    _i23.BusinessExpertPreferences? expertPreferences,
-    _i24.BusinessPatronPreferences? patronPreferences,
+    _i24.BusinessExpertPreferences? expertPreferences,
+    _i25.BusinessPatronPreferences? patronPreferences,
     String? preferredLocation,
     int? minExpertLevel,
     bool? isVerified,

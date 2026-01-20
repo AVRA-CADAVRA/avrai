@@ -408,7 +408,7 @@ class _FederatedLearningSettingsSectionState
                   ),
                   value: _isParticipating,
                   onChanged: _toggleParticipation,
-                  activeColor: AppColors.electricGreen,
+                  activeThumbColor: AppColors.electricGreen,
                 ),
               ),
             ),
