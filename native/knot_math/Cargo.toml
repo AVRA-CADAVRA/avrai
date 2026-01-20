@@ -28,7 +28,7 @@ serde_json = "1.0"
 
 # === Error Handling ===
 anyhow = "1.0"
-thiserror = "1.0"
+thiserror = "2.0"
 
 # === FFI for Flutter ===
 flutter_rust_bridge = "=2.11.1"
