@@ -24,10 +24,9 @@ class InteractionEvent {
     required this.parameters,
     required this.context,
     DateTime? timestamp,
-    AtomicTimestamp? atomicTimestamp,
+    this.atomicTimestamp,
     this.agentId,
-  })  : timestamp = timestamp ?? DateTime.now(),
-        atomicTimestamp = atomicTimestamp; // Will be set by caller if needed
+  }) : timestamp = timestamp ?? DateTime.now();
 
   /// Create event from JSON (for database retrieval)
   factory InteractionEvent.fromJson(Map<String, dynamic> json) {

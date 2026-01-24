@@ -4,10 +4,13 @@
   "java.import.gradle.wrapper.enabled": true,
   "java.import.gradle.arguments": "--no-daemon",
   "java.configuration.runtimes": [],
+  "java.clean.workspace": false,
   "files.exclude": {
     "**/backups/**": true,
     "**/.metadata/**": true,
-    "**/native/signal_ffi/**": true
+    "**/native/signal_ffi/**": true,
+    "**/.avrai_rename_backup_*/**": true,
+    "**/.avra_rename_backup_*/**": true
   },
   "files.watcherExclude": {
     "**/native/signal_ffi/**": true
@@ -16,7 +19,9 @@
     "**/native/signal_ffi/**": true
   },
   "java.import.exclusions": [
-    "**/native/signal_ffi/**"
+    "**/native/signal_ffi/**",
+    "**/.avrai_rename_backup_*/**",
+    "**/.avra_rename_backup_*/**"
   ],
   "java.project.sourcePaths": [
     "android/app/src/main/java",

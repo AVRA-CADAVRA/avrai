@@ -359,78 +359,67 @@ class _RecurringReservationWidgetState
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: RadioListTile<bool>(
-                  title: const Text('End Date'),
-                  value: true,
-                  groupValue: _endDate != null,
-                  onChanged: (value) {
-                    if (value == true) {
-                      _selectEndDate();
-                    } else {
-                      setState(() {
-                        _endDate = null;
-                        _generatePreview();
-                      });
-                    }
-                  },
+          RadioGroup<bool>(
+            groupValue: _endDate != null,
+            onChanged: (val) {
+              if (val == true) {
+                // End Date selected
+                _selectEndDate();
+              } else {
+                // Max Occurrences selected
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Maximum Occurrences'),
+                    content: TextField(
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Number of occurrences',
+                      ),
+                      onSubmitted: (value) {
+                        final max = int.tryParse(value);
+                        if (max != null && max > 0) {
+                          setState(() {
+                            _maxOccurrences = max;
+                            _endDate = null;
+                            _generatePreview();
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Will be handled by onSubmitted
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+            child: Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const Text('End Date'),
+                    value: true,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: RadioListTile<bool>(
-                  title: const Text('Max Occurrences'),
-                  value: true,
-                  groupValue: _maxOccurrences != null,
-                  onChanged: (value) {
-                    if (value == true) {
-                      // Show dialog for max occurrences
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Maximum Occurrences'),
-                          content: TextField(
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Number of occurrences',
-                            ),
-                            onSubmitted: (value) {
-                              final max = int.tryParse(value);
-                              if (max != null && max > 0) {
-                                setState(() {
-                                  _maxOccurrences = max;
-                                  _endDate = null;
-                                  _generatePreview();
-                                });
-                                Navigator.pop(context);
-                              }
-                            },
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                // Will be handled by onSubmitted
-                              },
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      setState(() {
-                        _maxOccurrences = null;
-                        _generatePreview();
-                      });
-                    }
-                  },
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const Text('Max Occurrences'),
+                    value: false,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           if (_endDate != null) ...[

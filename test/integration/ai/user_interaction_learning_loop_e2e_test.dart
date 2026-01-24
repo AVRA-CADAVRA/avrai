@@ -74,7 +74,7 @@ void main() {
                 isSynchronized: true,
               ));
       when(mockPersonalityLearning.evolveFromUserAction(any, any))
-          .thenAnswer((_) async {});
+          .thenAnswer((_) async => PersonalityProfile.initial('agent_$testUserId'));
       when(mockPersonalityLearning.getCurrentPersonality(any))
           .thenAnswer((_) async => PersonalityProfile.initial('agent_$testUserId'));
       

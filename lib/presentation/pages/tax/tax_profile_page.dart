@@ -416,34 +416,40 @@ class _TaxProfilePageState extends State<TaxProfilePage> {
           ),
         ),
         const SizedBox(height: 12),
-        ...TaxClassification.values.map((classification) {
-          return RadioListTile<TaxClassification>(
-            title: Text(
-              _getClassificationDisplayName(classification),
-              style: const TextStyle(color: AppColors.textPrimary),
-            ),
-            subtitle: Text(
-              _getClassificationDescription(classification),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            value: classification,
-            groupValue: _selectedClassification,
-            onChanged: (value) {
+        RadioGroup<TaxClassification>(
+          groupValue: _selectedClassification,
+          onChanged: (val) {
+            if (val != null) {
               setState(() {
-                _selectedClassification = value;
+                _selectedClassification = val;
                 // Clear EIN/business name if switching to individual
-                if (value == TaxClassification.individual) {
+                if (val == TaxClassification.individual) {
                   _einController.clear();
                   _businessNameController.clear();
                 }
               });
-            },
-            activeColor: AppTheme.primaryColor,
-          );
-        }),
+            }
+          },
+          child: Column(
+            children: TaxClassification.values.map((classification) {
+              return RadioListTile<TaxClassification>(
+                title: Text(
+                  _getClassificationDisplayName(classification),
+                  style: const TextStyle(color: AppColors.textPrimary),
+                ),
+                subtitle: Text(
+                  _getClassificationDescription(classification),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                value: classification,
+                activeColor: AppTheme.primaryColor,
+              );
+            }).toList(),
+          ),
+        ),
       ],
     );
   }

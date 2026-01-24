@@ -6,7 +6,7 @@ import 'package:avrai/supabase_config.dart' as config;
 /// Script to create a user in Supabase
 /// 
 /// Usage:
-///   dart run scripts/create_supabase_user.dart <email> <password> [name]
+///   dart run scripts/create_supabase_user.dart `<email>` `<password>` `[name]`
 /// 
 /// Example:
 ///   dart run scripts/create_supabase_user.dart reis@avrai.org avrai "Reis Gordon"

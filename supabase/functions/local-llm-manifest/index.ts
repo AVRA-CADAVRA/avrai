@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-type Platform = 'android' | 'ios'
+type Platform = 'android' | 'ios' | 'macos'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -55,6 +55,16 @@ serve(async (req) => {
     const iosSha2563b = Deno.env.get('LOCAL_LLM_IOS_COREML_ZIP_SHA256_3B') ?? ''
     const iosSize3b = Number(Deno.env.get('LOCAL_LLM_IOS_COREML_ZIP_SIZE_BYTES_3B') ?? '0')
 
+    // macOS (Apple Silicon CoreML)
+    const macosCoreMLUrl8b = Deno.env.get('LOCAL_LLM_MACOS_COREML_ZIP_URL') ?? ''
+    const macosCoreMLSha2568b = Deno.env.get('LOCAL_LLM_MACOS_COREML_ZIP_SHA256') ?? ''
+    const macosCoreMLSize8b = Number(Deno.env.get('LOCAL_LLM_MACOS_COREML_ZIP_SIZE_BYTES') ?? '0')
+
+    // macOS (Intel GGUF fallback - optional)
+    const macosIntelUrl8b = Deno.env.get('LOCAL_LLM_MACOS_INTEL_GGUF_URL') ?? ''
+    const macosIntelSha2568b = Deno.env.get('LOCAL_LLM_MACOS_INTEL_GGUF_SHA256') ?? ''
+    const macosIntelSize8b = Number(Deno.env.get('LOCAL_LLM_MACOS_INTEL_GGUF_SIZE_BYTES') ?? '0')
+
     const artifacts: any[] = []
     if (tier === 'small3b') {
       if (androidUrl3b && androidSha2563b && androidSize3b > 0) {
@@ -77,6 +87,7 @@ serve(async (req) => {
           is_zip: true,
         })
       }
+      // macOS 3B tier support can be added here if needed
     } else {
       if (androidUrl8b && androidSha2568b && androidSize8b > 0) {
       artifacts.push({
@@ -98,6 +109,28 @@ serve(async (req) => {
         is_zip: true,
       })
     }
+      // macOS (Apple Silicon - CoreML)
+      if (macosCoreMLUrl8b && macosCoreMLSha2568b && macosCoreMLSize8b > 0) {
+        artifacts.push({
+          platform: 'macos_coreml_zip',
+          url: macosCoreMLUrl8b,
+          sha256: macosCoreMLSha2568b,
+          size_bytes: macosCoreMLSize8b,
+          file_name: 'model_coreml.zip',
+          is_zip: true,
+        })
+      }
+      // macOS (Intel - GGUF fallback)
+      if (macosIntelUrl8b && macosIntelSha2568b && macosIntelSize8b > 0) {
+        artifacts.push({
+          platform: 'macos_intel_gguf',
+          url: macosIntelUrl8b,
+          sha256: macosIntelSha2568b,
+          size_bytes: macosIntelSize8b,
+          file_name: 'model.gguf',
+          is_zip: false,
+        })
+      }
     }
 
     // Minimal manifest payload (matches Dart schema).
@@ -117,10 +150,15 @@ serve(async (req) => {
       payload.artifacts = artifacts.filter((a) => a.platform === 'android_gguf')
     } else if (platform === 'ios') {
       payload.artifacts = artifacts.filter((a) => a.platform === 'ios_coreml_zip')
+    } else if (platform === 'macos') {
+      // macOS: prefer CoreML, fallback to Intel GGUF
+      const coremlArtifact = artifacts.find((a) => a.platform === 'macos_coreml_zip')
+      const intelArtifact = artifacts.find((a) => a.platform === 'macos_intel_gguf')
+      payload.artifacts = coremlArtifact ? [coremlArtifact] : (intelArtifact ? [intelArtifact] : [])
     }
 
     const payloadBytes = new TextEncoder().encode(JSON.stringify(payload))
-    const sigBytes = await ed25519.sign(payloadBytes, signingKey)
+    const sigBytes = await ed25519.signAsync(payloadBytes, signingKey)
 
     return new Response(
       JSON.stringify({

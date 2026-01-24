@@ -127,11 +127,19 @@ class LocalLlmModelPackManifest {
     final key = switch (platform) {
       TargetPlatform.android => 'android_gguf',
       TargetPlatform.iOS => 'ios_coreml_zip',
+      TargetPlatform.macOS => 'macos_coreml_zip', // Primary: CoreML for Apple Silicon
       _ => '',
     };
     if (key.isEmpty) return null;
+    // Check for primary artifact first (CoreML for macOS)
     for (final a in artifacts) {
       if (a.platform == key) return a;
+    }
+    // Fallback to Intel GGUF if CoreML not available (for Intel Macs)
+    if (platform == TargetPlatform.macOS) {
+      for (final a in artifacts) {
+        if (a.platform == 'macos_intel_gguf') return a;
+      }
     }
     return null;
   }

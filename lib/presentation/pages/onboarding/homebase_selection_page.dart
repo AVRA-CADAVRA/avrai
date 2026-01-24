@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:avrai/core/services/logger.dart';
-import 'package:flutter/material.dart';
 import 'package:avrai/core/theme/colors.dart';
+import 'package:avrai/core/theme/app_theme.dart';
+import 'package:avrai/core/services/geo_hierarchy_service.dart';
+import 'package:avrai/core/services/geo_city_pack_service.dart';
+import 'package:avrai/injection_container.dart' as di;
+import 'package:avrai/core/services/storage_service.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'
     if (dart.library.html) 'package:avrai/presentation/pages/onboarding/web_geocoding_nominatim.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:avrai/core/theme/app_theme.dart';
-import 'package:avrai/core/services/storage_service.dart';
-import 'package:avrai/injection_container.dart' as di;
-import 'package:avrai/core/services/geo_hierarchy_service.dart';
-import 'package:avrai/core/services/geo_city_pack_service.dart';
 
 class HomebaseSelectionPage extends StatefulWidget {
   final String? selectedHomebase;
@@ -290,6 +292,45 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
     }
   }
 
+  /// Fallback reverse geocoding via OpenStreetMap Nominatim when the native
+  /// implementation (e.g. CLGeocoder on macOS) returns empty or fails.
+  /// No API key; works on macOS, Windows, Linux. Nominatim requires a User-Agent.
+  Future<List<Placemark>> _reverseGeocodeNominatim(double lat, double lon) async {
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon&addressdetails=1',
+      );
+      final resp = await http.get(uri, headers: {
+        'User-Agent': 'AVRAI/1.0 (https://avrai.app)',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 5));
+
+      if (resp.statusCode != 200) return [];
+      final data = json.decode(resp.body) as Map<String, dynamic>?;
+      if (data == null) return [];
+      final addr = (data['address'] as Map<String, dynamic>?) ?? {};
+      final locality = (addr['city'] ?? addr['town'] ?? addr['village']) as String?;
+      final road = (addr['road'] ?? addr['pedestrian']) as String?;
+      return [
+        Placemark(
+          name: data['display_name'] as String?,
+          street: road,
+          thoroughfare: road,
+          locality: locality,
+          subLocality: (addr['neighbourhood'] ?? addr['suburb']) as String?,
+          administrativeArea: addr['state'] as String?,
+          subAdministrativeArea: addr['county'] as String?,
+          subThoroughfare: addr['house_number'] as String?,
+          postalCode: addr['postcode'] as String?,
+          country: addr['country'] as String?,
+        ),
+      ];
+    } catch (e) {
+      _logger.debug('HomebaseSelectionPage: Nominatim fallback failed: $e');
+      return [];
+    }
+  }
+
   Future<void> _getNeighborhoodName(LatLng location) async {
     _logger.debug(
         'HomebaseSelectionPage: Getting neighborhood name for location: ${location.latitude}, ${location.longitude}');
@@ -313,95 +354,63 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
       return;
     }
 
+    List<Placemark>? placemarks;
     try {
-      // Use a short-timeout geocoding; on web this resolves via stub quickly
-      final placemarks = await placemarkFromCoordinates(
+      placemarks = await placemarkFromCoordinates(
         location.latitude,
         location.longitude,
       ).timeout(const Duration(seconds: 4));
       _logger
-          .debug('HomebaseSelectionPage: Got ${placemarks.length} placemarks');
-
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
+          .debug('HomebaseSelectionPage: Got ${placemarks.length} placemarks (native)');
+      if (placemarks.isEmpty) {
+        placemarks = await _reverseGeocodeNominatim(
+          location.latitude,
+          location.longitude,
+        );
         _logger.debug(
-            'HomebaseSelectionPage: First placemark: ${place.name}, ${place.thoroughfare}, ${place.locality}');
-
-        String neighborhood = _extractNeighborhood(place);
-        _logger.debug(
-            'HomebaseSelectionPage: Extracted neighborhood: $neighborhood');
-
-        // Cache the result
-        _geocodingCache[cacheKey] = neighborhood;
-
-        if (mounted) {
-          setState(() {
-            _selectedNeighborhood = neighborhood;
-          });
-        }
-
-        // Update the homebase selection
-        if (neighborhood != 'Unknown Location') {
-          widget.onHomebaseChanged(neighborhood);
-          await _saveCachedLocation(location, neighborhood);
-        }
-      } else {
-        _logger.warn('HomebaseSelectionPage: No placemarks found');
-        if (mounted) {
-          setState(() {
-            _selectedNeighborhood = 'Unknown Location';
-          });
-        }
+            'HomebaseSelectionPage: Nominatim fallback: ${placemarks.length} placemarks');
       }
     } catch (e) {
       _logger.error('HomebaseSelectionPage: Error in geocoding', error: e);
-      // Try reverse geocoding as fallback with shorter timeout
-      try {
-        final completer = Completer<List<Placemark>>();
+      placemarks = await _reverseGeocodeNominatim(
+        location.latitude,
+        location.longitude,
+      );
+      _logger.debug(
+          'HomebaseSelectionPage: Nominatim fallback: ${placemarks.length} placemarks');
+    }
 
-        Timer(const Duration(seconds: 3), () {
-          if (!completer.isCompleted) {
-            completer.completeError('Reverse geocoding timeout');
-          }
+    if (placemarks.isNotEmpty) {
+      Placemark place = placemarks.first;
+      _logger.debug(
+          'HomebaseSelectionPage: First placemark: ${place.name}, ${place.thoroughfare}, ${place.locality}');
+
+      String neighborhood = _extractNeighborhood(place);
+      _logger.debug(
+          'HomebaseSelectionPage: Extracted neighborhood: $neighborhood');
+
+      _geocodingCache[cacheKey] = neighborhood;
+
+      if (mounted) {
+        setState(() {
+          _selectedNeighborhood = neighborhood;
         });
+      }
 
-        placemarkFromCoordinates(
-          location.latitude,
-          location.longitude,
-        ).then((placemarks) {
-          if (!completer.isCompleted) {
-            completer.complete(placemarks);
-          }
-        }).catchError((error) {
-          if (!completer.isCompleted) {
-            completer.completeError(error);
-          }
+      if (neighborhood != 'Unknown Location') {
+        widget.onHomebaseChanged(neighborhood);
+        await _saveCachedLocation(location, neighborhood);
+      }
+    } else {
+      _logger.warn('HomebaseSelectionPage: No placemarks from native or Nominatim');
+      if (mounted) {
+        setState(() {
+          _selectedNeighborhood = 'Unknown Location';
         });
-
-        final reversePlacemarks = await completer.future;
-
-        if (reversePlacemarks.isNotEmpty) {
-          Placemark place = reversePlacemarks.first;
-          String neighborhood = _extractNeighborhood(place);
-
-          // Cache the result
-          _geocodingCache[cacheKey] = neighborhood;
-
-          if (mounted) {
-            setState(() {
-              _selectedNeighborhood = neighborhood;
-            });
-          }
-        }
-      } catch (e2) {
-        _logger.error('HomebaseSelectionPage: Error in reverse geocoding',
-            error: e2);
-        // Handle geocoding error
-        if (mounted) {
-          setState(() {
-            _selectedNeighborhood = 'Unknown Location';
-          });
-        }
+        // Still allow proceeding: use a coordinate-based fallback so user can continue
+        final fallback = 'Current Location (${location.latitude.toStringAsFixed(2)}, ${location.longitude.toStringAsFixed(2)})';
+        widget.onHomebaseChanged(fallback);
+        unawaited(_saveCachedLocation(location, fallback));
       }
     }
   }
@@ -582,14 +591,17 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
         }
       }
 
-      // No overlay available.
+      // No overlay available (lookup null: outside coverage or Supabase/network).
+      if (lookup == null) {
+        _logger.debug(
+            'HomebaseSelectionPage: No locality at point (Supabase RPC or outside coverage)');
+      }
       if (!mounted) return;
       if (_geoPolygons.isNotEmpty) {
         setState(() => _geoPolygons = const []);
       }
     } catch (e) {
-      // Best-effort: overlay failure should never block onboarding.
-      _logger.debug('HomebaseSelectionPage: Geo overlay load failed: $e');
+      _logger.info('HomebaseSelectionPage: Geo overlay load failed: $e');
     }
   }
 
@@ -680,7 +692,7 @@ class _HomebaseSelectionPageState extends State<HomebaseSelectionPage> {
                           TileLayer(
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.avrai.app',
+                            userAgentPackageName: 'app.avrai',
                             maxZoom: 18,
                           ),
                           if (_geoPolygons.isNotEmpty)

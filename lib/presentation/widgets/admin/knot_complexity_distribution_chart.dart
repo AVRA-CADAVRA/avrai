@@ -45,7 +45,7 @@ class KnotCrossingNumberChart extends StatelessWidget {
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (group) => AppTheme.primaryColor,
-              tooltipRoundedRadius: 8,
+              tooltipBorderRadius: BorderRadius.circular(8),
             ),
           ),
           titlesData: FlTitlesData(
@@ -150,7 +150,7 @@ class KnotWritheChart extends StatelessWidget {
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (group) => AppColors.electricGreen,
-              tooltipRoundedRadius: 8,
+              tooltipBorderRadius: BorderRadius.circular(8),
             ),
           ),
           titlesData: FlTitlesData(

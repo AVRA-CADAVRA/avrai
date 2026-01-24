@@ -57,8 +57,9 @@ void main() {
       final retrievedDevice = service.getDevice(2);
 
       expect(retrievedDevice, isNotNull);
-      expect(retrievedDevice!.deviceId, 2);
-      expect(retrievedDevice.deviceName, 'Device 2');
+      expect(retrievedDevice!.deviceId, registeredDevice.deviceId);
+      expect(retrievedDevice.deviceName, registeredDevice.deviceName);
+      expect(retrievedDevice.registeredAt, registeredDevice.registeredAt);
     });
 
     test('should return null for non-existent device', () {

@@ -162,7 +162,14 @@ class _AddFriendQRPageState extends State<AddFriendQRPage> {
                           version: QrVersions.auto,
                           size: 250,
                           backgroundColor: AppColors.white,
-                          foregroundColor: AppColors.textPrimary,
+                          eyeStyle: QrEyeStyle(
+                            eyeShape: QrEyeShape.square,
+                            color: AppColors.textPrimary,
+                          ),
+                          dataModuleStyle: QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 32),

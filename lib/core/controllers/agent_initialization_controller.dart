@@ -95,9 +95,8 @@ class AgentInitializationController
   final SharedPreferencesCompat? _prefs;
 
   // AVRAI Core System Integration (optional, graceful degradation)
-  // ignore: unused_field
   final AtomicClockService
-      _atomicClock; // Reserved for future 4D quantum state timestamps
+      _atomicClock; // Used for 4D quantum state timestamps
   final LocationTimingQuantumStateService? _locationTimingService;
   final QuantumEntanglementService? _quantumEntanglementService;
   final QuantumMatchingAILearningService? _aiLearningService;
@@ -590,8 +589,11 @@ class AgentInitializationController
           ).resolveHomebaseGeoContextBestEffort();
 
           if (geo.hasCoordinates) {
+            // Use atomic clock for timestamp consistency
+            final timestamp = await _atomicClock.getAtomicTimestamp();
+            
             _logger.info(
-              '🌐 Creating 4D quantum location state for homebase: ${geo.latitude}, ${geo.longitude}',
+              '🌐 Creating 4D quantum location state for homebase: ${geo.latitude}, ${geo.longitude} (timestamp: ${timestamp.serverTime})',
               tag: _logName,
             );
 
@@ -613,7 +615,7 @@ class AgentInitializationController
             );
 
             _logger.info(
-              '✅ 4D quantum location state created for homebase',
+              '✅ 4D quantum location state created for homebase (timestamp: ${timestamp.serverTime})',
               tag: _logName,
             );
 

@@ -1,6 +1,6 @@
 import 'dart:developer' as developer;
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, defaultTargetPlatform, TargetPlatform;
 import 'package:go_router/go_router.dart';
 import 'package:avrai/core/services/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -9,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:avrai/core/services/device_capability_service.dart';
 import 'package:avrai/core/services/local_llm/local_llm_auto_install_service.dart';
+import 'package:avrai/core/services/local_llm/local_llm_macos_auto_install_service.dart';
 import 'package:avrai/core/services/local_llm/local_llm_provisioning_state_service.dart';
 import 'package:avrai/core/services/on_device_ai_capability_gate.dart';
 import 'package:avrai/core/theme/colors.dart';
@@ -1171,9 +1172,13 @@ class _ConnectAndDiscoverPageState extends State<_ConnectAndDiscoverPage> {
         });
       }
 
-      // Best-effort: kick auto-install so it can queue for Wi‑Fi.
+      // Best-effort: kick auto-install
       if (enabled && eligible) {
-        await LocalLlmAutoInstallService().maybeAutoInstall();
+        if (defaultTargetPlatform == TargetPlatform.macOS) {
+          await LocalLlmMacOSAutoInstallService().maybeAutoInstallMacOS();
+        } else {
+          await LocalLlmAutoInstallService().maybeAutoInstall();
+        }
       }
     } catch (e, st) {
       developer.log('Failed to load offline LLM onboarding state: $e',

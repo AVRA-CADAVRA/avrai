@@ -225,22 +225,26 @@ class _CancellationFlowPageState extends State<CancellationFlowPage> {
             ),
           ),
           const SizedBox(height: 16),
-          ...reasons.map((reason) {
-            return RadioListTile<String>(
-              title: Text(
-                reason,
-                style: const TextStyle(color: AppColors.textPrimary),
-              ),
-              value: reason,
-              groupValue: _selectedReason,
-              onChanged: (value) {
-                setState(() {
-                  _selectedReason = value;
-                });
-              },
-              activeColor: AppTheme.primaryColor,
-            );
-          }),
+          RadioGroup<String>(
+            groupValue: _selectedReason,
+            onChanged: (val) {
+              setState(() {
+                _selectedReason = val;
+              });
+            },
+            child: Column(
+              children: reasons.map((reason) {
+                return RadioListTile<String>(
+                  title: Text(
+                    reason,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  value: reason,
+                  activeColor: AppTheme.primaryColor,
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
       isActive: _currentStep >= 0,

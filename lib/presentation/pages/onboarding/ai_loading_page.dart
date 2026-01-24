@@ -977,6 +977,8 @@ class _AILoadingPageState extends State<AILoadingPage>
 
       if (generatedLists.isEmpty) return;
 
+      if (!mounted) return;
+
       _logger.info('📝 Creating ${generatedLists.length} fallback lists...',
           tag: 'AILoadingPage');
 

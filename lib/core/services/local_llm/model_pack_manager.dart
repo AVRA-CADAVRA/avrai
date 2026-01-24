@@ -292,6 +292,7 @@ class LocalLlmModelPackManager {
     final platform = switch (defaultTargetPlatform) {
       TargetPlatform.android => 'android',
       TargetPlatform.iOS => 'ios',
+      TargetPlatform.macOS => 'macos',
       _ => '',
     };
     final client = Supabase.instance.client;

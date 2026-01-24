@@ -80,6 +80,7 @@ class DeviceCapabilityService {
         platform: switch (defaultTargetPlatform) {
           TargetPlatform.android => 'android',
           TargetPlatform.iOS => 'ios',
+          TargetPlatform.macOS => 'macos',
           _ => 'unknown',
         },
         deviceModel: '',

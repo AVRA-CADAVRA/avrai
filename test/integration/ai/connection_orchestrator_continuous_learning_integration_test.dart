@@ -21,10 +21,8 @@ import 'package:avrai/core/ai2ai/connection_orchestrator.dart';
 import 'package:avrai/core/ai/continuous_learning_system.dart';
 import 'package:avrai/core/ai/personality_learning.dart';
 import 'package:avrai/core/ai/vibe_analysis_engine.dart';
-import 'package:avrai/core/models/connection_metrics.dart';
-import 'package:avrai/core/ai2ai/aipersonality_node.dart';
+import 'package:avrai/core/models/user_vibe.dart';
 import 'package:avrai/core/services/storage_service.dart' show SharedPreferencesCompat;
-import 'package:avrai/core/services/agent_id_service.dart';
 import 'package:avrai_core/models/personality_profile.dart';
 import '../../helpers/getit_test_harness.dart';
 import '../../mocks/mock_storage_service.dart';
@@ -61,6 +59,17 @@ void main() {
       final prefs = await SharedPreferencesCompat.getInstance(storage: mockStorage);
       await prefs.setBool('discovery_enabled', true);
       
+      // Create test personality FIRST (before it's used in mocks)
+      testPersonality = PersonalityProfile.initial(
+        'agent_$testUserId',
+        userId: testUserId,
+      ).evolve(
+        newDimensions: {
+          'exploration_eagerness': 0.8,
+          'community_orientation': 0.7,
+        },
+      );
+      
       // Create mocks
       mockVibeAnalyzer = MockUserVibeAnalyzer();
       mockConnectivity = MockConnectivity();
@@ -74,13 +83,12 @@ void main() {
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
       
       // Setup vibe analyzer mock
+      final testVibe = UserVibe.fromPersonalityProfile(
+        testUserId,
+        testPersonality.dimensions,
+      );
       when(mockVibeAnalyzer.compileUserVibe(any, any))
-          .thenAnswer((_) async => UserVibe(
-                userId: testUserId,
-                personality: testPersonality,
-                vibeSignature: 'test_signature',
-                compiledAt: DateTime.now(),
-              ));
+          .thenAnswer((_) async => testVibe);
       
       // Setup personality learning mock
       when(mockPersonalityLearning.evolveFromAI2AILearning(any, any))
@@ -88,9 +96,9 @@ void main() {
       
       // Setup continuous learning system mock
       when(mockContinuousLearningSystem.processAI2AILearningInsight(
-        userId: any,
-        insight: any,
-        peerId: any,
+        userId: anyNamed('userId'),
+        insight: anyNamed('insight'),
+        peerId: anyNamed('peerId'),
       )).thenAnswer((_) async {});
       
       // Register ContinuousLearningSystem in GetIt
@@ -105,17 +113,6 @@ void main() {
         connectivity: mockConnectivity,
         prefs: prefs,
         personalityLearning: mockPersonalityLearning,
-      );
-      
-      // Create test personality
-      testPersonality = PersonalityProfile.initial(
-        'agent_$testUserId',
-        userId: testUserId,
-      ).evolve(
-        newDimensions: {
-          'exploration_eagerness': 0.8,
-          'community_orientation': 0.7,
-        },
       );
     });
 
@@ -133,16 +130,6 @@ void main() {
       test('should call ContinuousLearningSystem after personalityLearning.evolveFromAI2AILearning()', () async {
         await orchestrator.initializeOrchestration(testUserId, testPersonality);
         
-        // Create test nodes for passive learning
-        final testNodes = [
-          AIPersonalityNode(
-            nodeId: 'peer-1',
-            personalityProfile: testPersonality,
-            lastSeen: DateTime.now(),
-            connectionStrength: 0.8,
-          ),
-        ];
-        
         // Trigger passive learning (this will call both personalityLearning and ContinuousLearningSystem)
         await orchestrator.discoverNearbyAIPersonalities(testUserId, testPersonality);
         
@@ -153,9 +140,9 @@ void main() {
         // Verify ContinuousLearningSystem was called (if passive learning occurred)
         // Note: This depends on passive learning conditions being met
         verify(mockContinuousLearningSystem.processAI2AILearningInsight(
-          userId: any,
-          insight: any,
-          peerId: any,
+          userId: anyNamed('userId'),
+          insight: anyNamed('insight'),
+          peerId: anyNamed('peerId'),
         )).called(greaterThanOrEqualTo(0));
       });
 
@@ -168,9 +155,9 @@ void main() {
         
         // And ContinuousLearningSystem should also be called
         verify(mockContinuousLearningSystem.processAI2AILearningInsight(
-          userId: any,
-          insight: any,
-          peerId: any,
+          userId: anyNamed('userId'),
+          insight: anyNamed('insight'),
+          peerId: anyNamed('peerId'),
         )).called(greaterThanOrEqualTo(0));
       });
 
@@ -209,9 +196,9 @@ void main() {
       test('should handle errors gracefully', () async {
         // Make ContinuousLearningSystem throw an error
         when(mockContinuousLearningSystem.processAI2AILearningInsight(
-          userId: any,
-          insight: any,
-          peerId: any,
+          userId: anyNamed('userId'),
+          insight: anyNamed('insight'),
+          peerId: anyNamed('peerId'),
         )).thenThrow(Exception('Processing error'));
         
         await orchestrator.initializeOrchestration(testUserId, testPersonality);
@@ -226,13 +213,3 @@ void main() {
   });
 }
 
-// Helper to create test UserVibe
-UserVibe _createTestUserVibe() {
-  final personality = PersonalityProfile.initial('agent_test');
-  return UserVibe(
-    userId: 'test-user',
-    personality: personality,
-    vibeSignature: 'test_signature',
-    compiledAt: DateTime.now(),
-  );
-}

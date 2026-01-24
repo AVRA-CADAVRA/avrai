@@ -98,27 +98,27 @@ class _PermissionsPageState extends State<PermissionsPage> {
     }
   }
 
-  /// Maps Permission to macOS System Settings URL for specific privacy section
+  /// Maps Permission to macOS System Settings URL for specific privacy section.
+  /// Use Privacy & Security sub-panes so the user can allow the app for Bluetooth/Local Network.
   String? _getSystemSettingsURL(Permission permission) {
     switch (permission) {
       case Permission.locationWhenInUse:
       case Permission.locationAlways:
-        // Opens Privacy & Security > Location Services
+        // Privacy & Security > Location Services (app allowlist)
         return 'x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices';
-      
+
       case Permission.bluetooth:
       case Permission.bluetoothScan:
       case Permission.bluetoothConnect:
       case Permission.bluetoothAdvertise:
-        // Opens Bluetooth preferences
-        return 'x-apple.systempreferences:com.apple.preference.bluetooth';
-      
+        // Privacy & Security > Bluetooth (app allowlist); NOT the main Bluetooth devices pane
+        return 'x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth';
+
       case Permission.nearbyWifiDevices:
-        // Opens Network > Wi-Fi settings
-        return 'x-apple.systempreferences:com.apple.preference.network?service=Wi-Fi';
-      
+        // Privacy & Security; user can open "Local Network" for app WiFi discovery
+        return 'x-apple.systempreferences:com.apple.preference.security';
+
       default:
-        // Default to Privacy & Security main pane
         return 'x-apple.systempreferences:com.apple.preference.security';
     }
   }
@@ -548,14 +548,15 @@ class _PermissionsPageState extends State<PermissionsPage> {
                 _logger.info('Opened System Settings: $opened',
                     tag: 'PermissionsPage');
 
-                // Show a helpful message
                 if (mounted && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
-                        'Please grant permissions in System Settings. The app will check again when you return.',
+                        Platform.isMacOS
+                            ? 'Please grant permissions in System Settings. When done, switch back to AVRAI (Cmd+Tab or dock). Use the Back button above to return to the previous step.'
+                            : 'Please grant permissions in System Settings. The app will check again when you return. Use the Back button above to return to the previous step.',
                       ),
-                      duration: Duration(seconds: 4),
+                      duration: const Duration(seconds: 5),
                     ),
                   );
                 }
@@ -672,9 +673,9 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
     if (!mounted) return;
 
-    final result = await showDialog<bool>(
+    final result = await showDialog<bool?>(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
@@ -723,15 +724,15 @@ class _PermissionsPageState extends State<PermissionsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(false); // false = go to settings
-            },
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Skip for now'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Open Settings'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop(true); // true = request in-app
-            },
+            onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Grant Permissions'),
           ),
         ],
@@ -739,30 +740,38 @@ class _PermissionsPageState extends State<PermissionsPage> {
     );
 
     if (result == null) {
-      // User dismissed dialog, don't do anything
       return;
     }
 
     if (result == true) {
-      // User chose to grant permissions in-app
       await _requestAll();
     } else {
-      // User chose to go to settings
-      // Determine which permission to open based on denied permissions
       final deniedPermissions = _statuses.entries
           .where((e) => e.value.isDenied || e.value.isPermanentlyDenied)
           .toList();
-      
-      final permissionToOpen = deniedPermissions.isNotEmpty 
-          ? deniedPermissions.first.key 
-          : Permission.locationWhenInUse; // Default to location
-      
+
+      final permissionToOpen = deniedPermissions.isNotEmpty
+          ? deniedPermissions.first.key
+          : Permission.locationWhenInUse;
+
       final opened = Platform.isMacOS
           ? await _openMacOSSystemSettings(permissionToOpen)
           : await openAppSettings();
       _logger.info('Opened app settings: $opened', tag: 'PermissionsPage');
 
-      // Refresh statuses after returning from settings
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              Platform.isMacOS
+                  ? 'When done in System Settings, switch back to AVRAI (Cmd+Tab or dock). Use the Back button above to return to the previous step.'
+                  : 'When done in Settings, return to the app. Use the Back button above to return to the previous step.',
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           _refreshStatuses();

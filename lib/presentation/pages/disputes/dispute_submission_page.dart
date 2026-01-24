@@ -349,29 +349,33 @@ class _DisputeSubmissionPageState extends State<DisputeSubmissionPage> {
           ),
         ),
         const SizedBox(height: 12),
-        ...DisputeType.values.map((type) {
-          return RadioListTile<DisputeType>(
-            title: Text(
-              type.displayName,
-              style: const TextStyle(color: AppColors.textPrimary),
-            ),
-            subtitle: Text(
-              _getTypeDescription(type),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            value: type,
-            groupValue: _selectedType,
-            onChanged: (value) {
-              setState(() {
-                _selectedType = value;
-              });
-            },
-            activeColor: AppTheme.primaryColor,
-          );
-        }),
+        RadioGroup<DisputeType>(
+          groupValue: _selectedType,
+          onChanged: (val) {
+            setState(() {
+              _selectedType = val;
+            });
+          },
+          child: Column(
+            children: DisputeType.values.map((type) {
+              return RadioListTile<DisputeType>(
+                title: Text(
+                  type.displayName,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                ),
+                subtitle: Text(
+                  _getTypeDescription(type),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                value: type,
+                activeColor: AppTheme.primaryColor,
+              );
+            }).toList(),
+          ),
+        ),
       ],
     );
   }

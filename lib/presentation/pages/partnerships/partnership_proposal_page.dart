@@ -641,38 +641,34 @@ class _PartnershipProposalFormPageState extends State<PartnershipProposalFormPag
                   ),
                 ),
                 const SizedBox(height: 12),
-                RadioListTile<PartnershipType>(
-                  title: const Text('Co-Host (Equal partners)'),
-                  subtitle: const Text('Share responsibilities equally'),
-                  value: PartnershipType.eventBased,
+                RadioGroup<PartnershipType>(
                   groupValue: _partnershipType,
-                  onChanged: (value) {
-                    setState(() {
-                      _partnershipType = value!;
-                    });
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _partnershipType = val;
+                      });
+                    }
                   },
-                ),
-                RadioListTile<PartnershipType>(
-                  title: const Text('Venue Provider (Business venue)'),
-                  subtitle: const Text('Business provides venue space'),
-                  value: PartnershipType.ongoing,
-                  groupValue: _partnershipType,
-                  onChanged: (value) {
-                    setState(() {
-                      _partnershipType = value!;
-                    });
-                  },
-                ),
-                RadioListTile<PartnershipType>(
-                  title: const Text('Sponsorship'),
-                  subtitle: const Text('Business sponsors the event'),
-                  value: PartnershipType.exclusive,
-                  groupValue: _partnershipType,
-                  onChanged: (value) {
-                    setState(() {
-                      _partnershipType = value!;
-                    });
-                  },
+                  child: Column(
+                    children: [
+                      RadioListTile<PartnershipType>(
+                        title: const Text('Co-Host (Equal partners)'),
+                        subtitle: const Text('Share responsibilities equally'),
+                        value: PartnershipType.eventBased,
+                      ),
+                      RadioListTile<PartnershipType>(
+                        title: const Text('Venue Provider (Business venue)'),
+                        subtitle: const Text('Business provides venue space'),
+                        value: PartnershipType.ongoing,
+                      ),
+                      RadioListTile<PartnershipType>(
+                        title: const Text('Sponsorship'),
+                        subtitle: const Text('Business sponsors the event'),
+                        value: PartnershipType.exclusive,
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 24),

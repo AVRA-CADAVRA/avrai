@@ -33,8 +33,14 @@ This guide walks you through:
 - ⚠️ **Facebook OAuth** - Client ID + Secret
 
 **Note:** Google Maps SDK keys are **different** from Google Places API key. You need both:
-- **Places API** = For searching/finding places
-- **Maps SDK** = For displaying the map itself
+- **Places API** = For searching/finding places (works on all platforms - HTTP-based)
+- **Maps SDK** = For displaying the map itself (Android/iOS only - native SDK)
+
+**Platform Strategy:**
+- **Android:** Google Maps SDK (primary) - requires `GOOGLE_MAPS_ANDROID_API_KEY`
+- **iOS:** Google Maps SDK (when enabled via `ENABLE_IOS_GOOGLE_MAPS`) - requires `GOOGLE_MAPS_IOS_API_KEY`
+- **macOS/Windows/Linux/Web:** flutter_map (OpenStreetMap) - no Google Maps SDK keys needed
+- **All platforms:** Google Places API works via HTTP (requires `GOOGLE_PLACES_API_KEY`)
 
 ---
 

@@ -296,45 +296,49 @@ class _CancellationPolicySettingsWidgetState
               ),
               if (_allowsRefund) ...[
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Full Refund',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                    Radio<bool>(
-                      value: true,
-                      groupValue: _isFullRefund,
-                      onChanged: (value) {
-                        setState(() {
-                          _isFullRefund = true;
+                RadioGroup<bool>(
+                  groupValue: _isFullRefund,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _isFullRefund = val;
+                        if (val) {
                           _refundPercentage = null;
                           _refundPercentageController.clear();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Partial Refund',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        }
+                      });
+                    }
+                  },
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Full Refund',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          Radio<bool>(
+                            value: true,
+                          ),
+                        ],
                       ),
-                    ),
-                    Radio<bool>(
-                      value: false,
-                      groupValue: _isFullRefund,
-                      onChanged: (value) {
-                        setState(() {
-                          _isFullRefund = false;
-                        });
-                      },
-                    ),
-                  ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Partial Refund',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          Radio<bool>(
+                            value: false,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 if (!_isFullRefund) ...[
                   const SizedBox(height: 16),

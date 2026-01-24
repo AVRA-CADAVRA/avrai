@@ -18,7 +18,7 @@ import 'package:mockito/annotations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:avrai/core/ai/ai2ai_learning/orchestrator.dart';
 import 'package:avrai/core/ai/continuous_learning_system.dart';
-import 'package:avrai/core/ai/ai2ai_learning.dart' show AI2AIChatEvent, ChatMessageType, AI2AIChatAnalysisResult, ConversationPatterns, PersonalityEvolutionRecommendation, TrustMetrics, CollectiveIntelligence;
+import 'package:avrai/core/ai/ai2ai_learning.dart' show AI2AIChatEvent, ChatMessageType;
 import 'package:avrai/core/models/connection_metrics.dart' hide ChatMessageType;
 import '../../helpers/getit_test_harness.dart';
 
@@ -42,8 +42,8 @@ void main() {
       
       // Setup continuous learning system mock
       when(mockContinuousLearningSystem.processAI2AIChatConversation(
-        userId: any,
-        chatAnalysis: any,
+        userId: anyNamed('userId'),
+        chatAnalysis: anyNamed('chatAnalysis'),
       )).thenAnswer((_) async {});
       
       // Register ContinuousLearningSystem in GetIt
@@ -88,8 +88,8 @@ void main() {
         // If confidence >= 0.6, ContinuousLearningSystem should be called
         if (result.analysisConfidence >= 0.6) {
           verify(mockContinuousLearningSystem.processAI2AIChatConversation(
-            userId: any,
-            chatAnalysis: any,
+            userId: anyNamed('userId'),
+            chatAnalysis: anyNamed('chatAnalysis'),
           )).called(greaterThanOrEqualTo(1));
         }
       });
@@ -120,8 +120,8 @@ void main() {
         // If confidence < 0.6, ContinuousLearningSystem should not be called
         if (result.analysisConfidence < 0.6) {
           verifyNever(mockContinuousLearningSystem.processAI2AIChatConversation(
-            userId: any,
-            chatAnalysis: any,
+            userId: anyNamed('userId'),
+            chatAnalysis: anyNamed('chatAnalysis'),
           ));
         }
       });

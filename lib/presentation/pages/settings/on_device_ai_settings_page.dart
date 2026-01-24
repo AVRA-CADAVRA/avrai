@@ -4,7 +4,7 @@ import 'dart:async';
 
 // ignore: uri_does_not_exist
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, kReleaseMode, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:avrai/core/models/local_llm_bootstrap_state.dart';
@@ -230,13 +230,20 @@ class _OnDeviceAiSettingsPageState extends State<OnDeviceAiSettingsPage> {
       OfflineLlmTier.llama8b => 'Eligible (Llama 3.1 8B class)',
     };
 
+    // macOS-specific: Show architecture info
+    final architectureInfo = defaultTargetPlatform == TargetPlatform.macOS
+        ? (caps.deviceModel.isNotEmpty ? 'Architecture: ${caps.deviceModel}\n' : '')
+        : '';
+    
     return _buildInfoCard(
       title: 'Device capability gate',
       body: [
+        architectureInfo,
         'Tier: $tier',
         if (caps.totalRamMb != null) 'RAM: ${caps.totalRamMb}MB',
         if (caps.freeDiskMb != null) 'Free storage: ${caps.freeDiskMb}MB',
-        'Low power mode: ${caps.isLowPowerMode ? "on" : "off"}',
+        if (defaultTargetPlatform != TargetPlatform.macOS)
+          'Low power mode: ${caps.isLowPowerMode ? "on" : "off"}',
         if (gate.reasons.isNotEmpty) '',
         ...gate.reasons.map((r) => '- $r'),
       ].join('\n'),
@@ -283,7 +290,9 @@ class _OnDeviceAiSettingsPageState extends State<OnDeviceAiSettingsPage> {
                   : null,
               title: const Text('Enable offline LLM (download)'),
               subtitle: Text(eligible
-                  ? 'Downloads a local model and runs chat offline.'
+                  ? (defaultTargetPlatform == TargetPlatform.macOS
+                      ? 'Downloads a local model immediately and runs chat offline.'
+                      : 'Downloads a local model when on Wi-Fi and charging, then runs chat offline.')
                   : 'Disabled: device not eligible (or low power mode on).'),
             ),
             SwitchListTile(
@@ -296,7 +305,9 @@ class _OnDeviceAiSettingsPageState extends State<OnDeviceAiSettingsPage> {
                   : null,
               title: const Text('Enable scheduled LoRA training'),
               subtitle: Text((eligible && allowLora)
-                  ? 'Trains adapters only during charging + idle.'
+                  ? (defaultTargetPlatform == TargetPlatform.macOS
+                      ? 'Trains adapters only during idle periods.'
+                      : 'Trains adapters only during charging + idle.')
                   : 'Disabled: requires higher-tier device capability.'),
             ),
           ],

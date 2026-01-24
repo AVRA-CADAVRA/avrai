@@ -94,10 +94,8 @@ void main() {
       });
 
       test('should return empty list when API not available (graceful degradation)', () async {
-        // Register ConnectionOrchestrator but without getRecentMeshInsights API
-        final mockOrchestrator2 = MockVibeConnectionOrchestrator();
+        // Ensure ConnectionOrchestrator is not registered - simulate unavailable state
         getIt.unregisterIfRegistered<VibeConnectionOrchestrator>();
-        // Don't register it - simulate unavailable state
         
         final input = {
           'user_id': 'test-user',

@@ -18,6 +18,8 @@ import 'package:avrai/core/services/device_capability_service.dart';
 import 'package:avrai/core/services/local_llm/local_llm_post_install_bootstrap_service.dart';
 import 'package:avrai/core/services/on_device_ai_capability_gate.dart';
 import 'package:avrai/core/services/storage_service.dart' show SharedPreferencesCompat;
+import 'package:avrai/core/services/bert_squad/bert_squad_backend.dart';
+import 'package:avrai/core/services/bert_squad/query_classifier.dart';
 import 'package:http/http.dart' as http;
 // NOTE: This is Android-only at runtime. We keep the dependency optional in
 // practice by only using it when `TargetPlatform.android`. Some lint runners
@@ -52,6 +54,7 @@ class LLMService {
   // we fall back to cloud (when online).
   final LlmBackend _cloudBackend;
   final LlmBackend _localBackend;
+  final LlmBackend? _bertSquadBackend; // Optional BERT-SQuAD for dataset Q&A
   final Future<bool> Function({required bool isOnline})? _shouldUseLocalOverride;
   final Future<bool> Function()? _isOnlineOverride;
   
@@ -65,6 +68,7 @@ class LLMService {
     Connectivity? connectivity,
     LlmBackend? cloudBackend,
     LlmBackend? localBackend,
+    LlmBackend? bertSquadBackend,
     Future<bool> Function({required bool isOnline})? shouldUseLocalOverride,
     Future<bool> Function()? isOnlineOverride,
   })  : connectivity = connectivity ?? Connectivity(),
@@ -74,6 +78,7 @@ class LLMService {
               fallback: CloudGeminiGenerationBackend(),
             ),
         _localBackend = localBackend ?? _createLocalBackend(),
+        _bertSquadBackend = bertSquadBackend ?? _createBertSquadBackend(),
         _shouldUseLocalOverride = shouldUseLocalOverride,
         _isOnlineOverride = isOnlineOverride;
 
@@ -81,7 +86,21 @@ class LLMService {
     if (defaultTargetPlatform == TargetPlatform.android) {
       return AndroidLlamaFlutterAndroidBackend();
     }
+    // iOS and macOS both use LocalPlatformLlmBackend (method channel)
     return LocalPlatformLlmBackend();
+  }
+  
+  /// Create BERT-SQuAD backend if available (macOS only).
+  static LlmBackend? _createBertSquadBackend() {
+    if (defaultTargetPlatform == TargetPlatform.macOS) {
+      try {
+        return BertSquadBackend();
+      } catch (e) {
+        developer.log('BERT-SQuAD backend not available: $e', name: _logName);
+        return null;
+      }
+    }
+    return null;
   }
   
   /// Check if device is online
@@ -140,7 +159,35 @@ class LLMService {
     }
   }
 
-  Future<LlmBackend> _selectBackend() async {
+  Future<LlmBackend> _selectBackend({
+    required List<ChatMessage> messages,
+    LLMContext? context,
+  }) async {
+    // Check if query should use BERT-SQuAD (for dataset questions)
+    if (_bertSquadBackend != null && messages.isNotEmpty) {
+      final lastMessage = messages.lastWhere(
+        (m) => m.role == ChatRole.user,
+        orElse: () => messages.last,
+      );
+      
+      final queryClassifier = QueryClassifier();
+      final isDatasetQuestion = await queryClassifier.isDatasetQuestion(lastMessage.content);
+      
+      if (isDatasetQuestion) {
+        try {
+          // Try BERT-SQuAD first for dataset questions
+          return _bertSquadBackend!;
+        } catch (e) {
+          developer.log(
+            'BERT-SQuAD not available, falling back to other backend: $e',
+            name: _logName,
+          );
+          // Fall through to normal backend selection
+        }
+      }
+    }
+    
+    // Normal backend selection (local vs cloud)
     final online = await _isOnline();
     final useLocal = await _shouldUseLocalLlm(isOnline: online);
     if (!online && !useLocal) {
@@ -204,7 +251,7 @@ class LLMService {
     int maxTokens = 500,
     Duration? timeout,
   }) async {
-    final backend = await _selectBackend();
+    final backend = await _selectBackend(messages: messages, context: context);
     // Treat the configured cloud backend as “cloud” even in tests where we
     // inject a recording backend.
     final isCloud = identical(backend, _cloudBackend);
@@ -494,7 +541,7 @@ class LLMService {
     bool useRealSSE = true, // Toggle between real and simulated streaming
     bool autoFallback = true, // Automatically fallback to non-streaming if SSE fails
   }) async* {
-    final backend = await _selectBackend();
+    final backend = await _selectBackend(messages: messages, context: context);
     final isCloud = identical(backend, _cloudBackend);
     final messagesToSend = isCloud
         ? messages

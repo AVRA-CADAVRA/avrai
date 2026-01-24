@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -27,6 +27,8 @@ import 'package:avrai/core/services/neighborhood_boundary_service.dart';
 import 'package:avrai/core/models/neighborhood_boundary.dart';
 import 'package:avrai/core/services/geohash_service.dart';
 import 'package:avrai/presentation/widgets/map/spot_reservation_marker.dart';
+import 'package:avrai/presentation/widgets/map/map_boundary.dart';
+import 'package:avrai/presentation/widgets/map/map_boundary_converter.dart';
 import 'dart:developer' as developer;
 
 class MapView extends StatefulWidget {
@@ -74,8 +76,19 @@ class _MapViewState extends State<MapView> {
   final GeoHierarchyService _geoHierarchyService = GeoHierarchyService();
   final NeighborhoodBoundaryService _neighborhoodBoundaryService =
       NeighborhoodBoundaryService();
+  
+  // Unified boundary data (map-agnostic) - stored for potential future use
+  // ignore: unused_field
+  List<MapBoundary> _unifiedBoundaries = [];
+  
+  // Google Maps specific boundaries (converted from unified data)
   Set<gmap.Polyline> _boundaryPolylines = {};
   Set<gmap.Polygon> _boundaryPolygons = {};
+  
+  // flutter_map specific boundaries (converted from unified data)
+  List<Polyline> _flutterMapPolylines = [];
+  List<Polygon> _flutterMapPolygons = [];
+  
   String? _selectedBoundaryCityCode;
   String? _selectedBoundaryLocalityName;
   String? _selectedBoundaryLocalityCode;
@@ -83,72 +96,94 @@ class _MapViewState extends State<MapView> {
   static const bool _enableIosGoogleMaps =
       bool.fromEnvironment('ENABLE_IOS_GOOGLE_MAPS');
 
+  /// Determines which map implementation to use based on platform.
+  ///
+  /// **Platform Strategy:**
+  /// - **Android:** Always use Google Maps (primary)
+  /// - **iOS:** Use Google Maps if `ENABLE_IOS_GOOGLE_MAPS` is set and API key configured
+  /// - **macOS/Windows/Linux/Web:** Always use flutter_map (Google Maps not supported)
+  ///
+  /// **Fallback:** If Google Maps SDK keys are missing, gracefully falls back to flutter_map.
   bool get _shouldUseGoogleMaps {
-    // iOS Google Maps SDK hard-crashes if GMSServices isn't provided an API key.
-    // Default to flutter_map tiles on iOS unless explicitly enabled.
-    if (Platform.isIOS && !_enableIosGoogleMaps) return false;
+    // macOS/Windows/Linux/Web: Always use flutter_map (Google Maps SDK not supported)
+    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux || kIsWeb) {
+      return false;
+    }
+
+    // iOS: Use Google Maps only if explicitly enabled
+    if (Platform.isIOS) {
+      return _enableIosGoogleMaps;
+    }
+
+    // Android: Use Google Maps (primary)
     return true;
   }
+
+  // Cache map type decision to ensure consistent loading
+  late final bool _useGoogleMaps;
 
   @override
   void initState() {
     super.initState();
+    // Determine map type immediately and cache it to ensure correct map loads on app opening
+    _useGoogleMaps = _shouldUseGoogleMaps;
+    developer.log('MapView: Using ${_useGoogleMaps ? "Google Maps" : "flutter_map"}', 
+        name: 'MapView');
+    
     _selectedList = widget.initialSelectedList;
     _loadSavedTheme();
     _loadSpots();
     _initializeSearchSuggestions();
 
     // Load spots and lists if not already loaded
+    // Use postFrameCallback without delay to ensure correct map loads immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Add a small delay to ensure native plugins are fully initialized
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (!mounted) return;
+      if (!mounted) return;
 
+      try {
+        context.read<SpotsBloc>().add(LoadSpots());
+        context.read<ListsBloc>().add(LoadLists());
+      } catch (e) {
+        developer.log('Error loading spots/lists: $e', name: 'MapView');
+      }
+
+      // Request location permission and auto-locate user
+      //
+      // NOTE: In widget tests, geolocator calls may never complete, and the
+      // Future.timeout() timers can remain pending after disposal.
+      // We skip auto-location in Flutter test runs to keep widget tests deterministic.
+      if (!_isRunningInFlutterTest()) {
+        // Wrap in try-catch to prevent crashes from location requests
         try {
-          context.read<SpotsBloc>().add(LoadSpots());
-          context.read<ListsBloc>().add(LoadLists());
+          _requestLocationPermission();
+          _getCurrentLocationWithRetry();
+        } catch (e, stackTrace) {
+          developer.log('Error in location initialization: $e',
+              name: 'MapView');
+          developer.log('Stack trace: $stackTrace', name: 'MapView');
+          if (mounted) {
+            setState(() {
+              _locationError = 'Location initialization failed';
+            });
+          }
+        }
+      }
+
+      // Initialize border visualization (Google Maps only).
+      if (mounted && _useGoogleMaps) {
+        try {
+          _borderVisualization = BorderVisualizationWidget(
+            key: _borderVisualizationKey,
+            mapController: _gController,
+            city: 'New York', // TODO: Get from user location or settings
+            showSoftBorderSpots: true,
+            showRefinementIndicators: true,
+          );
         } catch (e) {
-          developer.log('Error loading spots/lists: $e', name: 'MapView');
+          developer.log('Error initializing border visualization: $e',
+              name: 'MapView');
         }
-
-        // Request location permission and auto-locate user
-        //
-        // NOTE: In widget tests, geolocator calls may never complete, and the
-        // Future.timeout() timers can remain pending after disposal.
-        // We skip auto-location in Flutter test runs to keep widget tests deterministic.
-        if (!_isRunningInFlutterTest()) {
-          // Wrap in try-catch to prevent crashes from location requests
-          try {
-            _requestLocationPermission();
-            _getCurrentLocationWithRetry();
-          } catch (e, stackTrace) {
-            developer.log('Error in location initialization: $e',
-                name: 'MapView');
-            developer.log('Stack trace: $stackTrace', name: 'MapView');
-            if (mounted) {
-              setState(() {
-                _locationError = 'Location initialization failed';
-              });
-            }
-          }
-        }
-
-        // Initialize border visualization (Google Maps only).
-        if (mounted && _shouldUseGoogleMaps) {
-          try {
-            _borderVisualization = BorderVisualizationWidget(
-              key: _borderVisualizationKey,
-              mapController: _gController,
-              city: 'New York', // TODO: Get from user location or settings
-              showSoftBorderSpots: true,
-              showRefinementIndicators: true,
-            );
-          } catch (e) {
-            developer.log('Error initializing border visualization: $e',
-                name: 'MapView');
-          }
-        }
-      });
+      }
     });
   }
 
@@ -836,11 +871,11 @@ class _MapViewState extends State<MapView> {
 
                         // Get boundary polylines/polygons if boundaries are shown (Google Maps only).
                         final polylines =
-                            (_showBoundaries && _shouldUseGoogleMaps)
+                            (_showBoundaries && _useGoogleMaps)
                                 ? _boundaryPolylines
                                 : <gmap.Polyline>{};
                         final polygons =
-                            (_showBoundaries && _shouldUseGoogleMaps)
+                            (_showBoundaries && _useGoogleMaps)
                                 ? _boundaryPolygons
                                 : <gmap.Polygon>{};
 
@@ -850,7 +885,7 @@ class _MapViewState extends State<MapView> {
                             _selectedBoundaryLocalityCode != null &&
                             _selectedBoundaryLocalityCode!.isNotEmpty;
 
-                        final Widget mapWidget = _shouldUseGoogleMaps
+                        final Widget mapWidget = _useGoogleMaps
                             ? gmap.GoogleMap(
                                 initialCameraPosition: gmap.CameraPosition(
                                   target: centerGM,
@@ -887,15 +922,22 @@ class _MapViewState extends State<MapView> {
                                 options: MapOptions(
                                   initialCenter: centerLL,
                                   initialZoom: _currentZoom,
-                                  interactionOptions:
-                                      const InteractionOptions(),
                                 ),
                                 children: [
                                   TileLayer(
                                     urlTemplate: _getTileUrlTemplate(),
-                                    subdomains: const ['a', 'b', 'c', 'd'],
-                                    userAgentPackageName: 'com.avrai.app',
+                                    userAgentPackageName: 'app.avrai',
                                   ),
+                                  // Add polyline layer for boundaries
+                                  if (_showBoundaries && _flutterMapPolylines.isNotEmpty)
+                                    PolylineLayer(
+                                      polylines: _flutterMapPolylines,
+                                    ),
+                                  // Add polygon layer for boundaries
+                                  if (_showBoundaries && _flutterMapPolygons.isNotEmpty)
+                                    PolygonLayer(
+                                      polygons: _flutterMapPolygons,
+                                    ),
                                   MarkerLayer(
                                     markers: [
                                       if (_locationError == null &&
@@ -947,7 +989,7 @@ class _MapViewState extends State<MapView> {
                               ),
                             if (kDebugMode &&
                                 Platform.isIOS &&
-                                !_shouldUseGoogleMaps)
+                                !_useGoogleMaps)
                               Positioned(
                                 top: 8,
                                 left: 8,
@@ -1266,13 +1308,24 @@ class _MapViewState extends State<MapView> {
     }
   }
 
+  /// Load boundary overlays and convert to map-specific types.
+  ///
+  /// This method generates unified boundary data structures and then converts
+  /// them to the appropriate map type (Google Maps or flutter_map) based on
+  /// the current platform and configuration.
   Future<void> _loadBoundaryOverlays() async {
-    if (!_showBoundaries) return;
+    if (!_showBoundaries) {
+      _clearBoundaries();
+      return;
+    }
+
     final cityCode = _selectedBoundaryCityCode;
     final localityName = _selectedBoundaryLocalityName;
     final localityCode = _selectedBoundaryLocalityCode;
 
     try {
+      List<MapBoundary> boundaries = [];
+
       // Most precise (first-class geo): render locality polygon if available.
       if (localityCode != null && localityCode.isNotEmpty) {
         final poly = await _geoHierarchyService.getLocalityPolygon(
@@ -1281,33 +1334,29 @@ class _MapViewState extends State<MapView> {
         );
 
         if (poly != null && poly.rings.isNotEmpty) {
-          final polygons = <gmap.Polygon>{
-            gmap.Polygon(
-              polygonId: gmap.PolygonId('locality:$localityCode'),
-              points: poly.rings.first
-                  .map((p) => gmap.LatLng(p.lat, p.lon))
-                  .toList(growable: false),
-              holes: poly.rings.length > 1
-                  ? poly.rings
-                      .skip(1)
-                      .map(
-                        (r) => r
-                            .map((p) => gmap.LatLng(p.lat, p.lon))
-                            .toList(growable: false),
-                      )
-                      .toList(growable: false)
-                  : const <List<gmap.LatLng>>[],
-              strokeWidth: 2,
-              strokeColor: AppTheme.primaryColor.withValues(alpha: 0.9),
-              fillColor: AppTheme.primaryColor.withValues(alpha: 0.14),
-            ),
-          };
+          final outerRing = poly.rings.first
+              .map((p) => LatLng(p.lat, p.lon))
+              .toList();
+          final holes = poly.rings.length > 1
+              ? poly.rings
+                  .skip(1)
+                  .map((r) => r.map((p) => LatLng(p.lat, p.lon)).toList())
+                  .toList()
+              : <List<LatLng>>[];
 
-          if (!mounted) return;
-          setState(() {
-            _boundaryPolygons = polygons;
-            _boundaryPolylines = {};
-          });
+          boundaries.add(
+            MapBoundary.polygon(
+              id: 'locality:$localityCode',
+              outerRing: outerRing,
+              holes: holes.isNotEmpty ? holes : null,
+              strokeWidth: 2,
+              strokeColor: AppTheme.primaryColor.toARGB32().toRadixString(16),
+              fillColor: AppTheme.primaryColor.toARGB32().toRadixString(16),
+              opacity: 0.14,
+            ),
+          );
+
+          _updateBoundaries(boundaries);
           return;
         }
       }
@@ -1320,105 +1369,150 @@ class _MapViewState extends State<MapView> {
         );
 
         if (tiles.isNotEmpty) {
-          final polygons = <gmap.Polygon>{};
           for (final t in tiles) {
-            // Rectangle polygon (lon/lat order in LatLng is (lat, lon)).
-            final points = <gmap.LatLng>[
-              gmap.LatLng(t.minLat, t.minLon),
-              gmap.LatLng(t.minLat, t.maxLon),
-              gmap.LatLng(t.maxLat, t.maxLon),
-              gmap.LatLng(t.maxLat, t.minLon),
+            // Rectangle polygon
+            final outerRing = [
+              LatLng(t.minLat, t.minLon),
+              LatLng(t.minLat, t.maxLon),
+              LatLng(t.maxLat, t.maxLon),
+              LatLng(t.maxLat, t.minLon),
             ];
-            polygons.add(
-              gmap.Polygon(
-                polygonId:
-                    gmap.PolygonId('city_tile:$cityCode:${t.geohash3Id}'),
-                points: points,
+
+            boundaries.add(
+              MapBoundary.polygon(
+                id: 'city_tile:$cityCode:${t.geohash3Id}',
+                outerRing: outerRing,
                 strokeWidth: 1,
-                strokeColor: AppTheme.primaryColor.withValues(alpha: 0.8),
-                fillColor: AppTheme.primaryColor.withValues(alpha: 0.12),
+            strokeColor: AppTheme.primaryColor.toARGB32().toRadixString(16),
+            fillColor: AppTheme.primaryColor.toARGB32().toRadixString(16),
+                opacity: 0.12,
               ),
             );
           }
 
-          if (!mounted) return;
-          setState(() {
-            _boundaryPolygons = polygons;
-            _boundaryPolylines = {};
-          });
+          _updateBoundaries(boundaries);
           return;
         }
       }
 
-      // NEW: Load locality agent geohash overlays (if available)
-      final localityAgentPolygons = await _loadLocalityAgentGeohashOverlays(
+      // Load locality agent geohash overlays (if available)
+      final geohashBoundaries = await _loadLocalityAgentGeohashBoundaries(
         cityCode: cityCode,
         centerLat: _center?.latitude,
         centerLon: _center?.longitude,
       );
-      if (localityAgentPolygons.isNotEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _boundaryPolygons = localityAgentPolygons;
-          _boundaryPolylines = {};
-        });
+      if (geohashBoundaries.isNotEmpty) {
+        _updateBoundaries(geohashBoundaries);
         return;
       }
 
       // Fallback: neighborhood "boundaries" (currently mock/generated)
       if (localityName == null || localityName.isEmpty) {
-        setState(() {
-          _boundaryPolylines = {};
-          _boundaryPolygons = {};
-        });
+        _clearBoundaries();
         return;
       }
 
-      final boundaries = await _neighborhoodBoundaryService
+      final neighborhoodBoundaries = await _neighborhoodBoundaryService
           .loadBoundariesFromGoogleMaps(localityName);
 
-      final next = <gmap.Polyline>{};
-      for (final b in boundaries) {
+      for (final b in neighborhoodBoundaries) {
         if (b.coordinates.isEmpty) continue;
         final points = b.coordinates
-            .map((c) => gmap.LatLng(c.latitude, c.longitude))
-            .toList(growable: false);
-        next.add(
-          gmap.Polyline(
-            polylineId: gmap.PolylineId('boundary:${b.boundaryKey}'),
+            .map((c) => LatLng(c.latitude, c.longitude))
+            .toList();
+
+        boundaries.add(
+          MapBoundary.polyline(
+            id: 'boundary:${b.boundaryKey}',
             points: points,
-            width: b.boundaryType == BoundaryType.hardBorder ? 4 : 3,
-            color: b.boundaryType == BoundaryType.hardBorder
-                ? AppColors.error
-                : AppTheme.primaryColor.withValues(alpha: 0.7),
+            strokeWidth: b.boundaryType == BoundaryType.hardBorder ? 4 : 3,
+            strokeColor: b.boundaryType == BoundaryType.hardBorder
+                ? AppColors.error.toARGB32().toRadixString(16)
+                : AppTheme.primaryColor.toARGB32().toRadixString(16),
+            opacity: b.boundaryType == BoundaryType.hardBorder ? 1.0 : 0.7,
           ),
         );
       }
 
-      if (!mounted) return;
-      setState(() {
-        _boundaryPolylines = next;
-        _boundaryPolygons = {};
-      });
+      _updateBoundaries(boundaries);
     } catch (e, st) {
       developer.log('Failed to load boundaries: $e',
           name: 'MapView', stackTrace: st);
       if (!mounted) return;
+      _clearBoundaries();
+    }
+  }
+
+  /// Update boundaries by converting unified data to map-specific types.
+  void _updateBoundaries(List<MapBoundary> boundaries) {
+    if (!mounted) return;
+
+    _unifiedBoundaries = boundaries;
+
+    if (_useGoogleMaps) {
+      // Convert to Google Maps types
+      final polylines = <gmap.Polyline>{};
+      final polygons = <gmap.Polygon>{};
+
+      for (final boundary in boundaries) {
+        if (boundary.type == MapBoundaryType.polyline) {
+          polylines.add(MapBoundaryConverter.toGoogleMapsPolyline(boundary));
+        } else {
+          polygons.add(MapBoundaryConverter.toGoogleMapsPolygon(boundary));
+        }
+      }
+
       setState(() {
+        _boundaryPolylines = polylines;
+        _boundaryPolygons = polygons;
+        _flutterMapPolylines = [];
+        _flutterMapPolygons = [];
+      });
+    } else {
+      // Convert to flutter_map types
+      final polylines = <Polyline>[];
+      final polygons = <Polygon>[];
+
+      for (final boundary in boundaries) {
+        if (boundary.type == MapBoundaryType.polyline) {
+          polylines.add(MapBoundaryConverter.toFlutterMapPolyline(boundary));
+        } else {
+          polygons.add(MapBoundaryConverter.toFlutterMapPolygon(boundary));
+        }
+      }
+
+      setState(() {
+        _flutterMapPolylines = polylines;
+        _flutterMapPolygons = polygons;
         _boundaryPolylines = {};
         _boundaryPolygons = {};
       });
     }
   }
 
-  /// NEW: Load locality agent geohash overlays for visualization
-  Future<Set<gmap.Polygon>> _loadLocalityAgentGeohashOverlays({
+  /// Clear all boundaries.
+  void _clearBoundaries() {
+    if (!mounted) return;
+    setState(() {
+      _unifiedBoundaries = [];
+      _boundaryPolylines = {};
+      _boundaryPolygons = {};
+      _flutterMapPolylines = [];
+      _flutterMapPolygons = [];
+    });
+  }
+
+  /// Load locality agent geohash overlays as unified boundary data.
+  ///
+  /// Returns unified MapBoundary data that can be converted to either
+  /// Google Maps or flutter_map types.
+  Future<List<MapBoundary>> _loadLocalityAgentGeohashBoundaries({
     required String? cityCode,
     required double? centerLat,
     required double? centerLon,
   }) async {
     if (cityCode == null || centerLat == null || centerLon == null) {
-      return {};
+      return [];
     }
 
     try {
@@ -1433,8 +1527,8 @@ class _MapViewState extends State<MapView> {
       final neighbors = GeohashService.neighbors(geohash: geohash);
       final allGeohashes = [geohash, ...neighbors];
 
-      // Create polygons for each geohash
-      final polygons = <gmap.Polygon>{};
+      // Create unified boundary polygons for each geohash
+      final boundaries = <MapBoundary>[];
       for (final gh in allGeohashes) {
         final bbox = GeohashService.decodeBoundingBox(gh);
 
@@ -1443,30 +1537,33 @@ class _MapViewState extends State<MapView> {
         // For now, use a default opacity
         final opacity = 0.1; // Default opacity
 
-        polygons.add(
-          gmap.Polygon(
-            polygonId: gmap.PolygonId('locality_agent_geohash:$gh'),
-            points: [
-              gmap.LatLng(bbox.latMin, bbox.lonMin),
-              gmap.LatLng(bbox.latMin, bbox.lonMax),
-              gmap.LatLng(bbox.latMax, bbox.lonMax),
-              gmap.LatLng(bbox.latMax, bbox.lonMin),
-            ],
+        final outerRing = [
+          LatLng(bbox.latMin, bbox.lonMin),
+          LatLng(bbox.latMin, bbox.lonMax),
+          LatLng(bbox.latMax, bbox.lonMax),
+          LatLng(bbox.latMax, bbox.lonMin),
+        ];
+
+        boundaries.add(
+          MapBoundary.polygon(
+            id: 'locality_agent_geohash:$gh',
+            outerRing: outerRing,
             strokeWidth: 1,
-            strokeColor: AppColors.secondary.withValues(alpha: 0.6),
-            fillColor: AppColors.secondary.withValues(alpha: opacity),
+            strokeColor: AppColors.secondary.toARGB32().toRadixString(16),
+            fillColor: AppColors.secondary.toARGB32().toRadixString(16),
+            opacity: opacity,
           ),
         );
       }
 
-      return polygons;
+      return boundaries;
     } catch (e, st) {
       developer.log(
         'Failed to load locality agent geohash overlays: $e',
         name: 'MapView',
         stackTrace: st,
       );
-      return {};
+      return [];
     }
   }
 

@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:battery_plus/battery_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode, defaultTargetPlatform, TargetPlatform;
 import 'package:get_it/get_it.dart';
 
 import 'package:avrai/core/services/device_capability_service.dart';
@@ -11,6 +11,7 @@ import 'package:avrai/core/services/on_device_ai_capability_gate.dart';
 import 'package:avrai/core/services/local_llm/model_pack_manager.dart';
 import 'package:avrai/core/services/local_llm/local_llm_post_install_bootstrap_service.dart';
 import 'package:avrai/core/services/local_llm/local_llm_provisioning_state_service.dart';
+import 'package:avrai/core/services/local_llm/local_llm_macos_auto_install_service.dart';
 import 'package:avrai/core/services/storage_service.dart' show SharedPreferencesCompat;
 
 /// Best-effort auto-downloader for local LLM packs.
@@ -87,6 +88,11 @@ class LocalLlmAutoInstallService {
 
   Future<void> maybeAutoInstall() async {
     if (kIsWeb) return;
+
+    // macOS: Use immediate download service (no gates)
+    if (defaultTargetPlatform == TargetPlatform.macOS) {
+      return LocalLlmMacOSAutoInstallService().maybeAutoInstallMacOS();
+    }
 
     try {
       final prefs = await _prefs();

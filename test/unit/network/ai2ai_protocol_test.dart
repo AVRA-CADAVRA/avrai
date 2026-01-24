@@ -83,6 +83,8 @@ void main() {
         );
 
         // Test behavior: message can be converted to JSON for transmission
+        // JSON format used for testing legacy/debugging functionality
+        // ignore: deprecated_member_use
         final json = originalMessage.toJson();
         expect(json, isA<Map<String, dynamic>>());
         expect(json.containsKey('type'), isTrue);
@@ -240,7 +242,10 @@ void main() {
         payload: {'test': 'value'},
       );
 
+      // JSON format used for testing legacy/debugging functionality
+      // ignore: deprecated_member_use
       final json = original.toJson();
+      // ignore: deprecated_member_use
       final restored = ProtocolMessage.fromJson(json);
 
       // Test behavior: round-trip preserves all critical protocol data

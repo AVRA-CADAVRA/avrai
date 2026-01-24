@@ -49,6 +49,10 @@ android/app/src/main/assets/models/
 .cursor/*.log
 .codeql-databases/
 
+# Rename backup directories (created during package rename operations)
+.avrai_rename_backup_*/
+.avra_rename_backup_*/
+
 # Misc
 .DS_Store
 *.log

@@ -121,6 +121,8 @@ class AI2AIProtocol {
       );
 
       // Serialize message
+      // JSON format kept for debugging/backward compatibility
+      // ignore: deprecated_member_use_from_same_package
       final json = jsonEncode(message.toJson());
 
       // Encrypt using MessageEncryptionService (Phase 14: Signal Protocol ready)
@@ -667,7 +669,9 @@ class AI2AIProtocol {
       }
 
       // Deserialize JSON message
+      // JSON format kept for debugging/backward compatibility (fallback path)
       final data = jsonDecode(json) as Map<String, dynamic>;
+      // ignore: deprecated_member_use_from_same_package
       return ProtocolMessage.fromJson(data);
     } catch (e) {
       developer.log('Error decoding message: $e', name: _logName);
