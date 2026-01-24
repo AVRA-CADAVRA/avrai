@@ -12,11 +12,11 @@ class SupabaseConfig {
   // These are used if --dart-define flags are not provided
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://nfzlwgbvezwwrutqpedy.supabase.co',
+    defaultValue: '',
   );
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5memx3Z2J2ZXp3d3J1dHFwZWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1MDU5MDUsImV4cCI6MjA3OTA4MTkwNX0.TimlFKPLvhF7NU1JmaiMVbkq0KxSJoiMlyhA8YIUef0',
+    defaultValue: '',
   );
   static const String serviceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
 

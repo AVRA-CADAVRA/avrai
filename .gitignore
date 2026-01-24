@@ -84,6 +84,9 @@ build/
 # NOTE: Intentionally NOT gitignored. We use this folder to move/retain
 # potentially-deletable content for review before permanent deletion.
 
+# Local model weights (large; use scripts to download when needed)
+models/
+
 # Config files with API keys (use environment variables or .env files instead)
 lib/google_places_config.dart
 lib/supabase_config.dart

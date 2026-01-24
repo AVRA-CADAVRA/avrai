@@ -10,7 +10,7 @@
  *   - SUPABASE_PROJECT_REF (or will use nfzlwgbvezwwrutqpedy)
  */
 
-const PROJECT_REF = Deno.env.get('SUPABASE_PROJECT_REF') || 'nfzlwgbvezwwrutqpedy';
+const PROJECT_REF = Deno.env.get('SUPABASE_PROJECT_REF') || 'YOUR_SUPABASE_PROJECT_REF';
 const ACCESS_TOKEN = Deno.env.get('SUPABASE_ACCESS_TOKEN');
 
 if (!ACCESS_TOKEN) {

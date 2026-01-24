@@ -1,7 +1,6 @@
-// Firebase configuration for SPOTS app
-// Values extracted from Android/iOS configs
-// For web, some values may need to be obtained from Firebase Console
-// Run `flutterfire configure` to regenerate with all platform-specific values
+// Stub for shareable/clean branch. No real credentials.
+// Run: dart run flutterfire_cli:flutterfire configure
+// to generate a real firebase_options.dart from your Firebase project.
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -10,52 +9,48 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      // Web configuration - projectId is critical for Analytics
-      // Note: For production, get web-specific apiKey and appId from Firebase Console
       return const FirebaseOptions(
-        apiKey:
-            'AIzaSyAyVtejIzdA94AwHSgyo2o18g-2wB5-qrs', // Android API key (use web-specific if available)
-        appId: '1:790357806819:web:c660dc01837241d253ffd6', // Web app ID format
-        messagingSenderId: '790357806819', // GCM Sender ID
-        projectId:
-            'spots-app-adea5', // Critical: fixes Analytics "Missing App configuration value: projectId"
-        storageBucket: 'spots-app-adea5.firebasestorage.app',
+        apiKey: 'your-api-key',
+        appId: '1:000000000000:web:placeholder',
+        messagingSenderId: '000000000000',
+        projectId: 'your-project-id',
+        storageBucket: 'your-project-id.firebasestorage.app',
       );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return const FirebaseOptions(
-          apiKey: 'AIzaSyAyVtejIzdA94AwHSgyo2o18g-2wB5-qrs',
-          appId: '1:790357806819:android:c660dc01837241d253ffd6',
-          messagingSenderId: '790357806819',
-          projectId: 'spots-app-adea5',
-          storageBucket: 'spots-app-adea5.firebasestorage.app',
+          apiKey: 'your-api-key',
+          appId: '1:000000000000:android:placeholder',
+          messagingSenderId: '000000000000',
+          projectId: 'your-project-id',
+          storageBucket: 'your-project-id.firebasestorage.app',
         );
       case TargetPlatform.iOS:
         return const FirebaseOptions(
-          apiKey: 'AIzaSyBruEqo9VBO82RYUtRzbS00_t97taO2T2Y',
-          appId: '1:790357806819:ios:4e274b840993d24653ffd6',
-          messagingSenderId: '790357806819',
-          projectId: 'spots-app-adea5',
-          storageBucket: 'spots-app-adea5.firebasestorage.app',
-          iosBundleId: 'com.avrai.app',
+          apiKey: 'your-api-key',
+          appId: '1:000000000000:ios:placeholder',
+          messagingSenderId: '000000000000',
+          projectId: 'your-project-id',
+          storageBucket: 'your-project-id.firebasestorage.app',
+          iosBundleId: 'com.example.app',
         );
       case TargetPlatform.macOS:
         return const FirebaseOptions(
-          apiKey: 'AIzaSyBruEqo9VBO82RYUtRzbS00_t97taO2T2Y',
-          appId: '1:790357806819:ios:4e274b840993d24653ffd6',
-          messagingSenderId: '790357806819',
-          projectId: 'spots-app-adea5',
-          storageBucket: 'spots-app-adea5.firebasestorage.app',
-          iosBundleId: 'com.avrai.app',
+          apiKey: 'your-api-key',
+          appId: '1:000000000000:ios:placeholder',
+          messagingSenderId: '000000000000',
+          projectId: 'your-project-id',
+          storageBucket: 'your-project-id.firebasestorage.app',
+          iosBundleId: 'com.example.app',
         );
       default:
         return const FirebaseOptions(
-          apiKey: 'AIzaSyAyVtejIzdA94AwHSgyo2o18g-2wB5-qrs',
-          appId: '1:790357806819:android:c660dc01837241d253ffd6',
-          messagingSenderId: '790357806819',
-          projectId: 'spots-app-adea5',
-          storageBucket: 'spots-app-adea5.firebasestorage.app',
+          apiKey: 'your-api-key',
+          appId: '1:000000000000:android:placeholder',
+          messagingSenderId: '000000000000',
+          projectId: 'your-project-id',
+          storageBucket: 'your-project-id.firebasestorage.app',
         );
     }
   }
