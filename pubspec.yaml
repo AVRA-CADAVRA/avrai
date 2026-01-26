@@ -92,7 +92,7 @@ dependencies:
   supabase_flutter: ^2.3.4
   
   # Health Data Integration - Phase 4: Dynamic Knots with Wearables
-  health: ^13.2.1  # Cross-platform health data (HealthKit/Health Connect)
+  health: ^13.3.0  # Cross-platform health data (HealthKit/Health Connect)
   
   # Audio Playback - Knot Theory Integration
   audioplayers: ^6.0.0  # For knot-based audio playback
