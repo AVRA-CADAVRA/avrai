@@ -8,7 +8,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # === Core Math Libraries ===
-nalgebra = "0.32"         # Primary type system (vectors, matrices)
+nalgebra = "0.34"         # Primary type system (vectors, matrices)
 num = "0.4"               # Complex number support
 rug = { version = "1.22", features = ["serde"] }  # Arbitrary precision arithmetic (for polynomials)
 
