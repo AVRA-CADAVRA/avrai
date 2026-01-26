@@ -104,7 +104,7 @@ dependencies:
   onnxruntime: ^1.4.1  # ONNX Runtime for on-device inference
   
   # Payment Processing - Agent 1: Payment Processing & Revenue
-  flutter_stripe: ^12.1.1
+  flutter_stripe: ^12.2.0
   
   # PDF Generation - Tax Compliance
   pdf: ^3.11.0
