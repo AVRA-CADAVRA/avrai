@@ -69,7 +69,7 @@ jobs:
       run: flutter test test/unit/ --reporter=compact || echo "Some tests failed"
       
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v5
+      uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: "🤖 Auto-fix: Apply background agent fixes"
